@@ -1,6 +1,6 @@
 # ai-agent-ds-mentor
 
-AI agent for Telegram that helps users learn Data Science: builds study plans, generates quizzes, evaluates answers, and tracks progress.
+AI agent for Telegram that helps users learn Data Science: builds study plans, generates quizzes, evaluates answers, tracks progress, and now supports mock interview mode.
 
 ## Features
 
@@ -8,6 +8,7 @@ AI agent for Telegram that helps users learn Data Science: builds study plans, g
 - Personalized study plan generation
 - Topic explanations for Data Science subjects
 - Quiz mode with hints, skipping, and answer review
+- Mock interview mode with scored answer review
 - Progress tracking and learning statistics
 - Daily goals and streak tracking
 - Achievements system
@@ -101,6 +102,11 @@ python main.py
 - `/skip`
 - `/challenge`
 
+### Mock interview
+- `/interview <topic>`
+- `/interview_answer <your answer>`
+- `/interview_skip`
+
 ### Notes and resources
 - `/note <title> | <content>`
 - `/mynotes`
@@ -116,11 +122,12 @@ python main.py
 /plan
 /topic pandas
 /quiz statistics hard
+/interview machine learning
 ```
 
 ## What the project demonstrates
 
-- Agent-style orchestration with separate planning, tutoring, quiz, review, and progress logic
+- Agent-style orchestration with separate planning, tutoring, quiz, review, interview, and progress logic
 - Practical Telegram bot development
 - Persistent user state with SQLite
 - Adaptive learning workflows
@@ -128,9 +135,9 @@ python main.py
 
 ## Future improvements
 
-- interview mode
 - spaced repetition
 - richer topic taxonomy
 - skill map by category
 - weekly reports
 - webhook mode instead of polling
+- export progress summary to markdown or PDF

@@ -161,6 +161,33 @@ def init_db() -> None:
     """)
 
     cur.execute("""
+    CREATE TABLE IF NOT EXISTS interview_sessions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        focus TEXT NOT NULL,
+        questions_json TEXT NOT NULL,
+        current_index INTEGER DEFAULT 0,
+        score REAL DEFAULT 0,
+        status TEXT DEFAULT 'active',
+        started_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        completed_at TEXT
+    )
+    """)
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS interview_answers (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        interview_session_id INTEGER NOT NULL,
+        question_index INTEGER NOT NULL,
+        user_answer TEXT,
+        score REAL DEFAULT 0,
+        feedback TEXT,
+        follow_up TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+
+    cur.execute("""
     CREATE TABLE IF NOT EXISTS study_history (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER NOT NULL,
@@ -465,48 +492,57 @@ def save_quiz_answer(
     conn.close()
 
 
-def check_and_award_achievement(user_id: int, achievement_type: str, achievement_name: str) -> bool:
-    conn = get_db_connection()
-    cur = conn.cursor()
-    try:
-        cur.execute("""
-        INSERT INTO achievements (user_id, achievement_type, achievement_name)
-        VALUES (?, ?, ?)
-        """, (user_id, achievement_type, achievement_name))
-        conn.commit()
-        return True
-    except sqlite3.IntegrityError:
-        return False
-    finally:
-        conn.close()
-
-
-def maybe_award_quiz_achievements(user_id: int, score: int, total: int) -> List[str]:
-    awarded = []
-
-    if check_and_award_achievement(user_id, "first_quiz", "Первый завершённый квиз"):
-        awarded.append("🏆 Первый завершённый квиз")
-
-    if total > 0 and score == total:
-        if check_and_award_achievement(user_id, "perfect_quiz", "Идеальный результат в квизе"):
-            awarded.append("🏆 Идеальный результат в квизе")
-
+def create_interview_session(user_id: int, focus: str, questions: List[Dict[str, Any]]) -> int:
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""
-    SELECT COUNT(*) as total_correct
-    FROM quiz_answers qa
-    JOIN quiz_sessions qs ON qa.quiz_session_id = qs.id
-    WHERE qs.user_id = ? AND qa.is_correct = 1
+    INSERT INTO interview_sessions (user_id, focus, questions_json, current_index, score, status)
+    VALUES (?, ?, ?, 0, 0, 'active')
+    """, (user_id, focus, json.dumps(questions, ensure_ascii=False)))
+    session_id = cur.lastrowid
+    conn.commit()
+    conn.close()
+    return session_id
+
+
+def get_active_interview_session(user_id: int) -> Optional[sqlite3.Row]:
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("""
+    SELECT *
+    FROM interview_sessions
+    WHERE user_id = ? AND status = 'active'
+    ORDER BY id DESC
+    LIMIT 1
     """, (user_id,))
-    total_correct = cur.fetchone()["total_correct"]
+    row = cur.fetchone()
+    conn.close()
+    return row
+
+
+def update_interview_session(session_id: int, current_index: int, score: float, status: str) -> None:
+    completed_at = datetime.now().isoformat() if status == "completed" else None
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("""
+    UPDATE interview_sessions
+    SET current_index = ?, score = ?, status = ?,
+        completed_at = CASE WHEN ? IS NOT NULL THEN ? ELSE completed_at END
+    WHERE id = ?
+    """, (current_index, score, status, completed_at, completed_at, session_id))
+    conn.commit()
     conn.close()
 
-    if total_correct >= 10:
-        if check_and_award_achievement(user_id, "correct_10", "10 правильных ответов"):
-            awarded.append("🏆 10 правильных ответов")
 
-    return awarded
+def save_interview_answer(interview_session_id: int, question_index: int, user_answer: str, score: float, feedback: str, follow_up: str) -> None:
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("""
+    INSERT INTO interview_answers (interview_session_id, question_index, user_answer, score, feedback, follow_up)
+    VALUES (?, ?, ?, ?, ?, ?)
+    """, (interview_session_id, question_index, user_answer, score, feedback, follow_up))
+    conn.commit()
+    conn.close()
 
 
 def get_user_achievements(user_id: int) -> List[Dict[str, Any]]:
@@ -600,6 +636,50 @@ def get_resources(topic: str) -> List[Dict[str, Any]]:
     items = [dict(row) for row in cur.fetchall()]
     conn.close()
     return items
+
+
+def check_and_award_achievement(user_id: int, achievement_type: str, achievement_name: str) -> bool:
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("""
+        INSERT INTO achievements (user_id, achievement_type, achievement_name)
+        VALUES (?, ?, ?)
+        """, (user_id, achievement_type, achievement_name))
+        conn.commit()
+        return True
+    except sqlite3.IntegrityError:
+        return False
+    finally:
+        conn.close()
+
+
+def maybe_award_quiz_achievements(user_id: int, score: int, total: int) -> List[str]:
+    awarded = []
+
+    if check_and_award_achievement(user_id, "first_quiz", "Первый завершённый квиз"):
+        awarded.append("🏆 Первый завершённый квиз")
+
+    if total > 0 and score == total:
+        if check_and_award_achievement(user_id, "perfect_quiz", "Идеальный результат в квизе"):
+            awarded.append("🏆 Идеальный результат в квизе")
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("""
+    SELECT COUNT(*) as total_correct
+    FROM quiz_answers qa
+    JOIN quiz_sessions qs ON qa.quiz_session_id = qs.id
+    WHERE qs.user_id = ? AND qa.is_correct = 1
+    """, (user_id,))
+    total_correct = cur.fetchone()["total_correct"]
+    conn.close()
+
+    if total_correct >= 10:
+        if check_and_award_achievement(user_id, "correct_10", "10 правильных ответов"):
+            awarded.append("🏆 10 правильных ответов")
+
+    return awarded
 
 
 # =========================
@@ -729,6 +809,11 @@ Summarize learner progress and recommend the next best actions.
 CHALLENGE_SYSTEM = """
 You are Challenge Agent.
 Generate one concise practical Data Science learning challenge for today.
+"""
+
+INTERVIEW_SYSTEM = """
+You are Interview Agent.
+Conduct a concise Data Science mock interview. Ask realistic interview questions and evaluate answers like a supportive interviewer.
 """
 
 
@@ -982,6 +1067,83 @@ User level: {user_row["level"]}
     return llm_json(prompt, CHALLENGE_SYSTEM)
 
 
+def interview_question_agent(user_row: sqlite3.Row, focus: str, num_questions: int = 5) -> List[Dict[str, Any]]:
+    prompt = f"""
+Generate a short mock interview as JSON array.
+
+Return ONLY valid JSON:
+[
+  {{
+    "question": "string",
+    "expected_points": ["point1", "point2", "point3"],
+    "difficulty": "easy|medium|hard"
+  }}
+]
+
+User goal: {user_row["goal"]}
+User level: {user_row["level"]}
+Focus: {focus}
+Questions: {num_questions}
+
+Make the questions realistic for a Data Science interview.
+"""
+    data = llm_json(prompt, INTERVIEW_SYSTEM)
+    if not isinstance(data, list):
+        raise ValueError("Interview Agent returned invalid format")
+
+    cleaned = []
+    for item in data:
+        if not isinstance(item, dict):
+            continue
+        question = str(item.get("question", "")).strip()
+        expected_points = item.get("expected_points", [])
+        difficulty = str(item.get("difficulty", "medium")).strip()
+        if not question:
+            continue
+        if not isinstance(expected_points, list):
+            expected_points = []
+        cleaned.append({
+            "question": question,
+            "expected_points": [str(x).strip() for x in expected_points if str(x).strip()][:5],
+            "difficulty": difficulty,
+        })
+
+    if not cleaned:
+        raise ValueError("No interview questions generated")
+    return cleaned[:num_questions]
+
+
+def interview_reviewer_agent(question: str, expected_points: List[str], user_answer: str) -> Dict[str, Any]:
+    prompt = f"""
+Review this interview answer and return JSON.
+
+Return ONLY valid JSON:
+{{
+  "score": 0-10,
+  "feedback": "string",
+  "strengths": ["strength1", "strength2"],
+  "gaps": ["gap1", "gap2"],
+  "follow_up": "string"
+}}
+
+Question: {question}
+Expected points: {expected_points}
+Candidate answer: {user_answer}
+
+Be realistic but supportive.
+"""
+    data = llm_json(prompt, INTERVIEW_SYSTEM)
+    if not isinstance(data, dict):
+        raise ValueError("Interview review invalid")
+    score = data.get("score", 0)
+    try:
+        score = float(score)
+    except Exception:
+        score = 0.0
+    data["score"] = max(0.0, min(score, 10.0))
+    return data
+
+
 # =========================
 # Formatting helpers
 # =========================
@@ -1015,6 +1177,11 @@ def format_help() -> str:
 /hint — подсказка
 /skip — пропустить вопрос
 /challenge — задание на сегодня
+
+<b>Mock interview</b>
+/interview &lt;тема&gt; — начать mock interview
+/interview_answer &lt;твой ответ&gt; — ответить
+/interview_skip — пропустить вопрос
 
 <b>Заметки и ресурсы</b>
 /note &lt;название&gt; | &lt;содержание&gt;
@@ -1288,6 +1455,150 @@ def handle_answer(chat_id: int, user_id: int, user_answer: str) -> None:
 
 
 # =========================
+# Interview flow
+# =========================
+def send_next_interview_question(chat_id: int, user_id: int) -> None:
+    session = get_active_interview_session(user_id)
+    if session is None:
+        telegram_send_message(chat_id, "Нет активного интервью. Запусти /interview <тема>")
+        return
+
+    questions = json_loads_safe(session["questions_json"], [])
+    current_index = safe_parse_int(session["current_index"], 0)
+
+    if current_index >= len(questions):
+        total_questions = len(questions)
+        avg_score = round(float(session["score"]) / total_questions, 1) if total_questions else 0.0
+        update_interview_session(session["id"], current_index, float(session["score"]), "completed")
+
+        if avg_score >= 8.5:
+            check_and_award_achievement(user_id, "interview_strong", "Сильный результат в mock interview")
+
+        log_study_event(
+            user_id,
+            "interview_completed",
+            topic=session["focus"],
+            duration_minutes=20,
+            payload={"avg_score": avg_score, "questions": total_questions},
+        )
+        update_study_time(user_id, 20, session["focus"])
+
+        telegram_send_message(
+            chat_id,
+            f"🎤 Mock interview завершён!\n\nСредний балл: {avg_score}/10\nТема: {session['focus']}\n\nМожешь ещё потренироваться через /interview <тема>"
+        )
+        return
+
+    question = questions[current_index]
+    expected = question.get("expected_points", [])
+    expected_text = "\n".join([f"• {point}" for point in expected[:3]]) if expected else "—"
+
+    text = (
+        f"<b>Mock interview {current_index + 1}/{len(questions)}</b>\n"
+        f"Фокус: {session['focus']}\n"
+        f"Сложность: {question.get('difficulty', 'medium')}\n\n"
+        f"{question['question']}\n\n"
+        f"Ответь так:\n"
+        f"/interview_answer <твой ответ>\n"
+        f"/interview_skip — пропустить\n\n"
+        f"<i>Что интервьюер обычно ждёт в хорошем ответе:</i>\n{expected_text}"
+    )
+    telegram_send_message(chat_id, text)
+
+
+def handle_interview(chat_id: int, user_id: int, args: str) -> None:
+    focus = args.strip() or "machine learning"
+    user = get_user(user_id)
+    if user is None:
+        telegram_send_message(chat_id, "Сначала напиши /start")
+        return
+
+    telegram_send_typing(chat_id)
+    telegram_send_message(chat_id, f"🎤 Запускаю mock interview по теме: {focus}")
+    try:
+        questions = interview_question_agent(user, focus, num_questions=5)
+        create_interview_session(user_id, focus, questions)
+        log_study_event(user_id, "interview_started", topic=focus, payload={"questions": len(questions)})
+        send_next_interview_question(chat_id, user_id)
+    except Exception as exc:
+        logging.exception("Interview generation failed: %s", exc)
+        telegram_send_message(chat_id, "Не удалось запустить interview mode. Попробуй позже.")
+
+
+def handle_interview_answer(chat_id: int, user_id: int, answer: str) -> None:
+    answer = answer.strip()
+    if not answer:
+        telegram_send_message(chat_id, "Используй: /interview_answer <твой ответ>")
+        return
+
+    session = get_active_interview_session(user_id)
+    if session is None:
+        telegram_send_message(chat_id, "Нет активного интервью. Запусти /interview <тема>")
+        return
+
+    questions = json_loads_safe(session["questions_json"], [])
+    current_index = safe_parse_int(session["current_index"], 0)
+    if current_index >= len(questions):
+        telegram_send_message(chat_id, "Interview mode уже завершён.")
+        return
+
+    question = questions[current_index]
+    review = interview_reviewer_agent(question["question"], question.get("expected_points", []), answer)
+    score = float(review.get("score", 0))
+    feedback = str(review.get("feedback", "")).strip()
+    strengths = review.get("strengths", [])
+    gaps = review.get("gaps", [])
+    follow_up = str(review.get("follow_up", "")).strip()
+
+    total_score = float(session["score"]) + score
+    new_index = current_index + 1
+    new_status = "completed" if new_index >= len(questions) else "active"
+
+    save_interview_answer(session["id"], current_index, answer, score, feedback, follow_up)
+    update_interview_session(session["id"], new_index, total_score, new_status)
+
+    text = [f"🧠 Оценка ответа: {score}/10", ""]
+    if feedback:
+        text.append(feedback)
+        text.append("")
+    if strengths:
+        text.append("<b>Сильные стороны</b>")
+        text.extend([f"• {item}" for item in strengths[:3]])
+        text.append("")
+    if gaps:
+        text.append("<b>Что улучшить</b>")
+        text.extend([f"• {item}" for item in gaps[:3]])
+        text.append("")
+    if follow_up:
+        text.append(f"<b>Follow-up:</b> {follow_up}")
+
+    log_study_event(
+        user_id,
+        "interview_answered",
+        topic=session["focus"],
+        payload={"question": question["question"], "score": score, "follow_up": follow_up},
+    )
+
+    telegram_send_message(chat_id, "\n".join(text))
+    send_next_interview_question(chat_id, user_id)
+
+
+def handle_interview_skip(chat_id: int, user_id: int) -> None:
+    session = get_active_interview_session(user_id)
+    if session is None:
+        telegram_send_message(chat_id, "Нет активного интервью.")
+        return
+
+    current_index = safe_parse_int(session["current_index"], 0)
+    new_index = current_index + 1
+    new_status = "completed" if new_index >= len(json_loads_safe(session["questions_json"], [])) else "active"
+    save_interview_answer(session["id"], current_index, "__skipped__", 0.0, "Вопрос пропущен.", "")
+    update_interview_session(session["id"], new_index, float(session["score"]), new_status)
+    telegram_send_message(chat_id, "⏭ Вопрос интервью пропущен.")
+    send_next_interview_question(chat_id, user_id)
+
+
+# =========================
 # Command handlers
 # =========================
 def handle_start(chat_id: int, user_id: int, first_name: str) -> None:
@@ -1298,6 +1609,7 @@ def handle_start(chat_id: int, user_id: int, first_name: str) -> None:
         "• строить персональный план обучения\n"
         "• объяснять темы\n"
         "• генерировать квизы\n"
+        "• проводить mock interview\n"
         "• проверять ответы\n"
         "• отслеживать прогресс\n\n"
         "<b>Быстрый старт</b>\n"
@@ -1459,6 +1771,7 @@ def handle_stats(chat_id: int, user_id: int) -> None:
     SELECT COUNT(DISTINCT date(created_at)) as active_days,
            COUNT(CASE WHEN event_type = 'quiz_completed' THEN 1 END) as quizzes_taken,
            COUNT(CASE WHEN event_type = 'topic_explained' THEN 1 END) as topics_studied,
+           COUNT(CASE WHEN event_type = 'interview_completed' THEN 1 END) as interviews_done,
            COALESCE(SUM(duration_minutes), 0) as total_minutes
     FROM study_history
     WHERE user_id = ?
@@ -1485,6 +1798,7 @@ def handle_stats(chat_id: int, user_id: int) -> None:
         f"• Активных дней: {stats.get('active_days', 0)}",
         f"• Пройдено квизов: {stats.get('quizzes_taken', 0)}",
         f"• Изучено тем: {stats.get('topics_studied', 0)}",
+        f"• Mock interview: {stats.get('interviews_done', 0)}",
         f"• Серия: {streak} дней 🔥",
         "",
         "<b>Последние 7 дней</b>",
@@ -1649,6 +1963,12 @@ def handle_message(message: Dict[str, Any]) -> None:
             handle_hint(chat_id, user_id)
         elif command == "/skip":
             handle_skip(chat_id, user_id)
+        elif command == "/interview":
+            handle_interview(chat_id, user_id, args)
+        elif command == "/interview_answer":
+            handle_interview_answer(chat_id, user_id, args)
+        elif command == "/interview_skip":
+            handle_interview_skip(chat_id, user_id)
         elif command == "/progress":
             handle_progress(chat_id, user_id)
         elif command == "/stats":
@@ -1704,7 +2024,7 @@ def send_daily_reminders() -> None:
                 f"🔔 <b>Напоминание об обучении</b>\n\n"
                 f"Сегодня: {format_duration(user['actual_minutes'])} из {format_duration(user['daily_minutes'])}\n"
                 f"Осталось: {format_duration(remaining)}\n\n"
-                f"Продолжим? Попробуй /topic или /quiz 💪"
+                f"Продолжим? Попробуй /topic, /quiz или /interview 💪"
             )
             telegram_send_message(user["user_id"], text)
         except Exception as exc:
