@@ -1,38 +1,65 @@
 # ai-agent-ds-mentor
 
-AI agent for Telegram that helps users learn Data Science: builds study plans, generates quizzes, evaluates answers, tracks progress, and now supports mock interview mode.
+AI agent for Telegram that helps users learn Data Science: builds study plans, generates quizzes, evaluates answers, tracks progress, and supports mock interview mode.
 
 ## Features
 
 - Telegram bot with long polling
 - Personalized study plan generation
 - Topic explanations for Data Science subjects
-- Quiz mode with hints, skipping, and answer review
+- Quiz mode with hints, skipping, letter-based answers (`A/B/C/D`) and answer review
 - Mock interview mode with scored answer review
 - Progress tracking and learning statistics
 - Daily goals and streak tracking
 - Achievements system
 - Notes and learning resources
 - Daily reminder scheduler
+- Health check for Ollama
+- Active session status and cancel command
 - Local LLM integration through Ollama
 
-## Tech stack
+## Commands
 
-- Python
-- Requests
-- SQLite
-- APScheduler
-- Ollama
+### Main
+- `/start`
+- `/help`
+- `/profile`
+- `/status`
+- `/health`
+- `/progress`
+- `/stats`
+- `/daily`
+- `/achievements`
+- `/streak`
 
-## Project structure
+### Setup
+- `/setgoal <text>`
+- `/setlevel <beginner|junior|middle|advanced>`
+- `/settime <minutes>`
+- `/notifications on|off`
+- `/setlanguage ru|en`
 
-```text
-ai-agent-ds-mentor/
-├── main.py
-├── README.md
-├── requirements.txt
-└── .env.example
-```
+### Learning
+- `/plan`
+- `/topic <topic>`
+- `/topic <topic> <subtopic>`
+- `/quiz <topic>`
+- `/quiz <topic> <easy|medium|hard>`
+- `/answer <option or letter>`
+- `/hint`
+- `/skip`
+- `/challenge`
+- `/cancel`
+
+### Mock interview
+- `/interview <topic>`
+- `/interview_answer <your answer>`
+- `/interview_skip`
+
+### Notes and resources
+- `/note <title> | <content>`
+- `/mynotes`
+- `/resources <topic>`
 
 ## Setup
 
@@ -40,7 +67,6 @@ ai-agent-ds-mentor/
 Create a bot with BotFather and copy the token.
 
 ### 2. Install Ollama and model
-Run a local model, for example:
 
 ```bash
 ollama run llama3
@@ -65,6 +91,8 @@ MAX_RETRIES=3
 ENABLE_REMINDERS=true
 REMINDER_HOUR=19
 DEFAULT_LANGUAGE=ru
+DEFAULT_INTERVIEW_QUESTIONS=5
+DEFAULT_QUIZ_QUESTIONS=5
 ```
 
 ### 5. Run the bot
@@ -72,45 +100,6 @@ DEFAULT_LANGUAGE=ru
 ```bash
 python main.py
 ```
-
-## Commands
-
-### Main
-- `/start`
-- `/help`
-- `/profile`
-- `/progress`
-- `/stats`
-- `/daily`
-- `/achievements`
-- `/streak`
-
-### Setup
-- `/setgoal <text>`
-- `/setlevel <beginner|junior|middle|advanced>`
-- `/settime <minutes>`
-- `/notifications on|off`
-
-### Learning
-- `/plan`
-- `/topic <topic>`
-- `/topic <topic> <subtopic>`
-- `/quiz <topic>`
-- `/quiz <topic> <easy|medium|hard>`
-- `/answer <option>`
-- `/hint`
-- `/skip`
-- `/challenge`
-
-### Mock interview
-- `/interview <topic>`
-- `/interview_answer <your answer>`
-- `/interview_skip`
-
-### Notes and resources
-- `/note <title> | <content>`
-- `/mynotes`
-- `/resources <topic>`
 
 ## Example flow
 
@@ -122,21 +111,23 @@ python main.py
 /plan
 /topic pandas
 /quiz statistics hard
+/answer A
 /interview machine learning
 ```
 
-## What the project demonstrates
+## What this version improves
 
-- Agent-style orchestration with separate planning, tutoring, quiz, review, interview, and progress logic
-- Practical Telegram bot development
-- Persistent user state with SQLite
-- Adaptive learning workflows
-- Local AI product integration with Ollama
+- safer HTML output in Telegram messages
+- answer normalization for quiz options
+- session conflict protection
+- `/cancel` for active quiz or interview
+- `/status` for quick session overview
+- `/health` for Ollama availability check
+- `/setlanguage` to store preferred language
 
 ## Future improvements
 
 - spaced repetition
-- richer topic taxonomy
 - skill map by category
 - weekly reports
 - webhook mode instead of polling

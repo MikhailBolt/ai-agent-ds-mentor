@@ -94,6 +94,31 @@ def json_loads_safe(text: str, default: Any) -> Any:
         return default
 
 
+def sanitize_html_text(text: str) -> str:
+    if text is None:
+        return ""
+    text = str(text)
+    return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+
+def normalize_quiz_answer(user_answer: str, options: List[str]) -> str:
+    answer = user_answer.strip()
+    lowered = answer.lower()
+    mapping = {"a": 0, "b": 1, "c": 2, "d": 3, "1": 0, "2": 1, "3": 2, "4": 3}
+    if lowered in mapping and mapping[lowered] < len(options):
+        return options[mapping[lowered]]
+    return answer
+
+
+def ollama_is_available() -> bool:
+    try:
+        response = requests.get(f"{OLLAMA_BASE_URL}/api/tags", timeout=5)
+        response.raise_for_status()
+        return True
+    except Exception:
+        return False
+
+
 # =========================
 # Database
 # =========================
@@ -530,6 +555,14 @@ def update_interview_session(session_id: int, current_index: int, score: float, 
         completed_at = CASE WHEN ? IS NOT NULL THEN ? ELSE completed_at END
     WHERE id = ?
     """, (current_index, score, status, completed_at, completed_at, session_id))
+    conn.commit()
+    conn.close()
+
+
+def cancel_interview_session(session_id: int) -> None:
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("UPDATE interview_sessions SET status = 'cancelled', completed_at = ? WHERE id = ?", (datetime.now().isoformat(), session_id))
     conn.commit()
     conn.close()
 
@@ -1155,6 +1188,8 @@ def format_help() -> str:
 /start — начать
 /help — справка
 /profile — профиль
+/status — активные сессии и прогресс
+/health — состояние бота и LLM
 /progress — анализ прогресса
 /stats — подробная статистика
 /daily — статистика за сегодня
@@ -1166,6 +1201,7 @@ def format_help() -> str:
 /setlevel &lt;beginner|junior|middle|advanced&gt;
 /settime &lt;минуты&gt;
 /notifications on|off
+/setlanguage ru|en
 
 <b>Обучение</b>
 /plan — персональный план
@@ -1177,6 +1213,7 @@ def format_help() -> str:
 /hint — подсказка
 /skip — пропустить вопрос
 /challenge — задание на сегодня
+/cancel — остановить активный квиз или interview
 
 <b>Mock interview</b>
 /interview &lt;тема&gt; — начать mock interview
@@ -1305,6 +1342,62 @@ def format_resources(topic: str, items: List[Dict[str, Any]]) -> str:
     return "\n".join(lines)
 
 
+def handle_status(chat_id: int, user_id: int) -> None:
+    user = get_user(user_id)
+    if user is None:
+        telegram_send_message(chat_id, "Сначала напиши /start")
+        return
+    daily = get_daily_stats(user_id)
+    quiz = get_active_quiz_session(user_id)
+    interview = get_active_interview_session(user_id)
+    lines = ["<b>🧭 Текущий статус</b>", ""]
+    lines.append(f"Сегодня: {daily['actual']}/{daily['target']} мин")
+    if quiz:
+        lines.append(f"• Активный квиз: {sanitize_html_text(quiz['topic'])} ({sanitize_html_text(quiz['difficulty'])})")
+        lines.append(f"  Вопрос: {safe_parse_int(quiz['current_index']) + 1}")
+    else:
+        lines.append("• Активного квиза нет")
+    if interview:
+        lines.append(f"• Активное интервью: {sanitize_html_text(interview['focus'])}")
+        lines.append(f"  Вопрос: {safe_parse_int(interview['current_index']) + 1}")
+    else:
+        lines.append("• Активного interview нет")
+    if user['goal']:
+        lines.append(f"• Цель: {sanitize_html_text(user['goal'])}")
+    telegram_send_message(chat_id, "\n".join(lines))
+
+
+def handle_health(chat_id: int) -> None:
+    ok = ollama_is_available()
+    status = "✅ доступен" if ok else "❌ недоступен"
+    telegram_send_message(chat_id, f"<b>🩺 Health check</b>\n\nOllama: {status}\nModel: {sanitize_html_text(OLLAMA_MODEL)}\nDB: {sanitize_html_text(DB_PATH)}")
+
+
+def handle_set_language(chat_id: int, user_id: int, args: str) -> None:
+    lang = args.strip().lower()
+    if lang not in {"ru", "en"}:
+        telegram_send_message(chat_id, "Используй: /setlanguage ru|en")
+        return
+    update_user_profile(user_id, language=lang)
+    telegram_send_message(chat_id, f"✅ Язык сохранён: {sanitize_html_text(lang)}")
+
+
+def handle_cancel(chat_id: int, user_id: int) -> None:
+    cancelled = []
+    quiz = get_active_quiz_session(user_id)
+    interview = get_active_interview_session(user_id)
+    if quiz:
+        cancel_quiz_session(quiz['id'])
+        cancelled.append('квиз')
+    if interview:
+        cancel_interview_session(interview['id'])
+        cancelled.append('interview')
+    if cancelled:
+        telegram_send_message(chat_id, f"🛑 Остановлено: {', '.join(cancelled)}")
+    else:
+        telegram_send_message(chat_id, "Нет активного квиза или interview.")
+
+
 # =========================
 # Quiz flow
 # =========================
@@ -1337,14 +1430,14 @@ def send_next_quiz_question(chat_id: int, user_id: int) -> None:
         return
 
     question = questions[current_index]
-    options_text = "\n".join([f"• {opt}" for opt in question["options"]])
+    options_text = "\n".join([f"{chr(65+i)}. {sanitize_html_text(opt)}" for i, opt in enumerate(question["options"])])
     hint_text = "\nПодсказка: /hint" if question.get("hint") else ""
 
     text = (
         f"<b>Вопрос {current_index + 1}/{len(questions)}</b>\n"
         f"Тема: {session['topic']}\n"
         f"Сложность: {session['difficulty']}\n\n"
-        f"{question['question']}\n\n"
+        f"{sanitize_html_text(question['question'])}\n\n"
         f"{options_text}\n\n"
         f"Ответь так:\n"
         f"/answer <вариант>\n"
@@ -1415,11 +1508,12 @@ def handle_answer(chat_id: int, user_id: int, user_answer: str) -> None:
         return
 
     question = questions[current_index]
+    normalized_answer = normalize_quiz_answer(answer, question["options"])
     is_correct, feedback, review_meta = reviewer_agent(
         question=question["question"],
         correct_answer=question["correct_answer"],
         explanation=question["explanation"],
-        user_answer=answer,
+        user_answer=normalized_answer,
     )
 
     new_score = safe_parse_int(session["score"], 0) + (1 if is_correct else 0)
@@ -1429,7 +1523,7 @@ def handle_answer(chat_id: int, user_id: int, user_answer: str) -> None:
     save_quiz_answer(
         quiz_session_id=session["id"],
         question_index=current_index,
-        user_answer=answer,
+        user_answer=normalized_answer,
         correct_answer=question["correct_answer"],
         is_correct=is_correct,
         feedback=feedback,
@@ -1443,7 +1537,7 @@ def handle_answer(chat_id: int, user_id: int, user_answer: str) -> None:
         topic=session["topic"],
         payload={
             "question": question["question"],
-            "user_answer": answer,
+            "user_answer": normalized_answer,
             "correct_answer": question["correct_answer"],
             "is_correct": is_correct,
             "review_meta": review_meta,
@@ -1497,7 +1591,7 @@ def send_next_interview_question(chat_id: int, user_id: int) -> None:
         f"<b>Mock interview {current_index + 1}/{len(questions)}</b>\n"
         f"Фокус: {session['focus']}\n"
         f"Сложность: {question.get('difficulty', 'medium')}\n\n"
-        f"{question['question']}\n\n"
+        f"{sanitize_html_text(question['question'])}\n\n"
         f"Ответь так:\n"
         f"/interview_answer <твой ответ>\n"
         f"/interview_skip — пропустить\n\n"
@@ -1512,9 +1606,12 @@ def handle_interview(chat_id: int, user_id: int, args: str) -> None:
     if user is None:
         telegram_send_message(chat_id, "Сначала напиши /start")
         return
+    if get_active_quiz_session(user_id) or get_active_interview_session(user_id):
+        telegram_send_message(chat_id, "Сначала заверши или отмени текущую активность через /cancel")
+        return
 
     telegram_send_typing(chat_id)
-    telegram_send_message(chat_id, f"🎤 Запускаю mock interview по теме: {focus}")
+    telegram_send_message(chat_id, f"🎤 Запускаю mock interview по теме: {sanitize_html_text(focus)}")
     try:
         questions = interview_question_agent(user, focus, num_questions=5)
         create_interview_session(user_id, focus, questions)
@@ -1640,7 +1737,7 @@ def handle_set_level(chat_id: int, user_id: int, text: str) -> None:
         return
     update_user_profile(user_id, level=level)
     log_study_event(user_id, "set_level", payload={"level": level})
-    telegram_send_message(chat_id, f"✅ Уровень сохранён: {level}")
+    telegram_send_message(chat_id, f"✅ Уровень сохранён: {sanitize_html_text(level)}")
 
 
 def handle_set_time(chat_id: int, user_id: int, text: str) -> None:
@@ -1706,9 +1803,12 @@ def handle_topic(chat_id: int, user_id: int, args: str) -> None:
     if user is None:
         telegram_send_message(chat_id, "Сначала напиши /start")
         return
+    if get_active_quiz_session(user_id) or get_active_interview_session(user_id):
+        telegram_send_message(chat_id, "Сначала заверши или отмени текущую активность через /cancel")
+        return
 
     telegram_send_typing(chat_id)
-    telegram_send_message(chat_id, f"📖 Готовлю объяснение по теме: {topic}")
+    telegram_send_message(chat_id, f"📖 Готовлю объяснение по теме: {sanitize_html_text(topic)}")
     try:
         payload = tutor_agent(topic, user, subtopic)
         log_study_event(user_id, "topic_explained", topic=topic, subtopic=subtopic, duration_minutes=10, payload=payload)
@@ -1737,7 +1837,7 @@ def handle_quiz(chat_id: int, user_id: int, args: str) -> None:
         return
 
     telegram_send_typing(chat_id)
-    telegram_send_message(chat_id, f"📝 Генерирую квиз по теме: {topic} ({difficulty})")
+    telegram_send_message(chat_id, f"📝 Генерирую квиз по теме: {sanitize_html_text(topic)} ({sanitize_html_text(difficulty)})")
     try:
         questions = quiz_agent(topic, user, num_questions=5, difficulty=difficulty)
         create_quiz_session(user_id, topic, questions, difficulty)
@@ -1941,6 +2041,10 @@ def handle_message(message: Dict[str, Any]) -> None:
             handle_start(chat_id, user_id, first_name)
         elif command == "/help":
             telegram_send_message(chat_id, format_help())
+        elif command == "/status":
+            handle_status(chat_id, user_id)
+        elif command == "/health":
+            handle_health(chat_id)
         elif command == "/setgoal":
             handle_set_goal(chat_id, user_id, args)
         elif command == "/setlevel":
@@ -1949,6 +2053,8 @@ def handle_message(message: Dict[str, Any]) -> None:
             handle_set_time(chat_id, user_id, args)
         elif command == "/notifications":
             handle_notifications(chat_id, user_id, args)
+        elif command == "/setlanguage":
+            handle_set_language(chat_id, user_id, args)
         elif command == "/profile":
             handle_profile(chat_id, user_id)
         elif command == "/plan":
@@ -1969,6 +2075,8 @@ def handle_message(message: Dict[str, Any]) -> None:
             handle_interview_answer(chat_id, user_id, args)
         elif command == "/interview_skip":
             handle_interview_skip(chat_id, user_id)
+        elif command == "/cancel":
+            handle_cancel(chat_id, user_id)
         elif command == "/progress":
             handle_progress(chat_id, user_id)
         elif command == "/stats":
@@ -2037,6 +2145,10 @@ def send_daily_reminders() -> None:
 def run_bot() -> None:
     init_db()
     logging.info("Bot started")
+    if ollama_is_available():
+        logging.info("Ollama is available at %s", OLLAMA_BASE_URL)
+    else:
+        logging.warning("Ollama is not reachable at startup: %s", OLLAMA_BASE_URL)
 
     scheduler = BackgroundScheduler()
     if ENABLE_REMINDERS:
