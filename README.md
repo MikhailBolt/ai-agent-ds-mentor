@@ -1,8 +1,3 @@
-PLACEHOLDER README - see chat
+# AI Agent DS Mentor
 
-## Extra env options
-
-```env
-DEFAULT_INTERVIEW_QUESTIONS=5
-DEFAULT_QUIZ_QUESTIONS=5
-```
+Telegram bot for learning Data Science with AI.
