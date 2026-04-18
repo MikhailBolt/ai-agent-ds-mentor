@@ -1,6 +1,8 @@
 import logging
 import os
 import random
+import signal
+import sqlite3
 import time
 from typing import Any, Optional
 
@@ -25,6 +27,15 @@ def _require_env(name: str) -> str:
     return value
 
 
+def command_prefix(text: str) -> Optional[str]:
+    """`/cmd` или `/cmd@BotUsername` → нормализованный префикс `/cmd` в нижнем регистре."""
+    t = (text or "").strip()
+    if not t.startswith("/"):
+        return None
+    head = t.split(maxsplit=1)[0]
+    return head.split("@", 1)[0].lower()
+
+
 class TelegramAPI:
     def __init__(self, token: str) -> None:
         self._base = f"https://api.telegram.org/bot{token}"
@@ -32,17 +43,35 @@ class TelegramAPI:
 
     def request(self, method: str, payload: dict[str, Any]) -> dict[str, Any]:
         url = f"{self._base}/{method}"
-        try:
-            r = self._s.post(url, json=payload, timeout=HTTP_TIMEOUT_S)
-            r.raise_for_status()
-            data = r.json()
-        except (requests.RequestException, ValueError) as e:
-            raise RuntimeError(f"HTTP/JSON error calling {method}: {e}") from e
+        attempts = 0
+        while True:
+            try:
+                r = self._s.post(url, json=payload, timeout=HTTP_TIMEOUT_S)
+            except (requests.RequestException, ValueError) as e:
+                raise RuntimeError(f"HTTP/JSON error calling {method}: {e}") from e
 
-        if not isinstance(data, dict) or not data.get("ok", False):
-            description = data.get("description") if isinstance(data, dict) else None
-            raise RuntimeError(f"Telegram API error calling {method}: {description}")
-        return data
+            if r.status_code == 429:
+                attempts += 1
+                if attempts > 8:
+                    raise RuntimeError("Telegram API: too many 429 responses for " + method)
+                retry = r.headers.get("Retry-After")
+                try:
+                    wait_s = float(retry) if retry is not None else min(5.0 * attempts, 60.0)
+                except ValueError:
+                    wait_s = min(5.0 * attempts, 60.0)
+                time.sleep(wait_s)
+                continue
+
+            try:
+                r.raise_for_status()
+                data = r.json()
+            except (requests.RequestException, ValueError) as e:
+                raise RuntimeError(f"HTTP/JSON error calling {method}: {e}") from e
+
+            if not isinstance(data, dict) or not data.get("ok", False):
+                description = data.get("description") if isinstance(data, dict) else None
+                raise RuntimeError(f"Telegram API error calling {method}: {description}")
+            return data
 
     def send_message(self, chat_id: int, text: str) -> None:
         self.request("sendMessage", {"chat_id": chat_id, "text": text})
@@ -64,7 +93,7 @@ def _help_text() -> str:
         "AI DS Mentor запущен.\n\n"
         "Команды:\n"
         "/quiz — задать вопрос\n"
-        "/skip — пропустить текущий вопрос\n"
+        "/skip или /cancel — пропустить текущий вопрос\n"
         "/stats — статистика\n"
         "/reset — сбросить прогресс\n"
         "/help — помощь\n\n"
@@ -78,7 +107,7 @@ def _format_question(q: mentor_quiz.Question) -> str:
 
 def handle_text(
     api: TelegramAPI,
-    conn: "mentor_db.sqlite3.Connection",
+    conn: sqlite3.Connection,
     questions: list[mentor_quiz.Question],
     chat_id: int,
     text: str,
@@ -87,11 +116,12 @@ def handle_text(
 
     mentor_db.touch_user(conn, chat_id)
 
-    if text in {"/start", "/help"}:
+    cmd = command_prefix(text)
+    if cmd in {"/start", "/help"}:
         api.send_message(chat_id, _help_text())
         return
 
-    if text == "/stats":
+    if cmd == "/stats":
         st = mentor_db.get_stats(conn, chat_id)
         acc = (st.correct / st.total * 100.0) if st.total else 0.0
         api.send_message(
@@ -100,12 +130,12 @@ def handle_text(
         )
         return
 
-    if text == "/reset":
+    if cmd == "/reset":
         mentor_db.reset_user(conn, chat_id)
         api.send_message(chat_id, "Готово. Прогресс сброшен. Напиши /quiz чтобы начать заново.")
         return
 
-    if text == "/skip":
+    if cmd in {"/skip", "/cancel"}:
         active = mentor_db.get_active_question(conn, chat_id)
         if active is None:
             api.send_message(chat_id, "Сейчас нет активного вопроса. Напиши /quiz.")
@@ -114,7 +144,7 @@ def handle_text(
         api.send_message(chat_id, "Ок, пропустили. Напиши /quiz чтобы получить следующий вопрос.")
         return
 
-    if text.startswith("/quiz"):
+    if cmd == "/quiz":
         prev = mentor_db.get_active_question(conn, chat_id)
         q = mentor_quiz.pick_next(questions, exclude_id=prev)
         mentor_db.set_active_question(conn, chat_id, q.id)
@@ -165,41 +195,59 @@ def main() -> None:
     offset: Optional[int] = None
     backoff_s = 1.0
 
+    running = True
+
+    def stop_running(*_: Any) -> None:
+        nonlocal running
+        running = False
+
+    signal.signal(signal.SIGINT, stop_running)
+    try:
+        signal.signal(signal.SIGTERM, stop_running)
+    except (AttributeError, ValueError):
+        pass
+
     log.info("Bot started (polling)")
-    while True:
-        try:
-            updates = api.get_updates(offset)
-            backoff_s = 1.0
-        except Exception:
-            log.exception("Polling error; backing off")
-            sleep_s = min(MAX_BACKOFF_S, backoff_s) + random.random()
-            time.sleep(sleep_s)
-            backoff_s = min(MAX_BACKOFF_S, backoff_s * 2)
-            continue
-
-        for u in updates:
-            update_id = u.get("update_id")
-            if isinstance(update_id, int):
-                offset = update_id + 1
-
-            msg = u.get("message")
-            if not isinstance(msg, dict):
-                continue
-            chat = msg.get("chat")
-            if not isinstance(chat, dict):
-                continue
-            chat_id = chat.get("id")
-            if not isinstance(chat_id, int):
-                continue
-
-            text = msg.get("text")
-            if not isinstance(text, str):
-                continue
-
+    try:
+        while running:
             try:
-                handle_text(api, conn, questions, chat_id, text)
+                updates = api.get_updates(offset)
+                backoff_s = 1.0
             except Exception:
-                log.exception("Failed to handle message")
+                log.exception("Polling error; backing off")
+                sleep_s = min(MAX_BACKOFF_S, backoff_s) + random.random()
+                time.sleep(sleep_s)
+                backoff_s = min(MAX_BACKOFF_S, backoff_s * 2)
+                continue
+
+            for u in updates:
+                update_id = u.get("update_id")
+                if isinstance(update_id, int):
+                    offset = update_id + 1
+
+                msg = u.get("message")
+                if not isinstance(msg, dict):
+                    continue
+                chat = msg.get("chat")
+                if not isinstance(chat, dict):
+                    continue
+                chat_id = chat.get("id")
+                if not isinstance(chat_id, int):
+                    continue
+
+                text = msg.get("text")
+                if not isinstance(text, str):
+                    continue
+
+                try:
+                    handle_text(api, conn, questions, chat_id, text)
+                except Exception:
+                    log.exception("Failed to handle message")
+    except KeyboardInterrupt:
+        log.info("Keyboard interrupt; stopping")
+    finally:
+        conn.close()
+        log.info("SQLite connection closed")
 
 
 if __name__ == "__main__":

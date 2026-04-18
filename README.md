@@ -18,7 +18,7 @@ python .\main.py
 ## Commands
 
 - `/quiz`: ask a question (answers are plain text messages)
-- `/skip`: skip current active question
+- `/skip` or `/cancel`: skip current active question (works with `/skip@YourBot` style too)
 - `/stats`: show quiz stats
 - `/reset`: reset quiz progress
 - `/help`: help

@@ -16,9 +16,15 @@ class Question:
         a = normalize(user_answer)
         if not a:
             return False
-        if a == normalize(self.answer):
+        candidates = [normalize(self.answer)] + [normalize(x) for x in self.aliases]
+        if any(a == c for c in candidates if c):
             return True
-        return any(a == normalize(x) for x in self.aliases)
+        # Длинный эталон может быть частью развёрнутого ответа пользователя.
+        min_len = 12
+        for c in candidates:
+            if len(c) >= min_len and c in a:
+                return True
+        return False
 
 
 def normalize(s: str) -> str:
