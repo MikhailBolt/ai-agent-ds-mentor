@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 
 from mentor import db as mentor_db
 from mentor import quiz as mentor_quiz
+from mentor.textutil import command_prefix
 
 
 POLL_TIMEOUT_S = 30
@@ -25,15 +26,6 @@ def _require_env(name: str) -> str:
             f"Missing env var {name}. Create a .env file or export it before запуском."
         )
     return value
-
-
-def command_prefix(text: str) -> Optional[str]:
-    """`/cmd` или `/cmd@BotUsername` → нормализованный префикс `/cmd` в нижнем регистре."""
-    t = (text or "").strip()
-    if not t.startswith("/"):
-        return None
-    head = t.split(maxsplit=1)[0]
-    return head.split("@", 1)[0].lower()
 
 
 class TelegramAPI:

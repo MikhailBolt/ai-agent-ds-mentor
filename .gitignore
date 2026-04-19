@@ -17,6 +17,11 @@ ENV/
 *.db
 *.sqlite3
 
+# Tests / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
 # IDE / OS
 .idea/
 .vscode/
