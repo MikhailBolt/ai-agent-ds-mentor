@@ -2,10 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Optional
 
-
-def command_prefix(text: str) -> Optional[str]:
+def command_prefix(text: str) -> str | None:
     """`/cmd` или `/cmd@BotUsername` → нормализованный префикс `/cmd` в нижнем регистре."""
     t = (text or "").strip()
     if not t.startswith("/"):

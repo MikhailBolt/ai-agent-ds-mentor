@@ -1,8 +1,6 @@
 import json
 from pathlib import Path
 
-import pytest
-
 from mentor import quiz as qz
 
 
@@ -18,9 +16,7 @@ def test_matches_exact_and_substring() -> None:
         aliases=(),
     )
     assert q.matches("когда модель хорошо запоминает обучающие данные")
-    assert q.matches(
-        "Ответ: когда модель хорошо запоминает обучающие данные, это переобучение."
-    )
+    assert q.matches("Ответ: когда модель хорошо запоминает обучающие данные, это переобучение.")
 
 
 def test_load_questions_minimal(tmp_path: Path) -> None:

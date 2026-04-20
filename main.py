@@ -4,7 +4,7 @@ import random
 import signal
 import sqlite3
 import time
-from typing import Any, Optional
+from typing import Any
 
 import requests
 from dotenv import load_dotenv
@@ -12,7 +12,6 @@ from dotenv import load_dotenv
 from mentor import db as mentor_db
 from mentor import quiz as mentor_quiz
 from mentor.textutil import command_prefix
-
 
 POLL_TIMEOUT_S = 30
 HTTP_TIMEOUT_S = POLL_TIMEOUT_S + 10
@@ -68,7 +67,7 @@ class TelegramAPI:
     def send_message(self, chat_id: int, text: str) -> None:
         self.request("sendMessage", {"chat_id": chat_id, "text": text})
 
-    def get_updates(self, offset: Optional[int]) -> list[dict[str, Any]]:
+    def get_updates(self, offset: int | None) -> list[dict[str, Any]]:
         payload: dict[str, Any] = {
             "timeout": POLL_TIMEOUT_S,
             "allowed_updates": ["message"],
@@ -160,7 +159,11 @@ def handle_text(
         else:
             api.send_message(
                 chat_id,
-                f"Пока не зачтено.\nОжидаемый ответ (пример): {q.answer}\n\nНапиши /quiz для следующего вопроса.",
+                (
+                    "Пока не зачтено.\n"
+                    f"Ожидаемый ответ (пример): {q.answer}\n\n"
+                    "Напиши /quiz для следующего вопроса."
+                ),
             )
         return
 
@@ -184,7 +187,7 @@ def main() -> None:
     mentor_db.ensure_schema(conn)
     questions = mentor_quiz.load_questions(questions_path)
 
-    offset: Optional[int] = None
+    offset: int | None = None
     backoff_s = 1.0
 
     running = True

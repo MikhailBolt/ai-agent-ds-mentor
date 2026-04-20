@@ -1,8 +1,8 @@
 import json
 import random
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, Optional
 
 
 @dataclass(frozen=True)
@@ -40,11 +40,13 @@ def load_questions(path: str) -> list[Question]:
     for i, item in enumerate(raw):
         if not isinstance(item, dict):
             continue
-        qid = str(item.get("id") or f"q{i+1}")
+        qid = str(item.get("id") or f"q{i + 1}")
         prompt = str(item.get("prompt") or "").strip()
         answer = str(item.get("answer") or "").strip()
         aliases_raw = item.get("aliases") or []
-        aliases: tuple[str, ...] = tuple(str(x) for x in aliases_raw) if isinstance(aliases_raw, list) else ()
+        aliases: tuple[str, ...] = (
+            tuple(str(x) for x in aliases_raw) if isinstance(aliases_raw, list) else ()
+        )
         if prompt and answer:
             out.append(Question(id=qid, prompt=prompt, answer=answer, aliases=aliases))
     if not out:
@@ -52,7 +54,7 @@ def load_questions(path: str) -> list[Question]:
     return out
 
 
-def pick_next(questions: Iterable[Question], exclude_id: Optional[str]) -> Question:
+def pick_next(questions: Iterable[Question], exclude_id: str | None) -> Question:
     qs = list(questions)
     if not qs:
         raise ValueError("empty question bank")
@@ -62,9 +64,8 @@ def pick_next(questions: Iterable[Question], exclude_id: Optional[str]) -> Quest
     return random.choice(filtered or qs)
 
 
-def find_by_id(questions: Iterable[Question], qid: str) -> Optional[Question]:
+def find_by_id(questions: Iterable[Question], qid: str) -> Question | None:
     for q in questions:
         if q.id == qid:
             return q
     return None
-

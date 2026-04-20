@@ -1,8 +1,6 @@
 import sqlite3
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
-
 
 SCHEMA_SQL = """
 CREATE TABLE IF NOT EXISTS users (
@@ -39,7 +37,7 @@ def touch_user(conn: sqlite3.Connection, chat_id: int) -> None:
     conn.commit()
 
 
-def set_active_question(conn: sqlite3.Connection, chat_id: int, qid: Optional[str]) -> None:
+def set_active_question(conn: sqlite3.Connection, chat_id: int, qid: str | None) -> None:
     conn.execute(
         "UPDATE users SET active_question_id=? WHERE chat_id=?",
         (qid, chat_id),
@@ -47,7 +45,7 @@ def set_active_question(conn: sqlite3.Connection, chat_id: int, qid: Optional[st
     conn.commit()
 
 
-def get_active_question(conn: sqlite3.Connection, chat_id: int) -> Optional[str]:
+def get_active_question(conn: sqlite3.Connection, chat_id: int) -> str | None:
     row = conn.execute(
         "SELECT active_question_id FROM users WHERE chat_id=?",
         (chat_id,),
@@ -97,4 +95,3 @@ def reset_user(conn: sqlite3.Connection, chat_id: int) -> None:
         (chat_id,),
     )
     conn.commit()
-
