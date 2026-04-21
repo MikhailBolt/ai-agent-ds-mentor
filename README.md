@@ -52,6 +52,13 @@ $env:TELEGRAM_BOT_TOKEN="123456:ABC-DEF..."
 py .\main.py
 ```
 
+## Run with Docker
+
+```powershell
+docker build -t ai-agent-ds-mentor .
+docker run --rm -e TELEGRAM_BOT_TOKEN="123456:ABC-DEF..." ai-agent-ds-mentor
+```
+
 ## Tests & CI
 
 ```powershell
