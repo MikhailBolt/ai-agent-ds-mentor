@@ -27,6 +27,19 @@ tests/               # pytest
 
 ## Run locally (Windows / PowerShell)
 
+Quickstart scripts:
+
+```powershell
+.\scripts\setup.ps1
+
+# set token (or copy .env.example -> .env)
+$env:TELEGRAM_BOT_TOKEN="123456:ABC-DEF..."
+
+.\scripts\run.ps1
+```
+
+Manual:
+
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\activate
@@ -44,6 +57,12 @@ py .\main.py
 ```powershell
 pip install -r requirements-dev.txt
 pytest -q
+```
+
+Or:
+
+```powershell
+.\scripts\test.ps1
 ```
 
 GitHub Actions runs the same on every push/PR to `main` (see `.github/workflows/ci.yml`).
