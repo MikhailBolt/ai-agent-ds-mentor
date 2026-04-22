@@ -74,6 +74,17 @@ Or:
 
 GitHub Actions runs the same on every push/PR to `main` (see `.github/workflows/ci.yml`).
 
+## Development notes
+
+- Optional (recommended): enable `pre-commit` hooks
+
+```powershell
+pip install pre-commit
+pre-commit install
+```
+
+See `CONTRIBUTING.md` for details.
+
 ## Configuration
 
 | Variable | Required | Default |
