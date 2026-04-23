@@ -49,7 +49,7 @@ pip install -r requirements.txt
 # or:
 $env:TELEGRAM_BOT_TOKEN="123456:ABC-DEF..."
 
-py .\main.py
+py -m mentor
 ```
 
 ## Run with Docker
