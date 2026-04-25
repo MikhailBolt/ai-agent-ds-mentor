@@ -52,6 +52,14 @@ $env:TELEGRAM_BOT_TOKEN="123456:ABC-DEF..."
 py -m mentor
 ```
 
+## Quick checks (no token)
+
+Validate the question bank (useful in CI):
+
+```powershell
+py -m mentor check --skip-token
+```
+
 ## Run with Docker
 
 ```powershell

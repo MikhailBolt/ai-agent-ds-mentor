@@ -30,13 +30,18 @@ jobs:
           pip install -r requirements-dev.txt
 
       - name: Syntax check
-        run: python -m py_compile main.py
+        run: |
+          python -m py_compile main.py
+          python -m py_compile mentor/app.py mentor/cli.py mentor/__main__.py
 
       - name: Ruff (lint)
         run: ruff check .
 
       - name: Ruff (format check)
         run: ruff format --check .
+
+      - name: Config check (no token)
+        run: python -m mentor check --skip-token
 
       - name: Tests
         run: pytest -q

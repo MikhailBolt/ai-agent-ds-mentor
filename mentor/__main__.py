@@ -1,4 +1,6 @@
-from mentor.app import run
+import sys
+
+from mentor.cli import main
 
 if __name__ == "__main__":
-    run()
+    raise SystemExit(main(sys.argv[1:]))
