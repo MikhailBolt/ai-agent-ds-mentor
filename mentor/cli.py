@@ -4,12 +4,21 @@ import argparse
 import os
 import sys
 
+from mentor._version import __version__
 from mentor.app import run as run_bot
 from mentor.quiz import load_questions
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(prog="mentor", description="AI Agent DS Mentor bot utilities")
+    p = argparse.ArgumentParser(
+        prog="mentor",
+        description="AI Agent DS Mentor bot utilities",
+    )
+    p.add_argument(
+        "--version",
+        action="version",
+        version=f"%(prog)s {__version__}",
+    )
     sub = p.add_subparsers(dest="command", required=False)
 
     run = sub.add_parser("run", help="Run Telegram bot (default)")

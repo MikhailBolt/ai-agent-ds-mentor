@@ -54,11 +54,19 @@ py -m mentor
 
 ## Quick checks (no token)
 
+Show version:
+
+```powershell
+py -m mentor --version
+```
+
 Validate the question bank (useful in CI):
 
 ```powershell
 py -m mentor check --skip-token
 ```
+
+Note: duplicate `id` values in `data/questions.json` are rejected at load time.
 
 ## Run with Docker
 

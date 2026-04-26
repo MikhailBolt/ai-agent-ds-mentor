@@ -1,6 +1,8 @@
 import json
 from pathlib import Path
 
+import pytest
+
 from mentor import quiz as qz
 
 
@@ -29,3 +31,19 @@ def test_load_questions_minimal(tmp_path: Path) -> None:
     assert len(qs) == 1
     assert qs[0].id == "a"
     assert qs[0].matches("YES")
+
+
+def test_load_questions_rejects_duplicate_ids(tmp_path: Path) -> None:
+    p = tmp_path / "q.json"
+    p.write_text(
+        json.dumps(
+            [
+                {"id": "dup", "prompt": "Q1?", "answer": "a"},
+                {"id": "dup", "prompt": "Q2?", "answer": "b"},
+            ]
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError) as e:
+        qz.load_questions(str(p))
+    assert "duplicate" in str(e.value)

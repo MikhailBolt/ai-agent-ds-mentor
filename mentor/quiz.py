@@ -37,6 +37,7 @@ def load_questions(path: str) -> list[Question]:
         raise ValueError("questions json must be a list")
 
     out: list[Question] = []
+    seen: set[str] = set()
     for i, item in enumerate(raw):
         if not isinstance(item, dict):
             continue
@@ -48,6 +49,9 @@ def load_questions(path: str) -> list[Question]:
             tuple(str(x) for x in aliases_raw) if isinstance(aliases_raw, list) else ()
         )
         if prompt and answer:
+            if qid in seen:
+                raise ValueError(f"duplicate question id: {qid}")
+            seen.add(qid)
             out.append(Question(id=qid, prompt=prompt, answer=answer, aliases=aliases))
     if not out:
         raise ValueError("no valid questions loaded")
