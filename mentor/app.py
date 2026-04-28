@@ -176,7 +176,7 @@ def run() -> None:
     load_dotenv()
     token = _require_env("TELEGRAM_BOT_TOKEN")
     db_path = os.getenv("DB_PATH", "bot.db")
-    questions_path = os.getenv("QUESTIONS_PATH", os.path.join("data", "questions.json"))
+    questions_path = os.getenv("QUESTIONS_PATH", mentor_quiz.default_questions_path())
 
     logging.basicConfig(
         level=os.getenv("LOG_LEVEL", "INFO").upper(),

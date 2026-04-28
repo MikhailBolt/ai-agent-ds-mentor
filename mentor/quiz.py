@@ -2,6 +2,7 @@ import json
 import random
 from collections.abc import Iterable
 from dataclasses import dataclass
+from importlib import resources
 from pathlib import Path
 
 
@@ -29,6 +30,11 @@ class Question:
 
 def normalize(s: str) -> str:
     return " ".join((s or "").strip().casefold().split())
+
+
+def default_questions_path() -> str:
+    """Return packaged default question bank path (as a real filesystem path)."""
+    return str(resources.files("mentor.data").joinpath("questions.json"))
 
 
 def load_questions(path: str) -> list[Question]:

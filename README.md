@@ -68,6 +68,14 @@ py -m mentor check --skip-token
 
 Note: duplicate `id` values in `data/questions.json` are rejected at load time.
 
+## Install as a package (editable)
+
+```powershell
+pip install -e .
+mentor --version
+mentor check --skip-token
+```
+
 ## Run with Docker
 
 ```powershell

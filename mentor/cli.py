@@ -6,7 +6,7 @@ import sys
 
 from mentor._version import __version__
 from mentor.app import run as run_bot
-from mentor.quiz import load_questions
+from mentor.quiz import default_questions_path, load_questions
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -31,8 +31,8 @@ def build_parser() -> argparse.ArgumentParser:
     check = sub.add_parser("check", help="Validate configuration and question bank")
     check.add_argument(
         "--questions",
-        default=os.getenv("QUESTIONS_PATH", os.path.join("data", "questions.json")),
-        help="Path to questions JSON (default: QUESTIONS_PATH or data/questions.json)",
+        default=os.getenv("QUESTIONS_PATH", default_questions_path()),
+        help="Path to questions JSON (default: QUESTIONS_PATH or packaged questions.json)",
     )
     check.add_argument(
         "--skip-token",
@@ -77,3 +77,7 @@ def main(argv: list[str] | None = None) -> int:
 
     parser.print_help()
     return 2
+
+
+def entrypoint() -> None:
+    raise SystemExit(main(sys.argv[1:]))
