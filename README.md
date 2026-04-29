@@ -8,7 +8,7 @@ Telegram bot that runs a **Data Science quiz** from a JSON question bank, tracks
 
 ## Features
 
-- Commands: `/quiz`, `/skip`, `/cancel`, `/stats`, `/reset`, `/help`
+- Commands: `/quiz`, `/skip`, `/cancel`, `/stats`, `/status`, `/reset`, `/help`
 - Normalizes `/cmd@BotUsername` (Telegram menu / groups)
 - Retries on HTTP 429 using `Retry-After`
 - Quiz answers: exact match or substring match for long reference answers

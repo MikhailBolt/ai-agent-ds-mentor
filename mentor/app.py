@@ -11,6 +11,7 @@ from typing import Any
 import requests
 from dotenv import load_dotenv
 
+from mentor import __version__
 from mentor import db as mentor_db
 from mentor import quiz as mentor_quiz
 from mentor.textutil import command_prefix
@@ -88,6 +89,7 @@ def _help_text() -> str:
         "/quiz — задать вопрос\n"
         "/skip или /cancel — пропустить текущий вопрос\n"
         "/stats — статистика\n"
+        "/status — состояние бота\n"
         "/reset — сбросить прогресс\n"
         "/help — помощь\n\n"
         "Если бот задал вопрос — просто ответь сообщением."
@@ -98,10 +100,31 @@ def _format_question(q: mentor_quiz.Question) -> str:
     return f"Вопрос ({q.id}):\n{q.prompt}\n\nОтветь одним сообщением."
 
 
+def format_status_text(
+    *,
+    started_at: float,
+    now: float,
+    question_count: int,
+    stats: mentor_db.Stats,
+) -> str:
+    uptime_sec = max(0, int(now - started_at))
+    uptime_min, sec = divmod(uptime_sec, 60)
+    hours, minutes = divmod(uptime_min, 60)
+    acc = (stats.correct / stats.total * 100.0) if stats.total else 0.0
+    return (
+        "Статус бота:\n"
+        f"Версия: {__version__}\n"
+        f"Uptime: {hours:02d}:{minutes:02d}:{sec:02d}\n"
+        f"Вопросов в банке: {question_count}\n"
+        f"Твоя статистика: {stats.correct}/{stats.total} ({acc:.1f}%)"
+    )
+
+
 def handle_text(
     api: TelegramAPI,
     conn: sqlite3.Connection,
     questions: list[mentor_quiz.Question],
+    started_at: float,
     chat_id: int,
     text: str,
 ) -> None:
@@ -120,6 +143,19 @@ def handle_text(
         api.send_message(
             chat_id,
             f"Статистика:\nВерно: {st.correct}\nВсего: {st.total}\nТочность: {acc:.1f}%",
+        )
+        return
+
+    if cmd == "/status":
+        st = mentor_db.get_stats(conn, chat_id)
+        api.send_message(
+            chat_id,
+            format_status_text(
+                started_at=started_at,
+                now=time.time(),
+                question_count=len(questions),
+                stats=st,
+            ),
         )
         return
 
@@ -191,6 +227,7 @@ def run() -> None:
 
     offset: int | None = None
     backoff_s = 1.0
+    started_at = time.time()
 
     running = True
 
@@ -237,7 +274,7 @@ def run() -> None:
                     continue
 
                 try:
-                    handle_text(api, conn, questions, chat_id, text)
+                    handle_text(api, conn, questions, started_at, chat_id, text)
                 except Exception:
                     log.exception("Failed to handle message")
     except KeyboardInterrupt:
