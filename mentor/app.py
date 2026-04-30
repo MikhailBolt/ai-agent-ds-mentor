@@ -14,6 +14,7 @@ from dotenv import load_dotenv
 from mentor import __version__
 from mentor import db as mentor_db
 from mentor import quiz as mentor_quiz
+from mentor.telegram import iter_chunks
 from mentor.textutil import command_prefix
 
 POLL_TIMEOUT_S = 30
@@ -68,7 +69,8 @@ class TelegramAPI:
             return data
 
     def send_message(self, chat_id: int, text: str) -> None:
-        self.request("sendMessage", {"chat_id": chat_id, "text": text})
+        for chunk in iter_chunks(text):
+            self.request("sendMessage", {"chat_id": chat_id, "text": chunk})
 
     def get_updates(self, offset: int | None) -> list[dict[str, Any]]:
         payload: dict[str, Any] = {
