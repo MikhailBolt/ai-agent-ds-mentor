@@ -75,7 +75,7 @@ class TelegramAPI:
     def get_updates(self, offset: int | None) -> list[dict[str, Any]]:
         payload: dict[str, Any] = {
             "timeout": POLL_TIMEOUT_S,
-            "allowed_updates": ["message"],
+            "allowed_updates": ["message", "edited_message"],
         }
         if offset is not None:
             payload["offset"] = offset
@@ -94,7 +94,8 @@ def _help_text() -> str:
         "/status — состояние бота\n"
         "/reset — сбросить прогресс\n"
         "/help — помощь\n\n"
-        "Если бот задал вопрос — просто ответь сообщением."
+        "Если бот задал вопрос — просто ответь сообщением "
+        "(можно поправить текст после отправки — учтём правку)."
     )
 
 
@@ -262,6 +263,8 @@ def run() -> None:
                     offset = update_id + 1
 
                 msg = u.get("message")
+                if not isinstance(msg, dict):
+                    msg = u.get("edited_message")
                 if not isinstance(msg, dict):
                     continue
                 chat = msg.get("chat")
