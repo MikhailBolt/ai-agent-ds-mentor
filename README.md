@@ -12,6 +12,7 @@ Telegram bot that runs a **Data Science quiz** from a JSON question bank, tracks
 - Normalizes `/cmd@BotUsername` (Telegram menu / groups)
 - Retries on HTTP 429 using `Retry-After`
 - Quiz answers: exact match or substring match for long reference answers
+- De-duplicates Telegram update retries and handles edited messages without double-counting stats
 
 ## Project layout
 

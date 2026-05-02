@@ -11,6 +11,13 @@ CREATE TABLE IF NOT EXISTS users (
   quiz_total INTEGER NOT NULL DEFAULT 0,
   active_question_id TEXT
 );
+
+CREATE TABLE IF NOT EXISTS message_revisions (
+  chat_id INTEGER NOT NULL,
+  message_id INTEGER NOT NULL,
+  last_edit_date INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (chat_id, message_id)
+);
 """
 
 
@@ -95,3 +102,58 @@ def reset_user(conn: sqlite3.Connection, chat_id: int) -> None:
         (chat_id,),
     )
     conn.commit()
+
+
+def claim_message_revision(
+    conn: sqlite3.Connection,
+    chat_id: int,
+    message_id: int,
+    edit_date: int | None,
+) -> bool:
+    """Return True if this Telegram message revision should be processed.
+
+    Telegram retries may duplicate the same update; edited_message shares message_id with the
+    original message but carries a newer edit_date — those revisions must still be processed.
+    """
+    rev = int(edit_date) if edit_date is not None else 0
+
+    conn.execute("BEGIN IMMEDIATE")
+    try:
+        row = conn.execute(
+            """
+            SELECT last_edit_date
+            FROM message_revisions
+            WHERE chat_id=? AND message_id=?
+            """,
+            (chat_id, message_id),
+        ).fetchone()
+
+        if row is None:
+            conn.execute(
+                """
+                INSERT INTO message_revisions (chat_id, message_id, last_edit_date)
+                VALUES (?, ?, ?)
+                """,
+                (chat_id, message_id, rev),
+            )
+            conn.commit()
+            return True
+
+        last = int(row["last_edit_date"])
+        if rev > last:
+            conn.execute(
+                """
+                UPDATE message_revisions
+                SET last_edit_date=?
+                WHERE chat_id=? AND message_id=?
+                """,
+                (rev, chat_id, message_id),
+            )
+            conn.commit()
+            return True
+
+        conn.commit()
+        return False
+    except Exception:
+        conn.rollback()
+        raise

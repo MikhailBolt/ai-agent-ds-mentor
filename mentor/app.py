@@ -263,10 +263,12 @@ def run() -> None:
                     offset = update_id + 1
 
                 msg = u.get("message")
+                edited = u.get("edited_message")
                 if not isinstance(msg, dict):
-                    msg = u.get("edited_message")
+                    msg = edited
                 if not isinstance(msg, dict):
                     continue
+                is_edit = isinstance(edited, dict)
                 chat = msg.get("chat")
                 if not isinstance(chat, dict):
                     continue
@@ -274,11 +276,19 @@ def run() -> None:
                 if not isinstance(chat_id, int):
                     continue
 
+                msg_id = msg.get("message_id")
+                if not isinstance(msg_id, int):
+                    continue
+
+                edit_date = msg.get("edit_date") if is_edit else None
+
                 text = msg.get("text")
                 if not isinstance(text, str):
                     continue
 
                 try:
+                    if not mentor_db.claim_message_revision(conn, chat_id, msg_id, edit_date):
+                        continue
                     handle_text(api, conn, questions, started_at, chat_id, text)
                 except Exception:
                     log.exception("Failed to handle message")
