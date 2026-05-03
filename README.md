@@ -22,7 +22,7 @@ mentor/
   db.py              # SQLite schema + user stats
   quiz.py            # questions JSON + matching
   textutil.py        # command parsing (unit-tested)
-data/questions.json
+  data/questions.json   # packaged question bank (override via QUESTIONS_PATH)
 tests/               # pytest
 ```
 
@@ -67,7 +67,7 @@ Validate the question bank (useful in CI):
 py -m mentor check --skip-token
 ```
 
-Note: duplicate `id` values in `data/questions.json` are rejected at load time.
+Note: duplicate `id` values in the questions JSON are rejected at load time.
 
 ## Install as a package (editable)
 
@@ -117,7 +117,7 @@ See `CONTRIBUTING.md` for details.
 | `TELEGRAM_BOT_TOKEN` | yes | — |
 | `LOG_LEVEL` | no | `INFO` |
 | `DB_PATH` | no | `bot.db` |
-| `QUESTIONS_PATH` | no | `data/questions.json` |
+| `QUESTIONS_PATH` | no | packaged `mentor/data/questions.json` |
 
 ## License
 

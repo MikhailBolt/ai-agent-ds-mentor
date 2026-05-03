@@ -29,5 +29,5 @@ def test_check_missing_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> 
 
 def test_check_requires_token_by_default(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("TELEGRAM_BOT_TOKEN", raising=False)
-    rc = main(["check", "--questions", "data/questions.json"])
+    rc = main(["check", "--questions", "mentor/data/questions.json"])
     assert rc == 2
