@@ -67,6 +67,12 @@ Validate the question bank (useful in CI):
 py -m mentor check --skip-token
 ```
 
+If your token lives under a custom env var name (for example `BOT_TOKEN`), start the bot with:
+
+```powershell
+py -m mentor --token-env BOT_TOKEN
+```
+
 Note: duplicate `id` values in the questions JSON are rejected at load time.
 
 ## Install as a package (editable)

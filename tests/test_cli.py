@@ -1,15 +1,23 @@
 import json
+import os
 from pathlib import Path
 
 import pytest
 
 from mentor import __version__ as package_version
 from mentor._version import __version__ as version_module_version
-from mentor.cli import main
+from mentor.cli import apply_run_token_env, main
 
 
 def test_version_matches_package() -> None:
     assert package_version == version_module_version
+
+
+def test_apply_run_token_env_copies_to_standard_name(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("TELEGRAM_BOT_TOKEN", raising=False)
+    monkeypatch.setenv("MY_BOT_TOKEN", "abc123")
+    apply_run_token_env("MY_BOT_TOKEN")
+    assert os.environ.get("TELEGRAM_BOT_TOKEN") == "abc123"
 
 
 def test_check_ok(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

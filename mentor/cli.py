@@ -9,6 +9,13 @@ from mentor.app import run as run_bot
 from mentor.quiz import default_questions_path, load_questions
 
 
+def apply_run_token_env(token_env_name: str) -> None:
+    """Copy token from arbitrary env var into TELEGRAM_BOT_TOKEN for the app."""
+    val = os.getenv(token_env_name)
+    if val:
+        os.environ["TELEGRAM_BOT_TOKEN"] = val
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="mentor",
@@ -19,14 +26,19 @@ def build_parser() -> argparse.ArgumentParser:
         action="version",
         version=f"%(prog)s {__version__}",
     )
+    p.add_argument(
+        "--token-env",
+        dest="run_token_env",
+        default="TELEGRAM_BOT_TOKEN",
+        metavar="NAME",
+        help=(
+            "Environment variable that holds the bot token for `run` "
+            "(default: TELEGRAM_BOT_TOKEN). Value is copied into TELEGRAM_BOT_TOKEN."
+        ),
+    )
     sub = p.add_subparsers(dest="command", required=False)
 
-    run = sub.add_parser("run", help="Run Telegram bot (default)")
-    run.add_argument(
-        "--token-env",
-        default="TELEGRAM_BOT_TOKEN",
-        help="Environment variable name with Telegram bot token",
-    )
+    sub.add_parser("run", help="Run Telegram bot (default)")
 
     check = sub.add_parser("check", help="Validate configuration and question bank")
     check.add_argument(
@@ -69,6 +81,7 @@ def main(argv: list[str] | None = None) -> int:
 
     # Default command: run
     if args.command in (None, "run"):
+        apply_run_token_env(getattr(args, "run_token_env", "TELEGRAM_BOT_TOKEN"))
         run_bot()
         return 0
 
