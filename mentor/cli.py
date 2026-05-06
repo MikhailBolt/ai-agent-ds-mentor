@@ -16,6 +16,12 @@ def apply_run_token_env(token_env_name: str) -> None:
         os.environ["TELEGRAM_BOT_TOKEN"] = val
 
 
+def apply_env_override(env_name: str, value: str | None) -> None:
+    if value is None:
+        return
+    os.environ[env_name] = value
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="mentor",
@@ -38,7 +44,27 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = p.add_subparsers(dest="command", required=False)
 
-    sub.add_parser("run", help="Run Telegram bot (default)")
+    run = sub.add_parser("run", help="Run Telegram bot (default)")
+    run.add_argument(
+        "--questions",
+        default=None,
+        help="Override QUESTIONS_PATH for this run",
+    )
+    run.add_argument(
+        "--db-path",
+        default=None,
+        help="Override DB_PATH for this run",
+    )
+    run.add_argument(
+        "--log-level",
+        default=None,
+        help="Override LOG_LEVEL for this run (e.g. INFO, DEBUG)",
+    )
+    run.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Validate config and exit without starting polling",
+    )
 
     check = sub.add_parser("check", help="Validate configuration and question bank")
     check.add_argument(
@@ -82,6 +108,18 @@ def main(argv: list[str] | None = None) -> int:
     # Default command: run
     if args.command in (None, "run"):
         apply_run_token_env(getattr(args, "run_token_env", "TELEGRAM_BOT_TOKEN"))
+        apply_env_override("QUESTIONS_PATH", getattr(args, "questions", None))
+        apply_env_override("DB_PATH", getattr(args, "db_path", None))
+        apply_env_override("LOG_LEVEL", getattr(args, "log_level", None))
+
+        if getattr(args, "dry_run", False):
+            ns = argparse.Namespace(
+                questions=os.getenv("QUESTIONS_PATH", default_questions_path()),
+                skip_token=False,
+                token_env="TELEGRAM_BOT_TOKEN",
+            )
+            return cmd_check(ns)
+
         run_bot()
         return 0
 

@@ -6,7 +6,7 @@ import pytest
 
 from mentor import __version__ as package_version
 from mentor._version import __version__ as version_module_version
-from mentor.cli import apply_run_token_env, main
+from mentor.cli import apply_env_override, apply_run_token_env, main
 
 
 def test_version_matches_package() -> None:
@@ -18,6 +18,18 @@ def test_apply_run_token_env_copies_to_standard_name(monkeypatch: pytest.MonkeyP
     monkeypatch.setenv("MY_BOT_TOKEN", "abc123")
     apply_run_token_env("MY_BOT_TOKEN")
     assert os.environ.get("TELEGRAM_BOT_TOKEN") == "abc123"
+
+
+def test_apply_env_override_sets_value(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("X_TEST", raising=False)
+    apply_env_override("X_TEST", "1")
+    assert os.environ["X_TEST"] == "1"
+
+
+def test_run_dry_run_validates_questions(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "t")
+    rc = main(["run", "--dry-run"])
+    assert rc == 0
 
 
 def test_check_ok(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

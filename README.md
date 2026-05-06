@@ -73,6 +73,12 @@ If your token lives under a custom env var name (for example `BOT_TOKEN`), start
 py -m mentor --token-env BOT_TOKEN
 ```
 
+Dry-run (validate config without starting polling):
+
+```powershell
+py -m mentor run --dry-run
+```
+
 Note: duplicate `id` values in the questions JSON are rejected at load time.
 
 ## Install as a package (editable)
