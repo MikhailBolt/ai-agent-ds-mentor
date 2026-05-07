@@ -6,6 +6,7 @@ import sys
 
 from mentor._version import __version__
 from mentor.app import run as run_bot
+from mentor.db import connect, ensure_schema
 from mentor.quiz import default_questions_path, load_questions
 
 
@@ -73,6 +74,16 @@ def build_parser() -> argparse.ArgumentParser:
         help="Path to questions JSON (default: QUESTIONS_PATH or packaged questions.json)",
     )
     check.add_argument(
+        "--db-path",
+        default=os.getenv("DB_PATH", "bot.db"),
+        help="SQLite path to initialize/check (default: DB_PATH or bot.db)",
+    )
+    check.add_argument(
+        "--init-db",
+        action="store_true",
+        help="Create/upgrade SQLite schema in DB_PATH (safe operation)",
+    )
+    check.add_argument(
         "--skip-token",
         action="store_true",
         help="Skip Telegram token presence check (useful in CI)",
@@ -97,7 +108,21 @@ def cmd_check(args: argparse.Namespace) -> int:
         print(f"Questions load failed: {e}", file=sys.stderr)
         return 2
 
-    print(f"OK: loaded {len(qs)} questions from {args.questions}")
+    if getattr(args, "init_db", False):
+        try:
+            conn = connect(args.db_path)
+            try:
+                ensure_schema(conn)
+            finally:
+                conn.close()
+        except Exception as e:
+            print(f"DB init failed: {e}", file=sys.stderr)
+            return 2
+
+    msg = f"OK: loaded {len(qs)} questions from {args.questions}"
+    if getattr(args, "init_db", False):
+        msg += f"; db schema ok at {args.db_path}"
+    print(msg)
     return 0
 
 

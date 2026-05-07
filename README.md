@@ -67,6 +67,12 @@ Validate the question bank (useful in CI):
 py -m mentor check --skip-token
 ```
 
+Initialize DB schema (optional):
+
+```powershell
+py -m mentor check --skip-token --init-db --db-path bot.db
+```
+
 If your token lives under a custom env var name (for example `BOT_TOKEN`), start the bot with:
 
 ```powershell

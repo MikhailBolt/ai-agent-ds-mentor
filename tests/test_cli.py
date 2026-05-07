@@ -40,6 +40,16 @@ def test_check_ok(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     assert rc == 0
 
 
+def test_check_init_db(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    q = tmp_path / "q.json"
+    q.write_text(json.dumps([{"id": "a", "prompt": "Q?", "answer": "yes"}]), encoding="utf-8")
+    db = tmp_path / "bot.db"
+    monkeypatch.delenv("TELEGRAM_BOT_TOKEN", raising=False)
+    rc = main(["check", "--skip-token", "--questions", str(q), "--db-path", str(db), "--init-db"])
+    assert rc == 0
+    assert db.exists()
+
+
 def test_check_missing_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     missing = tmp_path / "missing.json"
     monkeypatch.delenv("TELEGRAM_BOT_TOKEN", raising=False)
