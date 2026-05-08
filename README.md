@@ -67,6 +67,12 @@ Validate the question bank (useful in CI):
 py -m mentor check --skip-token
 ```
 
+Print resolved config (helpful for debugging):
+
+```powershell
+py -m mentor check --skip-token --print-config
+```
+
 Initialize DB schema (optional):
 
 ```powershell

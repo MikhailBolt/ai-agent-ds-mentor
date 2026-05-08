@@ -84,6 +84,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Create/upgrade SQLite schema in DB_PATH (safe operation)",
     )
     check.add_argument(
+        "--print-config",
+        action="store_true",
+        help="Print resolved configuration and exit (still validates questions)",
+    )
+    check.add_argument(
         "--skip-token",
         action="store_true",
         help="Skip Telegram token presence check (useful in CI)",
@@ -98,7 +103,8 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def cmd_check(args: argparse.Namespace) -> int:
-    if not args.skip_token and not os.getenv(args.token_env):
+    token_present = bool(os.getenv(args.token_env))
+    if not args.skip_token and not token_present:
         print(f"Missing env var {args.token_env}", file=sys.stderr)
         return 2
 
@@ -118,6 +124,16 @@ def cmd_check(args: argparse.Namespace) -> int:
         except Exception as e:
             print(f"DB init failed: {e}", file=sys.stderr)
             return 2
+
+    if getattr(args, "print_config", False):
+        print(f"version={__version__}")
+        print(f"questions_path={args.questions}")
+        print(f"question_count={len(qs)}")
+        print(f"db_path={args.db_path}")
+        print(f"token_env={args.token_env}")
+        print(f"token_present={'1' if token_present else '0'}")
+        print(f"init_db={'1' if getattr(args, 'init_db', False) else '0'}")
+        return 0
 
     msg = f"OK: loaded {len(qs)} questions from {args.questions}"
     if getattr(args, "init_db", False):

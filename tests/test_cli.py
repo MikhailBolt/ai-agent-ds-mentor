@@ -40,6 +40,18 @@ def test_check_ok(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     assert rc == 0
 
 
+def test_check_print_config(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture) -> None:
+    monkeypatch.delenv("TELEGRAM_BOT_TOKEN", raising=False)
+    rc = main(["check", "--skip-token", "--print-config"])
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert "version=" in out
+    assert "questions_path=" in out
+    assert "question_count=" in out
+    assert "db_path=" in out
+    assert "token_present=" in out
+
+
 def test_check_init_db(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     q = tmp_path / "q.json"
     q.write_text(json.dumps([{"id": "a", "prompt": "Q?", "answer": "yes"}]), encoding="utf-8")
