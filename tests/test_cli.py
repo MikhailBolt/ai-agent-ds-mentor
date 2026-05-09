@@ -32,6 +32,13 @@ def test_run_dry_run_validates_questions(monkeypatch: pytest.MonkeyPatch) -> Non
     assert rc == 0
 
 
+def test_run_dry_run_with_custom_token_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("TELEGRAM_BOT_TOKEN", raising=False)
+    monkeypatch.setenv("MY_BOT_TOKEN", "secret")
+    rc = main(["--token-env", "MY_BOT_TOKEN", "run", "--dry-run"])
+    assert rc == 0
+
+
 def test_check_ok(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     p = tmp_path / "q.json"
     p.write_text(json.dumps([{"id": "a", "prompt": "Q?", "answer": "yes"}]), encoding="utf-8")

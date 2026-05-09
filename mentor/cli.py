@@ -23,6 +23,19 @@ def apply_env_override(env_name: str, value: str | None) -> None:
     os.environ[env_name] = value
 
 
+def namespace_for_run_dry_run(args: argparse.Namespace) -> argparse.Namespace:
+    """Full check namespace after env overrides (matches `mentor check` defaults)."""
+    token_env_name = getattr(args, "run_token_env", "TELEGRAM_BOT_TOKEN")
+    return argparse.Namespace(
+        questions=os.getenv("QUESTIONS_PATH", default_questions_path()),
+        db_path=os.getenv("DB_PATH", "bot.db"),
+        init_db=False,
+        print_config=False,
+        skip_token=False,
+        token_env=token_env_name,
+    )
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="mentor",
@@ -154,12 +167,7 @@ def main(argv: list[str] | None = None) -> int:
         apply_env_override("LOG_LEVEL", getattr(args, "log_level", None))
 
         if getattr(args, "dry_run", False):
-            ns = argparse.Namespace(
-                questions=os.getenv("QUESTIONS_PATH", default_questions_path()),
-                skip_token=False,
-                token_env="TELEGRAM_BOT_TOKEN",
-            )
-            return cmd_check(ns)
+            return cmd_check(namespace_for_run_dry_run(args))
 
         run_bot()
         return 0
