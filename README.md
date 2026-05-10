@@ -149,6 +149,10 @@ See `CONTRIBUTING.md` for details.
 | `DB_PATH` | no | `bot.db` |
 | `QUESTIONS_PATH` | no | packaged `mentor/data/questions.json` |
 
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md).
+
 ## License
 
 MIT — see [LICENSE](LICENSE).

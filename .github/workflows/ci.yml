@@ -29,6 +29,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
 
+      - name: Install package (editable)
+        run: pip install -e .
+
       - name: Syntax check
         run: |
           python -m py_compile main.py
@@ -40,8 +43,10 @@ jobs:
       - name: Ruff (format check)
         run: ruff format --check .
 
-      - name: Config check (no token)
-        run: python -m mentor check --skip-token
+      - name: Validate config (module + CLI entrypoint)
+        run: |
+          python -m mentor check --skip-token
+          mentor check --skip-token --print-config
 
       - name: Tests
         run: pytest -q
