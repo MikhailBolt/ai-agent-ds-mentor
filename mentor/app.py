@@ -38,7 +38,8 @@ class TelegramAPI:
 
     def request(self, method: str, payload: dict[str, Any]) -> dict[str, Any]:
         url = f"{self._base}/{method}"
-        attempts = 0
+        rate_limit_attempts = 0
+        server_error_attempts = 0
         while True:
             try:
                 r = self._s.post(url, json=payload, timeout=HTTP_TIMEOUT_S)
@@ -46,16 +47,31 @@ class TelegramAPI:
                 raise RuntimeError(f"HTTP/JSON error calling {method}: {e}") from e
 
             if r.status_code == 429:
-                attempts += 1
-                if attempts > 8:
+                rate_limit_attempts += 1
+                if rate_limit_attempts > 8:
                     raise RuntimeError("Telegram API: too many 429 responses for " + method)
                 retry = r.headers.get("Retry-After")
                 try:
-                    wait_s = float(retry) if retry is not None else min(5.0 * attempts, 60.0)
+                    wait_s = (
+                        float(retry) if retry is not None else min(5.0 * rate_limit_attempts, 60.0)
+                    )
                 except ValueError:
-                    wait_s = min(5.0 * attempts, 60.0)
+                    wait_s = min(5.0 * rate_limit_attempts, 60.0)
                 time.sleep(wait_s)
                 continue
+
+            if 500 <= r.status_code < 600:
+                server_error_attempts += 1
+                if server_error_attempts <= 6:
+                    wait_s = (
+                        min(
+                            2.0 * (2 ** (server_error_attempts - 1)),
+                            30.0,
+                        )
+                        + random.random() * 0.25
+                    )
+                    time.sleep(wait_s)
+                    continue
 
             try:
                 r.raise_for_status()

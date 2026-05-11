@@ -10,6 +10,12 @@ def test_normalize_strips_and_casefold() -> None:
     assert qz.normalize("  Hello   World  ") == "hello world"
 
 
+def test_normalize_strips_punctuation() -> None:
+    assert qz.normalize("Yes!!!") == "yes"
+    assert qz.normalize("переобучение, ") == "переобучение"
+    assert qz.normalize("a — b") == "a b"
+
+
 def test_matches_exact_and_substring() -> None:
     q = qz.Question(
         id="t1",
@@ -19,6 +25,13 @@ def test_matches_exact_and_substring() -> None:
     )
     assert q.matches("когда модель хорошо запоминает обучающие данные")
     assert q.matches("Ответ: когда модель хорошо запоминает обучающие данные, это переобучение.")
+
+
+def test_matches_ignores_punctuation_on_short_answers() -> None:
+    q = qz.Question(id="t2", prompt="p", answer="overfitting", aliases=("переобучение",))
+    assert q.matches("Overfitting!!!")
+    assert q.matches("  overfitting, ")
+    assert q.matches("«Переобучение»")
 
 
 def test_load_questions_minimal(tmp_path: Path) -> None:

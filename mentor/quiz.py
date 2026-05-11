@@ -1,5 +1,6 @@
 import json
 import random
+import re
 from collections.abc import Iterable
 from dataclasses import dataclass
 from importlib import resources
@@ -29,7 +30,10 @@ class Question:
 
 
 def normalize(s: str) -> str:
-    return " ".join((s or "").strip().casefold().split())
+    """Lowercase, collapse whitespace, strip punctuation (keeps letters and digits, all scripts)."""
+    t = (s or "").strip().casefold()
+    t = re.sub(r"[^\w\s]+", " ", t, flags=re.UNICODE)
+    return " ".join(t.split())
 
 
 def default_questions_path() -> str:
