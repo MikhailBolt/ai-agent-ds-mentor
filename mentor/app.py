@@ -26,7 +26,7 @@ def _require_env(name: str) -> str:
     value = os.getenv(name)
     if not value:
         raise SystemExit(
-            f"Missing env var {name}. Create a .env file or export it before запуском."
+            f"Missing env var {name}. Create a .env file or export it before starting."
         )
     return value
 
