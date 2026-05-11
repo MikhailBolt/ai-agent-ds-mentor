@@ -143,6 +143,7 @@ def cmd_check(args: argparse.Namespace) -> int:
         print(f"questions_path={args.questions}")
         print(f"question_count={len(qs)}")
         print(f"db_path={args.db_path}")
+        print(f"log_level={os.getenv('LOG_LEVEL', 'INFO')}")
         print(f"token_env={args.token_env}")
         print(f"token_present={'1' if token_present else '0'}")
         print(f"init_db={'1' if getattr(args, 'init_db', False) else '0'}")

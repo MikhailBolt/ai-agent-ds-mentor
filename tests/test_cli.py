@@ -56,6 +56,7 @@ def test_check_print_config(monkeypatch: pytest.MonkeyPatch, capsys: pytest.Capt
     assert "questions_path=" in out
     assert "question_count=" in out
     assert "db_path=" in out
+    assert "log_level=" in out
     assert "token_present=" in out
 
 

@@ -13,6 +13,11 @@ dependencies = [
 ]
 dynamic = ["version"]
 
+[project.urls]
+Homepage = "https://github.com/MikhailBolt/ai-agent-ds-mentor"
+Repository = "https://github.com/MikhailBolt/ai-agent-ds-mentor"
+Changelog = "https://github.com/MikhailBolt/ai-agent-ds-mentor/blob/main/CHANGELOG.md"
+
 [project.scripts]
 mentor = "mentor.cli:entrypoint"
 

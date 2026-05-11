@@ -244,6 +244,15 @@ def run() -> None:
     mentor_db.ensure_schema(conn)
     questions = mentor_quiz.load_questions(questions_path)
 
+    log.info(
+        "Starting bot version=%s questions=%s (%d) db=%s log_level=%s",
+        __version__,
+        questions_path,
+        len(questions),
+        db_path,
+        os.getenv("LOG_LEVEL", "INFO"),
+    )
+
     offset: int | None = None
     backoff_s = 1.0
     started_at = time.time()
@@ -260,7 +269,7 @@ def run() -> None:
     except (AttributeError, ValueError):
         pass
 
-    log.info("Bot started (polling)")
+    log.info("Polling Telegram (long polling)")
     try:
         while running:
             try:

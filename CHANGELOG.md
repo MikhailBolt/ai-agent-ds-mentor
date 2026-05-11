@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.1 (2026-05-09)
+
+- Startup logs: version, paths, question count, log level (no secrets)
+- `mentor check --print-config`: includes `log_level`
+- `pyproject.toml`: `[project.urls]` (Homepage, Repository, Changelog)
+
 ## 0.3.0 (2026-05-09)
 
 - CLI: `mentor check` with `--print-config`, `--init-db`, `--db-path`
