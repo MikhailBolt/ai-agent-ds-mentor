@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.2 (2026-05-09)
+
+- Bot: `/about` (version + repo link; override via `PROJECT_REPO_URL`)
+- Repo: `.gitattributes` for consistent line endings (fewer CRLF warnings on Windows)
+
 ## 0.3.1 (2026-05-09)
 
 - Startup logs: version, paths, question count, log level (no secrets)

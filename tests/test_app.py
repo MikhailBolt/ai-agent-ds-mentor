@@ -1,5 +1,8 @@
+import pytest
+
 from mentor import db as mentor_db
-from mentor.app import format_status_text
+from mentor._version import __version__
+from mentor.app import about_message_text, format_status_text
 
 
 def test_format_status_text_contains_expected_fields() -> None:
@@ -26,3 +29,14 @@ def test_format_status_text_when_no_answers() -> None:
         stats=stats,
     )
     assert "Твоя статистика: 0/0 (0.0%)" in text
+
+
+def test_about_message_text_default() -> None:
+    text = about_message_text()
+    assert __version__ in text
+    assert "github.com" in text
+
+
+def test_about_message_text_env_override(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("PROJECT_REPO_URL", "https://example.com/repo")
+    assert "example.com/repo" in about_message_text()

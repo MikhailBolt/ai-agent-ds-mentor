@@ -21,6 +21,8 @@ POLL_TIMEOUT_S = 30
 HTTP_TIMEOUT_S = POLL_TIMEOUT_S + 10
 MAX_BACKOFF_S = 30
 
+DEFAULT_REPO_URL = "https://github.com/MikhailBolt/ai-agent-ds-mentor"
+
 
 def _require_env(name: str) -> str:
     value = os.getenv(name)
@@ -108,10 +110,20 @@ def _help_text() -> str:
         "/skip или /cancel — пропустить текущий вопрос\n"
         "/stats — статистика\n"
         "/status — состояние бота\n"
+        "/about — версия и ссылка на проект\n"
         "/reset — сбросить прогресс\n"
         "/help — помощь\n\n"
         "Если бот задал вопрос — просто ответь сообщением "
         "(можно поправить текст после отправки — учтём правку)."
+    )
+
+
+def about_message_text() -> str:
+    repo = os.getenv("PROJECT_REPO_URL", DEFAULT_REPO_URL)
+    return (
+        f"AI DS Mentor v{__version__}\n"
+        f"Исходники: {repo}\n"
+        "/help — список команд"
     )
 
 
@@ -176,6 +188,10 @@ def handle_text(
                 stats=st,
             ),
         )
+        return
+
+    if cmd == "/about":
+        api.send_message(chat_id, about_message_text())
         return
 
     if cmd == "/reset":

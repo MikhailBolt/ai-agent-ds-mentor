@@ -11,6 +11,7 @@ from mentor.textutil import command_prefix
         ("/quiz@MyDSMentorBot", "/quiz"),
         ("/start@bot  extra", "/start"),
         ("  /help@x  ", "/help"),
+        ("/about@BotName", "/about"),
         ("not a command", None),
         ("", None),
     ],
