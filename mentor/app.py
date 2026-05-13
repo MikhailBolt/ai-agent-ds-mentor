@@ -120,11 +120,7 @@ def _help_text() -> str:
 
 def about_message_text() -> str:
     repo = os.getenv("PROJECT_REPO_URL", DEFAULT_REPO_URL)
-    return (
-        f"AI DS Mentor v{__version__}\n"
-        f"Исходники: {repo}\n"
-        "/help — список команд"
-    )
+    return f"AI DS Mentor v{__version__}\nИсходники: {repo}\n/help — список команд"
 
 
 def _format_question(q: mentor_quiz.Question) -> str:
@@ -137,18 +133,22 @@ def format_status_text(
     now: float,
     question_count: int,
     stats: mentor_db.Stats,
+    active_question_id: str | None = None,
 ) -> str:
     uptime_sec = max(0, int(now - started_at))
     uptime_min, sec = divmod(uptime_sec, 60)
     hours, minutes = divmod(uptime_min, 60)
     acc = (stats.correct / stats.total * 100.0) if stats.total else 0.0
-    return (
-        "Статус бота:\n"
-        f"Версия: {__version__}\n"
-        f"Uptime: {hours:02d}:{minutes:02d}:{sec:02d}\n"
-        f"Вопросов в банке: {question_count}\n"
-        f"Твоя статистика: {stats.correct}/{stats.total} ({acc:.1f}%)"
-    )
+    lines = [
+        "Статус бота:",
+        f"Версия: {__version__}",
+        f"Uptime: {hours:02d}:{minutes:02d}:{sec:02d}",
+        f"Вопросов в банке: {question_count}",
+        f"Твоя статистика: {stats.correct}/{stats.total} ({acc:.1f}%)",
+    ]
+    if active_question_id:
+        lines.append(f"Активный вопрос: {active_question_id}")
+    return "\n".join(lines)
 
 
 def handle_text(
@@ -179,6 +179,7 @@ def handle_text(
 
     if cmd == "/status":
         st = mentor_db.get_stats(conn, chat_id)
+        active = mentor_db.get_active_question(conn, chat_id)
         api.send_message(
             chat_id,
             format_status_text(
@@ -186,6 +187,7 @@ def handle_text(
                 now=time.time(),
                 question_count=len(questions),
                 stats=st,
+                active_question_id=active,
             ),
         )
         return

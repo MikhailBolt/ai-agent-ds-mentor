@@ -3,8 +3,12 @@ from __future__ import annotations
 import argparse
 import os
 import sys
+from pathlib import Path
+
+from dotenv import load_dotenv
 
 from mentor._version import __version__
+from mentor.app import DEFAULT_REPO_URL
 from mentor.app import run as run_bot
 from mentor.db import connect, ensure_schema
 from mentor.quiz import default_questions_path, load_questions
@@ -21,6 +25,15 @@ def apply_env_override(env_name: str, value: str | None) -> None:
     if value is None:
         return
     os.environ[env_name] = value
+
+
+def load_project_dotenv() -> None:
+    """Load `.env` from the current working directory when present."""
+    env_file = Path.cwd() / ".env"
+    if env_file.is_file():
+        load_dotenv(env_file)
+    else:
+        load_dotenv()
 
 
 def namespace_for_run_dry_run(args: argparse.Namespace) -> argparse.Namespace:
@@ -144,6 +157,7 @@ def cmd_check(args: argparse.Namespace) -> int:
         print(f"question_count={len(qs)}")
         print(f"db_path={args.db_path}")
         print(f"log_level={os.getenv('LOG_LEVEL', 'INFO')}")
+        print(f"project_repo_url={os.getenv('PROJECT_REPO_URL', DEFAULT_REPO_URL)}")
         print(f"token_env={args.token_env}")
         print(f"token_present={'1' if token_present else '0'}")
         print(f"init_db={'1' if getattr(args, 'init_db', False) else '0'}")
@@ -157,6 +171,7 @@ def cmd_check(args: argparse.Namespace) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
+    load_project_dotenv()
     parser = build_parser()
     args = parser.parse_args(argv)
 

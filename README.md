@@ -61,7 +61,7 @@ Show version:
 py -m mentor --version
 ```
 
-Validate the question bank (useful in CI):
+Validate the question bank (useful in CI). The CLI loads `.env` from the current directory first (same as `run`).
 
 ```powershell
 py -m mentor check --skip-token

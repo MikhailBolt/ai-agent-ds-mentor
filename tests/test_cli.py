@@ -47,6 +47,16 @@ def test_check_ok(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     assert rc == 0
 
 
+def test_check_reads_token_from_dotenv(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    q = tmp_path / "q.json"
+    q.write_text(json.dumps([{"id": "a", "prompt": "Q?", "answer": "yes"}]), encoding="utf-8")
+    (tmp_path / ".env").write_text("TELEGRAM_BOT_TOKEN=from-dotenv\n", encoding="utf-8")
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("TELEGRAM_BOT_TOKEN", raising=False)
+    rc = main(["check", "--questions", str(q)])
+    assert rc == 0
+
+
 def test_check_print_config(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture) -> None:
     monkeypatch.delenv("TELEGRAM_BOT_TOKEN", raising=False)
     rc = main(["check", "--skip-token", "--print-config"])
@@ -57,6 +67,7 @@ def test_check_print_config(monkeypatch: pytest.MonkeyPatch, capsys: pytest.Capt
     assert "question_count=" in out
     assert "db_path=" in out
     assert "log_level=" in out
+    assert "project_repo_url=" in out
     assert "token_present=" in out
 
 

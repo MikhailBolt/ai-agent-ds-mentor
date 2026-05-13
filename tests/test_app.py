@@ -31,6 +31,18 @@ def test_format_status_text_when_no_answers() -> None:
     assert "Твоя статистика: 0/0 (0.0%)" in text
 
 
+def test_format_status_text_shows_active_question() -> None:
+    stats = mentor_db.Stats(correct=1, total=2)
+    text = format_status_text(
+        started_at=0.0,
+        now=10.0,
+        question_count=4,
+        stats=stats,
+        active_question_id="ml-001",
+    )
+    assert "Активный вопрос: ml-001" in text
+
+
 def test_about_message_text_default() -> None:
     text = about_message_text()
     assert __version__ in text

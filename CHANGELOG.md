@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.3 (2026-05-13)
+
+- CLI: load `.env` before `check` / `run` (token and paths from file work without manual export)
+- CLI: `check --print-config` includes `project_repo_url`
+- Bot: `/status` shows active quiz question id when one is pending
+
 ## 0.3.2 (2026-05-09)
 
 - Bot: `/about` (version + repo link; override via `PROJECT_REPO_URL`)
