@@ -79,6 +79,12 @@ Initialize DB schema (optional):
 py -m mentor check --skip-token --init-db --db-path bot.db
 ```
 
+Verify schema on an existing database:
+
+```powershell
+py -m mentor check --skip-token --verify-db --db-path bot.db
+```
+
 If your token lives under a custom env var name (for example `BOT_TOKEN`), start the bot with:
 
 ```powershell

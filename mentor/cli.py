@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 from mentor._version import __version__
 from mentor.app import DEFAULT_REPO_URL
 from mentor.app import run as run_bot
-from mentor.db import connect, ensure_schema
+from mentor.db import connect, ensure_schema, verify_schema
 from mentor.quiz import default_questions_path, load_questions
 
 
@@ -110,6 +110,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Create/upgrade SQLite schema in DB_PATH (safe operation)",
     )
     check.add_argument(
+        "--verify-db",
+        action="store_true",
+        help="Verify SQLite schema in DB_PATH (requires existing database file)",
+    )
+    check.add_argument(
         "--print-config",
         action="store_true",
         help="Print resolved configuration and exit (still validates questions)",
@@ -151,6 +156,21 @@ def cmd_check(args: argparse.Namespace) -> int:
             print(f"DB init failed: {e}", file=sys.stderr)
             return 2
 
+    if getattr(args, "verify_db", False):
+        db_file = Path(args.db_path)
+        if not db_file.is_file():
+            print(f"Database file missing: {args.db_path}", file=sys.stderr)
+            return 2
+        try:
+            conn = connect(args.db_path)
+            try:
+                verify_schema(conn)
+            finally:
+                conn.close()
+        except Exception as e:
+            print(f"DB verify failed: {e}", file=sys.stderr)
+            return 2
+
     if getattr(args, "print_config", False):
         print(f"version={__version__}")
         print(f"questions_path={args.questions}")
@@ -161,11 +181,14 @@ def cmd_check(args: argparse.Namespace) -> int:
         print(f"token_env={args.token_env}")
         print(f"token_present={'1' if token_present else '0'}")
         print(f"init_db={'1' if getattr(args, 'init_db', False) else '0'}")
+        print(f"verify_db={'1' if getattr(args, 'verify_db', False) else '0'}")
         return 0
 
     msg = f"OK: loaded {len(qs)} questions from {args.questions}"
     if getattr(args, "init_db", False):
         msg += f"; db schema ok at {args.db_path}"
+    if getattr(args, "verify_db", False):
+        msg += f"; db verified at {args.db_path}"
     print(msg)
     return 0
 

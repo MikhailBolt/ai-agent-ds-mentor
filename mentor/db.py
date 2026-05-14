@@ -22,6 +22,8 @@ CREATE TABLE IF NOT EXISTS message_revisions (
 );
 """
 
+EXPECTED_TABLES = ("users", "message_revisions")
+
 
 def connect(db_path: str) -> sqlite3.Connection:
     Path(db_path).parent.mkdir(parents=True, exist_ok=True)
@@ -37,6 +39,17 @@ def connect(db_path: str) -> sqlite3.Connection:
 def ensure_schema(conn: sqlite3.Connection) -> None:
     conn.executescript(SCHEMA_SQL)
     conn.commit()
+
+
+def verify_schema(conn: sqlite3.Connection) -> None:
+    """Raise ValueError if required tables are missing."""
+    names = {
+        str(row[0])
+        for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()
+    }
+    missing = [name for name in EXPECTED_TABLES if name not in names]
+    if missing:
+        raise ValueError("missing tables: " + ", ".join(missing))
 
 
 def touch_user(conn: sqlite3.Connection, chat_id: int) -> None:

@@ -47,6 +47,7 @@ jobs:
         run: |
           python -m mentor check --skip-token
           mentor check --skip-token --print-config
+          python -m mentor check --skip-token --init-db --verify-db --db-path /tmp/mentor-ci.db
 
       - name: Tests
         run: pytest -q

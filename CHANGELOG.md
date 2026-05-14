@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.4 (2026-05-14)
+
+- CLI: `mentor check --verify-db` validates SQLite schema (pairs with `--init-db`)
+- DB: `verify_schema()` helper for required tables
+
 ## 0.3.3 (2026-05-13)
 
 - CLI: load `.env` before `check` / `run` (token and paths from file work without manual export)
