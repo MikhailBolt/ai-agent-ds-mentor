@@ -12,10 +12,11 @@ import requests
 from dotenv import load_dotenv
 
 from mentor import __version__
+from mentor import competencies as mentor_comp
 from mentor import db as mentor_db
 from mentor import quiz as mentor_quiz
 from mentor.telegram import iter_chunks
-from mentor.textutil import command_prefix
+from mentor.textutil import command_prefix, quiz_competency_arg
 
 POLL_TIMEOUT_S = 30
 HTTP_TIMEOUT_S = POLL_TIMEOUT_S + 10
@@ -106,14 +107,16 @@ def _help_text() -> str:
     return (
         "AI DS Mentor запущен.\n\n"
         "Команды:\n"
-        "/quiz — задать вопрос\n"
+        "/quiz — вопрос (приоритет слабым темам)\n"
+        "/quiz <id> — вопрос по компетенции, напр. /quiz ml-metrics\n"
+        "/map — карта компетенций и прогресс\n"
         "/skip или /cancel — пропустить текущий вопрос\n"
-        "/stats — статистика\n"
+        "/stats — общая статистика\n"
         "/status — состояние бота\n"
         "/about — версия и ссылка на проект\n"
         "/reset — сбросить прогресс\n"
         "/help — помощь\n\n"
-        "Если бот задал вопрос — просто ответь сообщением "
+        "Если бот задал вопрос — ответь сообщением "
         "(можно поправить текст после отправки — учтём правку)."
     )
 
@@ -123,8 +126,16 @@ def about_message_text() -> str:
     return f"AI DS Mentor v{__version__}\nИсходники: {repo}\n/help — список команд"
 
 
-def _format_question(q: mentor_quiz.Question) -> str:
-    return f"Вопрос ({q.id}):\n{q.prompt}\n\nОтветь одним сообщением."
+def _format_question(
+    q: mentor_quiz.Question,
+    *,
+    competency_title: str | None = None,
+) -> str:
+    stars = "★" * q.difficulty + "☆" * (3 - q.difficulty)
+    meta = f"Вопрос ({q.id}) · сложность {stars}"
+    if competency_title:
+        meta += f"\nТема: {competency_title}"
+    return f"{meta}\n{q.prompt}\n\nОтветь одним сообщением."
 
 
 def format_status_text(
@@ -155,6 +166,7 @@ def handle_text(
     api: TelegramAPI,
     conn: sqlite3.Connection,
     questions: list[mentor_quiz.Question],
+    competencies: list[mentor_comp.Competency],
     started_at: float,
     chat_id: int,
     text: str,
@@ -164,8 +176,18 @@ def handle_text(
     mentor_db.touch_user(conn, chat_id)
 
     cmd = command_prefix(text)
+    comp_index = mentor_comp.competency_by_id(competencies)
+
     if cmd in {"/start", "/help"}:
         api.send_message(chat_id, _help_text())
+        return
+
+    if cmd in {"/map", "/competencies"}:
+        comp_stats = mentor_db.get_competency_stats(conn, chat_id)
+        api.send_message(
+            chat_id,
+            mentor_comp.format_competency_map(competencies, comp_stats),
+        )
         return
 
     if cmd == "/stats":
@@ -212,9 +234,42 @@ def handle_text(
 
     if cmd == "/quiz":
         prev = mentor_db.get_active_question(conn, chat_id)
-        q = mentor_quiz.pick_next(questions, exclude_id=prev)
+        try:
+            comp_filter = quiz_competency_arg(text)
+        except ValueError:
+            comp_filter = ""
+        if comp_filter:
+            if comp_filter not in comp_index:
+                ids = ", ".join(c.id for c in competencies)
+                api.send_message(
+                    chat_id,
+                    f"Неизвестная компетенция «{comp_filter}».\n"
+                    f"Доступные id: {ids}\n/map — карта тем",
+                )
+                return
+        comp_stats = mentor_db.get_competency_stats(conn, chat_id)
+        weights = mentor_quiz.competency_weights_for_practice(
+            comp_stats,
+            (c.id for c in competencies),
+        )
+        try:
+            q = mentor_quiz.pick_next(
+                questions,
+                prev,
+                competency_filter=comp_filter or None,
+                competency_weights=weights if not comp_filter else None,
+            )
+        except ValueError:
+            api.send_message(
+                chat_id,
+                "Нет вопросов по этой теме. Попробуй /map или /quiz без аргумента.",
+            )
+            return
+        title = None
+        if q.competency_id and q.competency_id in comp_index:
+            title = comp_index[q.competency_id].title
         mentor_db.set_active_question(conn, chat_id, q.id)
-        api.send_message(chat_id, _format_question(q))
+        api.send_message(chat_id, _format_question(q, competency_title=title))
         return
 
     # If there's an active question, treat message as an answer.
@@ -227,19 +282,26 @@ def handle_text(
             return
 
         is_correct = q.matches(text)
-        mentor_db.record_quiz_result(conn, chat_id, is_correct=is_correct)
+        mentor_db.record_quiz_result(
+            conn,
+            chat_id,
+            is_correct=is_correct,
+            competency_id=q.competency_id,
+        )
         mentor_db.set_active_question(conn, chat_id, None)
         if is_correct:
-            api.send_message(chat_id, "Верно. Отлично! Напиши /quiz для следующего вопроса.")
+            api.send_message(chat_id, "Верно. Отлично! Напиши /quiz или /map.")
         else:
-            api.send_message(
-                chat_id,
-                (
-                    "Пока не зачтено.\n"
-                    f"Ожидаемый ответ (пример): {q.answer}\n\n"
-                    "Напиши /quiz для следующего вопроса."
-                ),
-            )
+            lines = [
+                "Пока не зачтено.",
+                f"Ожидаемый ответ (пример): {q.answer}",
+            ]
+            if q.hint:
+                lines.append(f"Подсказка: {q.hint}")
+            if q.competency_id and q.competency_id in comp_index:
+                lines.append(f"Тема: {comp_index[q.competency_id].title} — /quiz {q.competency_id}")
+            lines.append("\nНапиши /quiz для следующего вопроса.")
+            api.send_message(chat_id, "\n".join(lines))
         return
 
     api.send_message(chat_id, "Команда не распознана. Напиши /help")
@@ -250,6 +312,10 @@ def run() -> None:
     token = _require_env("TELEGRAM_BOT_TOKEN")
     db_path = os.getenv("DB_PATH", "bot.db")
     questions_path = os.getenv("QUESTIONS_PATH", mentor_quiz.default_questions_path())
+    competencies_path = os.getenv(
+        "COMPETENCIES_PATH",
+        mentor_comp.default_competencies_path(),
+    )
 
     logging.basicConfig(
         level=os.getenv("LOG_LEVEL", "INFO").upper(),
@@ -260,15 +326,18 @@ def run() -> None:
     api = TelegramAPI(token)
     conn = mentor_db.connect(db_path)
     mentor_db.ensure_schema(conn)
-    questions = mentor_quiz.load_questions(questions_path)
+    competencies = mentor_comp.load_competencies(competencies_path)
+    comp_ids = {c.id for c in competencies}
+    questions = mentor_quiz.load_questions(questions_path, valid_competency_ids=comp_ids)
 
     log.info(
-        "Starting bot version=%s questions=%s (%d) db=%s log_level=%s",
+        "Starting bot version=%s questions=%s (%d) competencies=%s (%d) db=%s",
         __version__,
         questions_path,
         len(questions),
+        competencies_path,
+        len(competencies),
         db_path,
-        os.getenv("LOG_LEVEL", "INFO"),
     )
 
     offset: int | None = None
@@ -332,7 +401,7 @@ def run() -> None:
                 try:
                     if not mentor_db.claim_message_revision(conn, chat_id, msg_id, edit_date):
                         continue
-                    handle_text(api, conn, questions, started_at, chat_id, text)
+                    handle_text(api, conn, questions, competencies, started_at, chat_id, text)
                 except Exception:
                     log.exception("Failed to handle message")
     except KeyboardInterrupt:

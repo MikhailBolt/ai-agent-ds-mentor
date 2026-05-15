@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.0 (2026-05-14)
+
+- **Карта компетенций**: `mentor/data/competencies.json`, команда `/map`
+- **Улучшенный банк вопросов**: темы, сложность 1–3, подсказки; 11 вопросов
+- **Квиз по теме**: `/quiz ml-metrics` (и другие id из карты)
+- **Умный выбор вопроса**: приоритет слабым/непройденным компетенциям
+- **Прогресс по темам** в SQLite (`competency_stats`)
+
 ## 0.3.4 (2026-05-14)
 
 - CLI: `mentor check --verify-db` validates SQLite schema (pairs with `--init-db`)

@@ -28,7 +28,7 @@ version = {attr = "mentor._version.__version__"}
 packages = ["mentor", "mentor.data"]
 
 [tool.setuptools.package-data]
-mentor = ["py.typed", "data/questions.json"]
+mentor = ["py.typed", "data/questions.json", "data/competencies.json"]
 
 [tool.ruff]
 target-version = "py311"

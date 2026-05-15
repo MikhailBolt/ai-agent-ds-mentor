@@ -8,7 +8,9 @@ Telegram bot that runs a **Data Science quiz** from a JSON question bank, tracks
 
 ## Features
 
-- Commands: `/quiz`, `/skip`, `/cancel`, `/stats`, `/status`, `/about`, `/reset`, `/help`
+- Commands: `/quiz`, `/quiz <topic>`, `/map`, `/skip`, `/cancel`, `/stats`, `/status`, `/about`, `/reset`, `/help`
+- **Competency map** (`/map`) with per-topic progress bars
+- Smarter quizzes: weak topics are prioritized; questions include hints and difficulty
 - Normalizes `/cmd@BotUsername` (Telegram menu / groups)
 - Retries on HTTP 429 using `Retry-After`
 - Quiz answers: exact match or substring match for long reference answers
@@ -22,7 +24,8 @@ mentor/
   db.py              # SQLite schema + user stats
   quiz.py            # questions JSON + matching
   textutil.py        # command parsing (unit-tested)
-  data/questions.json   # packaged question bank (override via QUESTIONS_PATH)
+  data/questions.json      # question bank (competency_id, difficulty, hint)
+  data/competencies.json   # competency map
 tests/               # pytest
 ```
 
@@ -154,6 +157,7 @@ See `CONTRIBUTING.md` for details.
 | `LOG_LEVEL` | no | `INFO` |
 | `DB_PATH` | no | `bot.db` |
 | `QUESTIONS_PATH` | no | packaged `mentor/data/questions.json` |
+| `COMPETENCIES_PATH` | no | packaged `mentor/data/competencies.json` |
 | `PROJECT_REPO_URL` | no | default GitHub repo URL (shown in `/about`) |
 
 ## Changelog

@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 from mentor._version import __version__
 from mentor.app import DEFAULT_REPO_URL
 from mentor.app import run as run_bot
+from mentor.competencies import default_competencies_path, load_competencies
 from mentor.db import connect, ensure_schema, verify_schema
 from mentor.quiz import default_questions_path, load_questions
 
@@ -139,10 +140,13 @@ def cmd_check(args: argparse.Namespace) -> int:
         print(f"Missing env var {args.token_env}", file=sys.stderr)
         return 2
 
+    comp_path = os.getenv("COMPETENCIES_PATH", default_competencies_path())
     try:
-        qs = load_questions(args.questions)
+        competencies = load_competencies(comp_path)
+        comp_ids = {c.id for c in competencies}
+        qs = load_questions(args.questions, valid_competency_ids=comp_ids)
     except Exception as e:
-        print(f"Questions load failed: {e}", file=sys.stderr)
+        print(f"Config load failed: {e}", file=sys.stderr)
         return 2
 
     if getattr(args, "init_db", False):
@@ -174,6 +178,8 @@ def cmd_check(args: argparse.Namespace) -> int:
     if getattr(args, "print_config", False):
         print(f"version={__version__}")
         print(f"questions_path={args.questions}")
+        print(f"competencies_path={comp_path}")
+        print(f"competency_count={len(competencies)}")
         print(f"question_count={len(qs)}")
         print(f"db_path={args.db_path}")
         print(f"log_level={os.getenv('LOG_LEVEL', 'INFO')}")

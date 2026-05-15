@@ -20,9 +20,17 @@ CREATE TABLE IF NOT EXISTS message_revisions (
   last_edit_date INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (chat_id, message_id)
 );
+
+CREATE TABLE IF NOT EXISTS competency_stats (
+  chat_id INTEGER NOT NULL,
+  competency_id TEXT NOT NULL,
+  correct INTEGER NOT NULL DEFAULT 0,
+  total INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (chat_id, competency_id)
+);
 """
 
-EXPECTED_TABLES = ("users", "message_revisions")
+EXPECTED_TABLES = ("users", "message_revisions", "competency_stats")
 
 
 def connect(db_path: str) -> sqlite3.Connection:
@@ -82,7 +90,13 @@ def get_active_question(conn: sqlite3.Connection, chat_id: int) -> str | None:
     return str(qid) if qid is not None else None
 
 
-def record_quiz_result(conn: sqlite3.Connection, chat_id: int, is_correct: bool) -> None:
+def record_quiz_result(
+    conn: sqlite3.Connection,
+    chat_id: int,
+    is_correct: bool,
+    *,
+    competency_id: str | None = None,
+) -> None:
     conn.execute(
         """
         UPDATE users
@@ -92,7 +106,30 @@ def record_quiz_result(conn: sqlite3.Connection, chat_id: int, is_correct: bool)
         """,
         (1 if is_correct else 0, chat_id),
     )
+    if competency_id:
+        conn.execute(
+            """
+            INSERT INTO competency_stats (chat_id, competency_id, correct, total)
+            VALUES (?, ?, ?, 1)
+            ON CONFLICT(chat_id, competency_id) DO UPDATE SET
+              correct = correct + excluded.correct,
+              total = total + 1
+            """,
+            (chat_id, competency_id, 1 if is_correct else 0),
+        )
     conn.commit()
+
+
+def get_competency_stats(conn: sqlite3.Connection, chat_id: int) -> dict[str, tuple[int, int]]:
+    rows = conn.execute(
+        """
+        SELECT competency_id, correct, total
+        FROM competency_stats
+        WHERE chat_id=?
+        """,
+        (chat_id,),
+    ).fetchall()
+    return {str(r["competency_id"]): (int(r["correct"]), int(r["total"])) for r in rows}
 
 
 @dataclass(frozen=True)
@@ -120,6 +157,7 @@ def reset_user(conn: sqlite3.Connection, chat_id: int) -> None:
         """,
         (chat_id,),
     )
+    conn.execute("DELETE FROM competency_stats WHERE chat_id=?", (chat_id,))
     conn.commit()
 
 

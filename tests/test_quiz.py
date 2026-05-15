@@ -46,6 +46,29 @@ def test_load_questions_minimal(tmp_path: Path) -> None:
     assert qs[0].matches("YES")
 
 
+def test_load_questions_with_competency_and_hint(tmp_path: Path) -> None:
+    p = tmp_path / "q.json"
+    p.write_text(
+        json.dumps(
+            [
+                {
+                    "id": "a",
+                    "prompt": "Q?",
+                    "answer": "yes",
+                    "competency_id": "c1",
+                    "difficulty": 2,
+                    "hint": "think",
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+    qs = qz.load_questions(str(p), valid_competency_ids={"c1"})
+    assert qs[0].competency_id == "c1"
+    assert qs[0].difficulty == 2
+    assert qs[0].hint == "think"
+
+
 def test_load_questions_rejects_duplicate_ids(tmp_path: Path) -> None:
     p = tmp_path / "q.json"
     p.write_text(

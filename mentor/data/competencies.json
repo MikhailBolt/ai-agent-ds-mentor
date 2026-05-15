@@ -1,0 +1,27 @@
+[
+  {
+    "id": "ml-foundations",
+    "title": "Основы ML",
+    "description": "Обучение, переобучение, bias–variance"
+  },
+  {
+    "id": "ml-metrics",
+    "title": "Метрики классификации",
+    "description": "Precision, Recall, F1, confusion matrix"
+  },
+  {
+    "id": "ml-validation",
+    "title": "Валидация моделей",
+    "description": "Train/val/test, кросс-валидация"
+  },
+  {
+    "id": "stats-basics",
+    "title": "Статистика для DS",
+    "description": "Среднее, дисперсия, корреляция"
+  },
+  {
+    "id": "python-ds",
+    "title": "Python для анализа",
+    "description": "pandas, numpy, базовые операции"
+  }
+]
