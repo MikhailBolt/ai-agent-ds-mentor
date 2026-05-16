@@ -2,7 +2,7 @@ import pytest
 
 from mentor import db as mentor_db
 from mentor._version import __version__
-from mentor.app import about_message_text, format_status_text
+from mentor.app import about_message_text, format_status_text, streak_bonus_message
 
 
 def test_format_status_text_contains_expected_fields() -> None:
@@ -47,6 +47,23 @@ def test_about_message_text_default() -> None:
     text = about_message_text()
     assert __version__ in text
     assert "github.com" in text
+
+
+def test_format_status_text_includes_streak() -> None:
+    stats = mentor_db.Stats(correct=1, total=1)
+    text = format_status_text(
+        started_at=0.0,
+        now=10.0,
+        question_count=3,
+        stats=stats,
+        streak=4,
+    )
+    assert "Серия верных: 4" in text
+
+
+def test_streak_bonus_message() -> None:
+    assert "3" in streak_bonus_message(3)
+    assert streak_bonus_message(4) == ""
 
 
 def test_about_message_text_env_override(monkeypatch: pytest.MonkeyPatch) -> None:

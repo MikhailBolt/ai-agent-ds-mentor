@@ -50,7 +50,41 @@ def test_pick_next_filters_competency() -> None:
         assert picked.competency_id == "ml-metrics"
 
 
+def test_format_stats_summary() -> None:
+    competencies = [
+        comp.Competency(id="a", title="A", description=""),
+        comp.Competency(id="b", title="B", description=""),
+    ]
+    text = comp.format_stats_summary(
+        correct=2,
+        total=4,
+        streak=1,
+        competencies=competencies,
+        comp_stats={"a": (1, 2), "b": (0, 0)},
+    )
+    assert "серия" in text.lower()
+    assert "A" in text
+    assert "ещё не решал" in text
+
+
+def test_suggest_practice_prefers_unseen() -> None:
+    competencies = [
+        comp.Competency(id="done", title="Done", description=""),
+        comp.Competency(id="new", title="New", description=""),
+    ]
+    pick = comp.suggest_practice_competency(competencies, {"done": (1, 1)})
+    assert pick is not None
+    assert pick.id == "new"
+
+
 def test_competency_weights_favor_weak() -> None:
     stats = {"strong": (9, 10), "weak": (1, 10)}
     weights = qz.competency_weights_for_practice(stats, ["strong", "weak"])
     assert weights["weak"] > weights["strong"]
+
+
+def test_validate_competency_coverage() -> None:
+    qs = [qz.Question(id="1", prompt="p", answer="a", competency_id="x")]
+    qz.validate_competency_coverage(qs, {"x"})
+    with pytest.raises(ValueError, match="no questions for competencies"):
+        qz.validate_competency_coverage(qs, {"x", "y"})

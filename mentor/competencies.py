@@ -50,6 +50,66 @@ def progress_bar(accuracy: float, width: int = 5) -> str:
     return "▓" * filled + "░" * (width - filled)
 
 
+def suggest_practice_competency(
+    competencies: list[Competency],
+    stats: dict[str, tuple[int, int]],
+) -> Competency | None:
+    """Pick an unseen topic first, otherwise the weakest by accuracy."""
+    unseen = [c for c in competencies if stats.get(c.id, (0, 0))[1] == 0]
+    if unseen:
+        return unseen[0]
+    weakest_acc = 2.0
+    pick: Competency | None = None
+    for c in competencies:
+        correct, total = stats.get(c.id, (0, 0))
+        if total == 0:
+            continue
+        acc = correct / total
+        if acc < weakest_acc:
+            weakest_acc = acc
+            pick = c
+    return pick
+
+
+def format_stats_summary(
+    *,
+    correct: int,
+    total: int,
+    streak: int,
+    competencies: list[Competency],
+    comp_stats: dict[str, tuple[int, int]],
+) -> str:
+    acc = (correct / total * 100.0) if total else 0.0
+    lines = [
+        "Статистика",
+        f"Верно: {correct} · всего: {total} · точность: {acc:.1f}%",
+        f"Текущая серия верных: {streak}",
+    ]
+    tip = suggest_practice_competency(competencies, comp_stats)
+    if tip is not None:
+        _, tip_total = comp_stats.get(tip.id, (0, 0))
+        if tip_total == 0:
+            lines.append(f"Рекомендация: начни с «{tip.title}» — /quiz {tip.id}")
+        else:
+            c_ok, c_tot = comp_stats[tip.id]
+            tip_acc = c_ok / c_tot * 100.0
+            lines.append(
+                f"Рекомендация: подтянуть «{tip.title}» ({tip_acc:.0f}%) — /quiz {tip.id}",
+            )
+    lines.append("")
+    lines.append("По темам:")
+    for c in competencies:
+        c_ok, c_tot = comp_stats.get(c.id, (0, 0))
+        if c_tot == 0:
+            lines.append(f"• {c.title} — ещё не решал")
+        else:
+            c_acc = c_ok / c_tot * 100.0
+            lines.append(f"• {c.title} — {c_ok}/{c_tot} ({c_acc:.0f}%)")
+    lines.append("")
+    lines.append("/map — карта · /quiz — новый вопрос")
+    return "\n".join(lines)
+
+
 def format_competency_map(
     competencies: list[Competency],
     stats: dict[str, tuple[int, int]],

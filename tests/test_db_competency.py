@@ -20,6 +20,44 @@ def test_record_competency_stats(conn: sqlite3.Connection) -> None:
     assert stats["ml-metrics"] == (1, 2)
 
 
+def test_quiz_streak(conn: sqlite3.Connection) -> None:
+    mentor_db.touch_user(conn, 1)
+    assert mentor_db.record_quiz_result(conn, 1, True) == 1
+    assert mentor_db.record_quiz_result(conn, 1, True) == 2
+    assert mentor_db.record_quiz_result(conn, 1, False) == 0
+    assert mentor_db.record_quiz_result(conn, 1, True) == 1
+
+
+def test_reset_clears_streak(conn: sqlite3.Connection) -> None:
+    mentor_db.record_quiz_result(conn, 1, True)
+    mentor_db.reset_user(conn, 1)
+    assert mentor_db.get_streak(conn, 1) == 0
+
+
+def test_streak_column_migrated_on_old_db(tmp_path) -> None:
+    db_path = tmp_path / "legacy.db"
+    c = sqlite3.connect(db_path)
+    c.execute(
+        """
+        CREATE TABLE users (
+          chat_id INTEGER PRIMARY KEY,
+          created_at TEXT NOT NULL DEFAULT (datetime('now')),
+          last_seen_at TEXT NOT NULL DEFAULT (datetime('now')),
+          quiz_correct INTEGER NOT NULL DEFAULT 0,
+          quiz_total INTEGER NOT NULL DEFAULT 0,
+          active_question_id TEXT
+        )
+        """
+    )
+    c.commit()
+    c.close()
+    c2 = mentor_db.connect(str(db_path))
+    mentor_db.ensure_schema(c2)
+    cols = {row[1] for row in c2.execute("PRAGMA table_info(users)").fetchall()}
+    assert "quiz_streak" in cols
+    c2.close()
+
+
 def test_reset_clears_competency_stats(conn: sqlite3.Connection) -> None:
     mentor_db.record_quiz_result(conn, 1, True, competency_id="a")
     mentor_db.reset_user(conn, 1)

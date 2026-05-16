@@ -39,21 +39,34 @@ def test_run_dry_run_with_custom_token_env(monkeypatch: pytest.MonkeyPatch) -> N
     assert rc == 0
 
 
+def _minimal_bank(tmp_path: Path) -> tuple[Path, Path]:
+    cid = "test-topic"
+    c = tmp_path / "c.json"
+    c.write_text(
+        json.dumps([{"id": cid, "title": "Test", "description": ""}]),
+        encoding="utf-8",
+    )
+    q = tmp_path / "q.json"
+    q.write_text(
+        json.dumps([{"id": "a", "prompt": "Q?", "answer": "yes", "competency_id": cid}]),
+        encoding="utf-8",
+    )
+    return q, c
+
+
 def test_check_ok(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    p = tmp_path / "q.json"
-    p.write_text(json.dumps([{"id": "a", "prompt": "Q?", "answer": "yes"}]), encoding="utf-8")
+    q, c = _minimal_bank(tmp_path)
     monkeypatch.delenv("TELEGRAM_BOT_TOKEN", raising=False)
-    rc = main(["check", "--skip-token", "--questions", str(p)])
+    rc = main(["check", "--skip-token", "--questions", str(q), "--competencies", str(c)])
     assert rc == 0
 
 
 def test_check_reads_token_from_dotenv(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    q = tmp_path / "q.json"
-    q.write_text(json.dumps([{"id": "a", "prompt": "Q?", "answer": "yes"}]), encoding="utf-8")
+    q, c = _minimal_bank(tmp_path)
     (tmp_path / ".env").write_text("TELEGRAM_BOT_TOKEN=from-dotenv\n", encoding="utf-8")
     monkeypatch.chdir(tmp_path)
     monkeypatch.delenv("TELEGRAM_BOT_TOKEN", raising=False)
-    rc = main(["check", "--questions", str(q)])
+    rc = main(["check", "--questions", str(q), "--competencies", str(c)])
     assert rc == 0
 
 
@@ -72,18 +85,7 @@ def test_check_print_config(monkeypatch: pytest.MonkeyPatch, capsys: pytest.Capt
 
 
 def test_check_init_db(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    q = tmp_path / "q.json"
-    q.write_text(json.dumps([{"id": "a", "prompt": "Q?", "answer": "yes"}]), encoding="utf-8")
-    db = tmp_path / "bot.db"
-    monkeypatch.delenv("TELEGRAM_BOT_TOKEN", raising=False)
-    rc = main(["check", "--skip-token", "--questions", str(q), "--db-path", str(db), "--init-db"])
-    assert rc == 0
-    assert db.exists()
-
-
-def test_check_verify_db_after_init(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    q = tmp_path / "q.json"
-    q.write_text(json.dumps([{"id": "a", "prompt": "Q?", "answer": "yes"}]), encoding="utf-8")
+    q, c = _minimal_bank(tmp_path)
     db = tmp_path / "bot.db"
     monkeypatch.delenv("TELEGRAM_BOT_TOKEN", raising=False)
     rc = main(
@@ -92,6 +94,29 @@ def test_check_verify_db_after_init(tmp_path: Path, monkeypatch: pytest.MonkeyPa
             "--skip-token",
             "--questions",
             str(q),
+            "--competencies",
+            str(c),
+            "--db-path",
+            str(db),
+            "--init-db",
+        ]
+    )
+    assert rc == 0
+    assert db.exists()
+
+
+def test_check_verify_db_after_init(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    q, c = _minimal_bank(tmp_path)
+    db = tmp_path / "bot.db"
+    monkeypatch.delenv("TELEGRAM_BOT_TOKEN", raising=False)
+    rc = main(
+        [
+            "check",
+            "--skip-token",
+            "--questions",
+            str(q),
+            "--competencies",
+            str(c),
             "--db-path",
             str(db),
             "--init-db",
@@ -102,8 +127,7 @@ def test_check_verify_db_after_init(tmp_path: Path, monkeypatch: pytest.MonkeyPa
 
 
 def test_check_verify_db_missing_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    q = tmp_path / "q.json"
-    q.write_text(json.dumps([{"id": "a", "prompt": "Q?", "answer": "yes"}]), encoding="utf-8")
+    q, c = _minimal_bank(tmp_path)
     missing_db = tmp_path / "missing.db"
     monkeypatch.delenv("TELEGRAM_BOT_TOKEN", raising=False)
     rc = main(
@@ -112,6 +136,8 @@ def test_check_verify_db_missing_file(tmp_path: Path, monkeypatch: pytest.Monkey
             "--skip-token",
             "--questions",
             str(q),
+            "--competencies",
+            str(c),
             "--db-path",
             str(missing_db),
             "--verify-db",

@@ -12,7 +12,11 @@ from mentor.app import DEFAULT_REPO_URL
 from mentor.app import run as run_bot
 from mentor.competencies import default_competencies_path, load_competencies
 from mentor.db import connect, ensure_schema, verify_schema
-from mentor.quiz import default_questions_path, load_questions
+from mentor.quiz import (
+    default_questions_path,
+    load_questions,
+    validate_competency_coverage,
+)
 
 
 def apply_run_token_env(token_env_name: str) -> None:
@@ -42,6 +46,7 @@ def namespace_for_run_dry_run(args: argparse.Namespace) -> argparse.Namespace:
     token_env_name = getattr(args, "run_token_env", "TELEGRAM_BOT_TOKEN")
     return argparse.Namespace(
         questions=os.getenv("QUESTIONS_PATH", default_questions_path()),
+        competencies=os.getenv("COMPETENCIES_PATH", default_competencies_path()),
         db_path=os.getenv("DB_PATH", "bot.db"),
         init_db=False,
         print_config=False,
@@ -101,6 +106,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Path to questions JSON (default: QUESTIONS_PATH or packaged questions.json)",
     )
     check.add_argument(
+        "--competencies",
+        default=os.getenv("COMPETENCIES_PATH", default_competencies_path()),
+        help="Path to competencies JSON (default: COMPETENCIES_PATH or packaged file)",
+    )
+    check.add_argument(
         "--db-path",
         default=os.getenv("DB_PATH", "bot.db"),
         help="SQLite path to initialize/check (default: DB_PATH or bot.db)",
@@ -140,11 +150,12 @@ def cmd_check(args: argparse.Namespace) -> int:
         print(f"Missing env var {args.token_env}", file=sys.stderr)
         return 2
 
-    comp_path = os.getenv("COMPETENCIES_PATH", default_competencies_path())
+    comp_path = args.competencies
     try:
         competencies = load_competencies(comp_path)
         comp_ids = {c.id for c in competencies}
         qs = load_questions(args.questions, valid_competency_ids=comp_ids)
+        validate_competency_coverage(qs, comp_ids)
     except Exception as e:
         print(f"Config load failed: {e}", file=sys.stderr)
         return 2

@@ -111,7 +111,8 @@ def _help_text() -> str:
         "/quiz <id> — вопрос по компетенции, напр. /quiz ml-metrics\n"
         "/map — карта компетенций и прогресс\n"
         "/skip или /cancel — пропустить текущий вопрос\n"
-        "/stats — общая статистика\n"
+        "/stats — статистика и прогресс по темам\n"
+        "/hint — подсказка к текущему вопросу\n"
         "/status — состояние бота\n"
         "/about — версия и ссылка на проект\n"
         "/reset — сбросить прогресс\n"
@@ -138,12 +139,19 @@ def _format_question(
     return f"{meta}\n{q.prompt}\n\nОтветь одним сообщением."
 
 
+def streak_bonus_message(streak: int) -> str:
+    if streak in (3, 5, 10):
+        return f" Серия верных ответов: {streak}!"
+    return ""
+
+
 def format_status_text(
     *,
     started_at: float,
     now: float,
     question_count: int,
     stats: mentor_db.Stats,
+    streak: int = 0,
     active_question_id: str | None = None,
 ) -> str:
     uptime_sec = max(0, int(now - started_at))
@@ -156,6 +164,7 @@ def format_status_text(
         f"Uptime: {hours:02d}:{minutes:02d}:{sec:02d}",
         f"Вопросов в банке: {question_count}",
         f"Твоя статистика: {stats.correct}/{stats.total} ({acc:.1f}%)",
+        f"Серия верных: {streak}",
     ]
     if active_question_id:
         lines.append(f"Активный вопрос: {active_question_id}")
@@ -192,15 +201,35 @@ def handle_text(
 
     if cmd == "/stats":
         st = mentor_db.get_stats(conn, chat_id)
-        acc = (st.correct / st.total * 100.0) if st.total else 0.0
+        streak = mentor_db.get_streak(conn, chat_id)
+        comp_stats = mentor_db.get_competency_stats(conn, chat_id)
         api.send_message(
             chat_id,
-            f"Статистика:\nВерно: {st.correct}\nВсего: {st.total}\nТочность: {acc:.1f}%",
+            mentor_comp.format_stats_summary(
+                correct=st.correct,
+                total=st.total,
+                streak=streak,
+                competencies=competencies,
+                comp_stats=comp_stats,
+            ),
         )
+        return
+
+    if cmd == "/hint":
+        active = mentor_db.get_active_question(conn, chat_id)
+        if active is None:
+            api.send_message(chat_id, "Сейчас нет активного вопроса. Напиши /quiz.")
+            return
+        q = mentor_quiz.find_by_id(questions, active)
+        if q is None or not q.hint:
+            api.send_message(chat_id, "Для этого вопроса подсказки нет.")
+            return
+        api.send_message(chat_id, f"Подсказка: {q.hint}")
         return
 
     if cmd == "/status":
         st = mentor_db.get_stats(conn, chat_id)
+        streak = mentor_db.get_streak(conn, chat_id)
         active = mentor_db.get_active_question(conn, chat_id)
         api.send_message(
             chat_id,
@@ -209,6 +238,7 @@ def handle_text(
                 now=time.time(),
                 question_count=len(questions),
                 stats=st,
+                streak=streak,
                 active_question_id=active,
             ),
         )
@@ -282,7 +312,7 @@ def handle_text(
             return
 
         is_correct = q.matches(text)
-        mentor_db.record_quiz_result(
+        streak = mentor_db.record_quiz_result(
             conn,
             chat_id,
             is_correct=is_correct,
@@ -290,7 +320,11 @@ def handle_text(
         )
         mentor_db.set_active_question(conn, chat_id, None)
         if is_correct:
-            api.send_message(chat_id, "Верно. Отлично! Напиши /quiz или /map.")
+            bonus = streak_bonus_message(streak)
+            api.send_message(
+                chat_id,
+                f"Верно. Отлично!{bonus}\nНапиши /quiz или /map.",
+            )
         else:
             lines = [
                 "Пока не зачтено.",
@@ -329,6 +363,7 @@ def run() -> None:
     competencies = mentor_comp.load_competencies(competencies_path)
     comp_ids = {c.id for c in competencies}
     questions = mentor_quiz.load_questions(questions_path, valid_competency_ids=comp_ids)
+    mentor_quiz.validate_competency_coverage(questions, comp_ids)
 
     log.info(
         "Starting bot version=%s questions=%s (%d) competencies=%s (%d) db=%s",

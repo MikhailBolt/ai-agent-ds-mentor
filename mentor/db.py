@@ -44,8 +44,17 @@ def connect(db_path: str) -> sqlite3.Connection:
     return conn
 
 
+def _migrate_users(conn: sqlite3.Connection) -> None:
+    cols = {str(row[1]) for row in conn.execute("PRAGMA table_info(users)").fetchall()}
+    if "quiz_streak" not in cols:
+        conn.execute(
+            "ALTER TABLE users ADD COLUMN quiz_streak INTEGER NOT NULL DEFAULT 0",
+        )
+
+
 def ensure_schema(conn: sqlite3.Connection) -> None:
     conn.executescript(SCHEMA_SQL)
+    _migrate_users(conn)
     conn.commit()
 
 
@@ -96,16 +105,29 @@ def record_quiz_result(
     is_correct: bool,
     *,
     competency_id: str | None = None,
-) -> None:
-    conn.execute(
-        """
-        UPDATE users
-        SET quiz_total = quiz_total + 1,
-            quiz_correct = quiz_correct + ?
-        WHERE chat_id = ?
-        """,
-        (1 if is_correct else 0, chat_id),
-    )
+) -> int:
+    """Record answer; return current streak after update."""
+    if is_correct:
+        conn.execute(
+            """
+            UPDATE users
+            SET quiz_total = quiz_total + 1,
+                quiz_correct = quiz_correct + 1,
+                quiz_streak = quiz_streak + 1
+            WHERE chat_id = ?
+            """,
+            (chat_id,),
+        )
+    else:
+        conn.execute(
+            """
+            UPDATE users
+            SET quiz_total = quiz_total + 1,
+                quiz_streak = 0
+            WHERE chat_id = ?
+            """,
+            (chat_id,),
+        )
     if competency_id:
         conn.execute(
             """
@@ -118,6 +140,17 @@ def record_quiz_result(
             (chat_id, competency_id, 1 if is_correct else 0),
         )
     conn.commit()
+    return get_streak(conn, chat_id)
+
+
+def get_streak(conn: sqlite3.Connection, chat_id: int) -> int:
+    row = conn.execute(
+        "SELECT quiz_streak FROM users WHERE chat_id=?",
+        (chat_id,),
+    ).fetchone()
+    if row is None:
+        return 0
+    return int(row["quiz_streak"])
 
 
 def get_competency_stats(conn: sqlite3.Connection, chat_id: int) -> dict[str, tuple[int, int]]:
@@ -152,7 +185,7 @@ def reset_user(conn: sqlite3.Connection, chat_id: int) -> None:
     conn.execute(
         """
         UPDATE users
-        SET quiz_correct=0, quiz_total=0, active_question_id=NULL
+        SET quiz_correct=0, quiz_total=0, quiz_streak=0, active_question_id=NULL
         WHERE chat_id=?
         """,
         (chat_id,),

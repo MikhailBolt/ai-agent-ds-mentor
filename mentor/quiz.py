@@ -127,6 +127,16 @@ def pick_next(
     return random.choice(qs)
 
 
+def validate_competency_coverage(
+    questions: Iterable[Question],
+    competency_ids: set[str],
+) -> None:
+    covered = {q.competency_id for q in questions if q.competency_id}
+    missing = sorted(competency_ids - covered)
+    if missing:
+        raise ValueError("no questions for competencies: " + ", ".join(missing))
+
+
 def find_by_id(questions: Iterable[Question], qid: str) -> Question | None:
     for q in questions:
         if q.id == qid:
