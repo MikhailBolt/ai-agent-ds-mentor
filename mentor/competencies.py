@@ -110,29 +110,45 @@ def format_stats_summary(
     return "\n".join(lines)
 
 
+def format_topics_list(
+    competencies: list[Competency],
+    bank_counts: dict[str, int] | None = None,
+) -> str:
+    lines = ["Темы (id для /quiz):", ""]
+    for c in competencies:
+        n = bank_counts.get(c.id, 0) if bank_counts else 0
+        suffix = f" — {n} вопр. в банке" if n else ""
+        lines.append(f"• {c.id}: {c.title}{suffix}")
+    lines.append("")
+    lines.append("/map — прогресс · /practice — слабая тема")
+    return "\n".join(lines)
+
+
 def format_competency_map(
     competencies: list[Competency],
     stats: dict[str, tuple[int, int]],
     *,
     title: str = "Карта компетенций (Data Science)",
+    bank_counts: dict[str, int] | None = None,
 ) -> str:
     """stats: competency_id -> (correct, total)."""
     lines = [title, ""]
     for c in competencies:
         correct, total = stats.get(c.id, (0, 0))
+        bank_n = bank_counts.get(c.id, 0) if bank_counts else 0
+        bank_s = f" · в банке {bank_n}" if bank_n else ""
         if total == 0:
-            acc_s = "—"
             bar = progress_bar(0)
             detail = "ещё не решал"
         else:
             acc = correct / total * 100.0
-            acc_s = f"{acc:.0f}%"
             bar = progress_bar(acc)
-            detail = f"{correct}/{total} ({acc_s})"
-        lines.append(f"• {c.title} — {detail} {bar}")
+            detail = f"{correct}/{total} ({acc:.0f}%)"
+        lines.append(f"• {c.title} — {detail} {bar}{bank_s}")
         if c.description:
             lines.append(f"  {c.description}")
+        lines.append(f"  id: {c.id}")
     lines.append("")
-    lines.append("Квиз по теме: /quiz <id>, например /quiz ml-metrics")
-    lines.append("Случайный вопрос: /quiz")
+    lines.append("/practice — тренировка слабой темы")
+    lines.append("/quiz <id> — вопрос по теме · /topics — список id")
     return "\n".join(lines)

@@ -16,6 +16,7 @@ class Question:
     competency_id: str | None = None
     difficulty: int = 1
     hint: str | None = None
+    explanation: str | None = None
 
     def matches(self, user_answer: str) -> bool:
         a = normalize(user_answer)
@@ -82,6 +83,11 @@ def load_questions(
         if hint == "":
             hint = None
 
+        expl_raw = item.get("explanation")
+        explanation = str(expl_raw).strip() if expl_raw else None
+        if explanation == "":
+            explanation = None
+
         if prompt and answer:
             if qid in seen:
                 raise ValueError(f"duplicate question id: {qid}")
@@ -95,6 +101,7 @@ def load_questions(
                     competency_id=competency_id,
                     difficulty=difficulty,
                     hint=hint,
+                    explanation=explanation,
                 )
             )
     if not out:
@@ -125,6 +132,14 @@ def pick_next(
         return random.choices(qs, weights=weights, k=1)[0]
 
     return random.choice(qs)
+
+
+def question_counts_by_competency(questions: Iterable[Question]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for q in questions:
+        if q.competency_id:
+            counts[q.competency_id] = counts.get(q.competency_id, 0) + 1
+    return counts
 
 
 def validate_competency_coverage(

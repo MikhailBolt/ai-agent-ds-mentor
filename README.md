@@ -8,9 +8,10 @@ Telegram bot that runs a **Data Science quiz** from a JSON question bank, tracks
 
 ## Features
 
-- Commands: `/quiz`, `/quiz <topic>`, `/map`, `/hint`, `/skip`, `/cancel`, `/stats`, `/status`, `/about`, `/reset`, `/help`
+- Commands: `/quiz`, `/practice`, `/map`, `/topics`, `/hint`, `/skip`, `/stats`, `/status`, `/about`, `/reset`, `/help`
 - **Competency map** (`/map`) with per-topic progress bars
-- Smarter quizzes: weak topics are prioritized; `/hint` during a question; answer streaks
+- Smarter quizzes: `/practice` on weak topics; explanations after wrong answers; `/hint`; streaks
+- Telegram command menu registered on startup (`setMyCommands`)
 - `/stats` shows per-topic progress and what to practice next
 - Normalizes `/cmd@BotUsername` (Telegram menu / groups)
 - Retries on HTTP 429 using `Retry-After`

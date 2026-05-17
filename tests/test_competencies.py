@@ -18,14 +18,26 @@ def test_load_competencies(tmp_path: Path) -> None:
     assert cs[0].id == "a"
 
 
+def test_format_topics_list() -> None:
+    competencies = [comp.Competency(id="ml-metrics", title="Metrics", description="")]
+    text = comp.format_topics_list(competencies, {"ml-metrics": 3})
+    assert "ml-metrics" in text
+    assert "3 вопр." in text
+
+
 def test_format_competency_map() -> None:
     competencies = [
         comp.Competency(id="x", title="Topic X", description="d"),
     ]
-    text = comp.format_competency_map(competencies, {"x": (2, 4)})
+    text = comp.format_competency_map(
+        competencies,
+        {"x": (2, 4)},
+        bank_counts={"x": 5},
+    )
     assert "Topic X" in text
     assert "2/4" in text
     assert "▓" in text
+    assert "в банке 5" in text
 
 
 def test_questions_require_valid_competency(tmp_path: Path) -> None:

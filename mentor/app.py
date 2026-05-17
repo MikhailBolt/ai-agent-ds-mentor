@@ -24,6 +24,19 @@ MAX_BACKOFF_S = 30
 
 DEFAULT_REPO_URL = "https://github.com/MikhailBolt/ai-agent-ds-mentor"
 
+BOT_COMMANDS: tuple[tuple[str, str], ...] = (
+    ("start", "Начать и помощь"),
+    ("quiz", "Новый вопрос"),
+    ("practice", "Вопрос по слабой теме"),
+    ("map", "Карта компетенций"),
+    ("topics", "Список тем (id)"),
+    ("hint", "Подсказка к вопросу"),
+    ("stats", "Статистика"),
+    ("skip", "Пропустить вопрос"),
+    ("reset", "Сброс прогресса"),
+    ("about", "Версия и репозиторий"),
+)
+
 
 def _require_env(name: str) -> str:
     value = os.getenv(name)
@@ -91,6 +104,12 @@ class TelegramAPI:
         for chunk in iter_chunks(text):
             self.request("sendMessage", {"chat_id": chat_id, "text": chunk})
 
+    def set_my_commands(self) -> None:
+        commands = [
+            {"command": name, "description": desc} for name, desc in BOT_COMMANDS
+        ]
+        self.request("setMyCommands", {"commands": commands})
+
     def get_updates(self, offset: int | None) -> list[dict[str, Any]]:
         payload: dict[str, Any] = {
             "timeout": POLL_TIMEOUT_S,
@@ -108,8 +127,10 @@ def _help_text() -> str:
         "AI DS Mentor запущен.\n\n"
         "Команды:\n"
         "/quiz — вопрос (приоритет слабым темам)\n"
-        "/quiz <id> — вопрос по компетенции, напр. /quiz ml-metrics\n"
+        "/quiz <id> — вопрос по теме, напр. /quiz ml-metrics\n"
+        "/practice — вопрос по самой слабой/новой теме\n"
         "/map — карта компетенций и прогресс\n"
+        "/topics — список id тем\n"
         "/skip или /cancel — пропустить текущий вопрос\n"
         "/stats — статистика и прогресс по темам\n"
         "/hint — подсказка к текущему вопросу\n"
@@ -145,6 +166,76 @@ def streak_bonus_message(streak: int) -> str:
     return ""
 
 
+def format_wrong_answer_message(
+    q: mentor_quiz.Question,
+    *,
+    competency_title: str | None = None,
+    competency_id: str | None = None,
+) -> str:
+    lines = [
+        "Пока не зачтено.",
+        f"Ожидаемый ответ (пример): {q.answer}",
+    ]
+    if q.explanation:
+        lines.append(f"Пояснение: {q.explanation}")
+    elif q.hint:
+        lines.append(f"Подсказка: {q.hint}")
+    if competency_title and competency_id:
+        lines.append(f"Тема: {competency_title} — /quiz {competency_id} или /practice")
+    lines.append("\nНапиши /quiz или /practice для следующего вопроса.")
+    return "\n".join(lines)
+
+
+def deliver_quiz_question(
+    api: TelegramAPI,
+    conn: sqlite3.Connection,
+    chat_id: int,
+    questions: list[mentor_quiz.Question],
+    competencies: list[mentor_comp.Competency],
+    *,
+    comp_filter: str = "",
+    intro: str | None = None,
+) -> None:
+    comp_index = mentor_comp.competency_by_id(competencies)
+    if comp_filter and comp_filter not in comp_index:
+        ids = ", ".join(c.id for c in competencies)
+        api.send_message(
+            chat_id,
+            f"Неизвестная компетенция «{comp_filter}».\n"
+            f"Доступные id: {ids}\n/topics — список тем",
+        )
+        return
+
+    prev = mentor_db.get_active_question(conn, chat_id)
+    comp_stats = mentor_db.get_competency_stats(conn, chat_id)
+    weights = mentor_quiz.competency_weights_for_practice(
+        comp_stats,
+        (c.id for c in competencies),
+    )
+    try:
+        q = mentor_quiz.pick_next(
+            questions,
+            prev,
+            competency_filter=comp_filter or None,
+            competency_weights=weights if not comp_filter else None,
+        )
+    except ValueError:
+        api.send_message(
+            chat_id,
+            "Нет вопросов по этой теме. Попробуй /map или /quiz без аргумента.",
+        )
+        return
+
+    title = None
+    if q.competency_id and q.competency_id in comp_index:
+        title = comp_index[q.competency_id].title
+    mentor_db.set_active_question(conn, chat_id, q.id)
+    body = _format_question(q, competency_title=title)
+    if intro:
+        body = f"{intro}\n\n{body}"
+    api.send_message(chat_id, body)
+
+
 def format_status_text(
     *,
     started_at: float,
@@ -176,6 +267,7 @@ def handle_text(
     conn: sqlite3.Connection,
     questions: list[mentor_quiz.Question],
     competencies: list[mentor_comp.Competency],
+    bank_counts: dict[str, int],
     started_at: float,
     chat_id: int,
     text: str,
@@ -195,7 +287,35 @@ def handle_text(
         comp_stats = mentor_db.get_competency_stats(conn, chat_id)
         api.send_message(
             chat_id,
-            mentor_comp.format_competency_map(competencies, comp_stats),
+            mentor_comp.format_competency_map(
+                competencies,
+                comp_stats,
+                bank_counts=bank_counts,
+            ),
+        )
+        return
+
+    if cmd == "/topics":
+        api.send_message(
+            chat_id,
+            mentor_comp.format_topics_list(competencies, bank_counts),
+        )
+        return
+
+    if cmd in {"/practice", "/weak"}:
+        comp_stats = mentor_db.get_competency_stats(conn, chat_id)
+        tip = mentor_comp.suggest_practice_competency(competencies, comp_stats)
+        if tip is None:
+            api.send_message(chat_id, "Нет тем для тренировки.")
+            return
+        deliver_quiz_question(
+            api,
+            conn,
+            chat_id,
+            questions,
+            competencies,
+            comp_filter=tip.id,
+            intro=f"Тренировка: {tip.title}",
         )
         return
 
@@ -263,43 +383,18 @@ def handle_text(
         return
 
     if cmd == "/quiz":
-        prev = mentor_db.get_active_question(conn, chat_id)
         try:
             comp_filter = quiz_competency_arg(text)
         except ValueError:
             comp_filter = ""
-        if comp_filter:
-            if comp_filter not in comp_index:
-                ids = ", ".join(c.id for c in competencies)
-                api.send_message(
-                    chat_id,
-                    f"Неизвестная компетенция «{comp_filter}».\n"
-                    f"Доступные id: {ids}\n/map — карта тем",
-                )
-                return
-        comp_stats = mentor_db.get_competency_stats(conn, chat_id)
-        weights = mentor_quiz.competency_weights_for_practice(
-            comp_stats,
-            (c.id for c in competencies),
+        deliver_quiz_question(
+            api,
+            conn,
+            chat_id,
+            questions,
+            competencies,
+            comp_filter=comp_filter,
         )
-        try:
-            q = mentor_quiz.pick_next(
-                questions,
-                prev,
-                competency_filter=comp_filter or None,
-                competency_weights=weights if not comp_filter else None,
-            )
-        except ValueError:
-            api.send_message(
-                chat_id,
-                "Нет вопросов по этой теме. Попробуй /map или /quiz без аргумента.",
-            )
-            return
-        title = None
-        if q.competency_id and q.competency_id in comp_index:
-            title = comp_index[q.competency_id].title
-        mentor_db.set_active_question(conn, chat_id, q.id)
-        api.send_message(chat_id, _format_question(q, competency_title=title))
         return
 
     # If there's an active question, treat message as an answer.
@@ -326,16 +421,18 @@ def handle_text(
                 f"Верно. Отлично!{bonus}\nНапиши /quiz или /map.",
             )
         else:
-            lines = [
-                "Пока не зачтено.",
-                f"Ожидаемый ответ (пример): {q.answer}",
-            ]
-            if q.hint:
-                lines.append(f"Подсказка: {q.hint}")
-            if q.competency_id and q.competency_id in comp_index:
-                lines.append(f"Тема: {comp_index[q.competency_id].title} — /quiz {q.competency_id}")
-            lines.append("\nНапиши /quiz для следующего вопроса.")
-            api.send_message(chat_id, "\n".join(lines))
+            comp_title = None
+            comp_id = q.competency_id
+            if comp_id and comp_id in comp_index:
+                comp_title = comp_index[comp_id].title
+            api.send_message(
+                chat_id,
+                format_wrong_answer_message(
+                    q,
+                    competency_title=comp_title,
+                    competency_id=comp_id,
+                ),
+            )
         return
 
     api.send_message(chat_id, "Команда не распознана. Напиши /help")
@@ -364,6 +461,12 @@ def run() -> None:
     comp_ids = {c.id for c in competencies}
     questions = mentor_quiz.load_questions(questions_path, valid_competency_ids=comp_ids)
     mentor_quiz.validate_competency_coverage(questions, comp_ids)
+    bank_counts = mentor_quiz.question_counts_by_competency(questions)
+
+    try:
+        api.set_my_commands()
+    except Exception:
+        log.warning("setMyCommands failed", exc_info=True)
 
     log.info(
         "Starting bot version=%s questions=%s (%d) competencies=%s (%d) db=%s",
@@ -436,7 +539,16 @@ def run() -> None:
                 try:
                     if not mentor_db.claim_message_revision(conn, chat_id, msg_id, edit_date):
                         continue
-                    handle_text(api, conn, questions, competencies, started_at, chat_id, text)
+                    handle_text(
+                        api,
+                        conn,
+                        questions,
+                        competencies,
+                        bank_counts,
+                        started_at,
+                        chat_id,
+                        text,
+                    )
                 except Exception:
                     log.exception("Failed to handle message")
     except KeyboardInterrupt:

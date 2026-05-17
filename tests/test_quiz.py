@@ -69,6 +69,25 @@ def test_load_questions_with_competency_and_hint(tmp_path: Path) -> None:
     assert qs[0].hint == "think"
 
 
+def test_load_questions_with_explanation(tmp_path: Path) -> None:
+    p = tmp_path / "q.json"
+    p.write_text(
+        json.dumps(
+            [
+                {
+                    "id": "a",
+                    "prompt": "Q?",
+                    "answer": "yes",
+                    "explanation": "because",
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+    qs = qz.load_questions(str(p))
+    assert qs[0].explanation == "because"
+
+
 def test_load_questions_rejects_duplicate_ids(tmp_path: Path) -> None:
     p = tmp_path / "q.json"
     p.write_text(
