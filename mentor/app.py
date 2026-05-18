@@ -31,7 +31,8 @@ BOT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("map", "Карта компетенций"),
     ("topics", "Список тем (id)"),
     ("hint", "Подсказка к вопросу"),
-    ("stats", "Статистика"),
+    ("stats", "Статистика и прогресс"),
+    ("progress", "Прогресс по банку"),
     ("skip", "Пропустить вопрос"),
     ("reset", "Сброс прогресса"),
     ("about", "Версия и репозиторий"),
@@ -132,7 +133,7 @@ def _help_text() -> str:
         "/map — карта компетенций и прогресс\n"
         "/topics — список id тем\n"
         "/skip или /cancel — пропустить текущий вопрос\n"
-        "/stats — статистика и прогресс по темам\n"
+        "/stats, /progress — статистика и прогресс по банку\n"
         "/hint — подсказка к текущему вопросу\n"
         "/status — состояние бота\n"
         "/about — версия и ссылка на проект\n"
@@ -207,6 +208,7 @@ def deliver_quiz_question(
         return
 
     prev = mentor_db.get_active_question(conn, chat_id)
+    seen_ids = mentor_db.get_seen_question_ids(conn, chat_id)
     comp_stats = mentor_db.get_competency_stats(conn, chat_id)
     weights = mentor_quiz.competency_weights_for_practice(
         comp_stats,
@@ -218,6 +220,7 @@ def deliver_quiz_question(
             prev,
             competency_filter=comp_filter or None,
             competency_weights=weights if not comp_filter else None,
+            seen_ids=seen_ids,
         )
     except ValueError:
         api.send_message(
@@ -231,6 +234,8 @@ def deliver_quiz_question(
         title = comp_index[q.competency_id].title
     mentor_db.set_active_question(conn, chat_id, q.id)
     body = _format_question(q, competency_title=title)
+    if q.id in seen_ids:
+        body = f"Повтор вопроса.\n\n{body}"
     if intro:
         body = f"{intro}\n\n{body}"
     api.send_message(chat_id, body)
@@ -243,6 +248,8 @@ def format_status_text(
     question_count: int,
     stats: mentor_db.Stats,
     streak: int = 0,
+    best_streak: int = 0,
+    bank_seen: int = 0,
     active_question_id: str | None = None,
 ) -> str:
     uptime_sec = max(0, int(now - started_at))
@@ -255,7 +262,8 @@ def format_status_text(
         f"Uptime: {hours:02d}:{minutes:02d}:{sec:02d}",
         f"Вопросов в банке: {question_count}",
         f"Твоя статистика: {stats.correct}/{stats.total} ({acc:.1f}%)",
-        f"Серия верных: {streak}",
+        f"Серия верных: {streak} (лучшая: {best_streak})",
+        f"Встречено вопросов из банка: {bank_seen}/{question_count}",
     ]
     if active_question_id:
         lines.append(f"Активный вопрос: {active_question_id}")
@@ -319,9 +327,11 @@ def handle_text(
         )
         return
 
-    if cmd == "/stats":
+    if cmd in {"/stats", "/progress"}:
         st = mentor_db.get_stats(conn, chat_id)
         streak = mentor_db.get_streak(conn, chat_id)
+        best = mentor_db.get_best_streak(conn, chat_id)
+        seen = mentor_db.get_seen_question_ids(conn, chat_id)
         comp_stats = mentor_db.get_competency_stats(conn, chat_id)
         api.send_message(
             chat_id,
@@ -329,6 +339,9 @@ def handle_text(
                 correct=st.correct,
                 total=st.total,
                 streak=streak,
+                best_streak=best,
+                bank_total=len(questions),
+                bank_seen=len(seen),
                 competencies=competencies,
                 comp_stats=comp_stats,
             ),
@@ -350,6 +363,8 @@ def handle_text(
     if cmd == "/status":
         st = mentor_db.get_stats(conn, chat_id)
         streak = mentor_db.get_streak(conn, chat_id)
+        best = mentor_db.get_best_streak(conn, chat_id)
+        seen = len(mentor_db.get_seen_question_ids(conn, chat_id))
         active = mentor_db.get_active_question(conn, chat_id)
         api.send_message(
             chat_id,
@@ -359,6 +374,8 @@ def handle_text(
                 question_count=len(questions),
                 stats=st,
                 streak=streak,
+                best_streak=best,
+                bank_seen=seen,
                 active_question_id=active,
             ),
         )
@@ -413,12 +430,19 @@ def handle_text(
             is_correct=is_correct,
             competency_id=q.competency_id,
         )
+        mentor_db.record_question_attempt(
+            conn, chat_id, q.id, is_correct=is_correct
+        )
         mentor_db.set_active_question(conn, chat_id, None)
         if is_correct:
             bonus = streak_bonus_message(streak)
+            seen = mentor_db.get_seen_question_ids(conn, chat_id)
+            bank_done = ""
+            if len(seen) >= len(questions):
+                bank_done = "\nТы прошёл все вопросы банка — дальше будут повторы."
             api.send_message(
                 chat_id,
-                f"Верно. Отлично!{bonus}\nНапиши /quiz или /map.",
+                f"Верно. Отлично!{bonus}{bank_done}\nНапиши /quiz или /map.",
             )
         else:
             comp_title = None

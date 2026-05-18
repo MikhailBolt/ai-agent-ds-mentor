@@ -60,5 +60,24 @@ def test_streak_column_migrated_on_old_db(tmp_path) -> None:
 
 def test_reset_clears_competency_stats(conn: sqlite3.Connection) -> None:
     mentor_db.record_quiz_result(conn, 1, True, competency_id="a")
+    mentor_db.record_question_attempt(conn, 1, "q1", is_correct=True)
     mentor_db.reset_user(conn, 1)
     assert mentor_db.get_competency_stats(conn, 1) == {}
+    assert mentor_db.get_seen_question_ids(conn, 1) == set()
+
+
+def test_best_streak_tracked(conn: sqlite3.Connection) -> None:
+    mentor_db.touch_user(conn, 1)
+    mentor_db.record_quiz_result(conn, 1, True)
+    mentor_db.record_quiz_result(conn, 1, True)
+    assert mentor_db.get_best_streak(conn, 1) == 2
+    mentor_db.record_quiz_result(conn, 1, False)
+    mentor_db.record_quiz_result(conn, 1, True)
+    assert mentor_db.get_streak(conn, 1) == 1
+    assert mentor_db.get_best_streak(conn, 1) == 2
+
+
+def test_question_history_attempts(conn: sqlite3.Connection) -> None:
+    mentor_db.record_question_attempt(conn, 1, "q1", is_correct=False)
+    mentor_db.record_question_attempt(conn, 1, "q1", is_correct=True)
+    assert mentor_db.get_seen_question_ids(conn, 1) == {"q1"}

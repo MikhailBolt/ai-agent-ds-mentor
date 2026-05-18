@@ -115,6 +115,7 @@ def pick_next(
     *,
     competency_filter: str | None = None,
     competency_weights: dict[str, float] | None = None,
+    seen_ids: set[str] | None = None,
 ) -> Question:
     qs = list(questions)
     if competency_filter is not None:
@@ -123,6 +124,11 @@ def pick_next(
         qs = [q for q in qs if q.id != exclude_id]
     if not qs:
         raise ValueError("no questions available for selection")
+
+    if seen_ids:
+        unseen = [q for q in qs if q.id not in seen_ids]
+        if unseen:
+            qs = unseen
 
     if competency_weights:
         weights: list[float] = []

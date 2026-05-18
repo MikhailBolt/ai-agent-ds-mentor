@@ -52,6 +52,16 @@ def test_questions_require_valid_competency(tmp_path: Path) -> None:
         qz.load_questions(str(q), valid_competency_ids={"ok"})
 
 
+def test_pick_next_prefers_unseen() -> None:
+    qs = [
+        qz.Question(id="seen", prompt="p", answer="a"),
+        qz.Question(id="new", prompt="p", answer="b"),
+    ]
+    for _ in range(15):
+        picked = qz.pick_next(qs, None, seen_ids={"seen"})
+        assert picked.id == "new"
+
+
 def test_pick_next_filters_competency() -> None:
     qs = [
         qz.Question(id="1", prompt="p", answer="a", competency_id="ml-metrics"),
@@ -71,9 +81,14 @@ def test_format_stats_summary() -> None:
         correct=2,
         total=4,
         streak=1,
+        best_streak=3,
+        bank_total=10,
+        bank_seen=4,
         competencies=competencies,
         comp_stats={"a": (1, 2), "b": (0, 0)},
     )
+    assert "лучшая: 3" in text
+    assert "4/10" in text
     assert "серия" in text.lower()
     assert "A" in text
     assert "ещё не решал" in text

@@ -208,5 +208,41 @@
     ],
     "hint": "i как integer, l как label.",
     "explanation": "loc['2024-01-01'] vs iloc[0] — метка против позиции."
+  },
+  {
+    "id": "st-004",
+    "competency_id": "stats-basics",
+    "difficulty": 2,
+    "prompt": "Что такое медиана и когда она устойчивее среднего?",
+    "answer": "центральное значение выборки; при выбросах и асимметрии",
+    "aliases": [
+      "50 перцентиль",
+      "не чувствительна к экстремумам как mean"
+    ],
+    "explanation": "Медиана отражает типичный уровень, когда среднее тянут редкие большие значения."
+  },
+  {
+    "id": "ml-012",
+    "competency_id": "ml-validation",
+    "difficulty": 1,
+    "prompt": "Что такое hold-out validation?",
+    "answer": "однократное разбиение данных на train и validation для подбора модели",
+    "aliases": [
+      "простое разделение train val",
+      "один фиксированный val set"
+    ],
+    "hint": "Проще k-fold, но зависит от случайного split."
+  },
+  {
+    "id": "py-005",
+    "competency_id": "python-ds",
+    "difficulty": 1,
+    "prompt": "Что делает df.dropna() в pandas?",
+    "answer": "удаляет строки или столбцы с пропущенными значениями NaN",
+    "aliases": [
+      "выбрасывает missing",
+      "очистка от NaN"
+    ],
+    "hint": "Параметры axis и how."
   }
 ]

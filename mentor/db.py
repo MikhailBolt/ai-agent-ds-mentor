@@ -28,9 +28,17 @@ CREATE TABLE IF NOT EXISTS competency_stats (
   total INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (chat_id, competency_id)
 );
+
+CREATE TABLE IF NOT EXISTS question_history (
+  chat_id INTEGER NOT NULL,
+  question_id TEXT NOT NULL,
+  attempts INTEGER NOT NULL DEFAULT 1,
+  correct_count INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (chat_id, question_id)
+);
 """
 
-EXPECTED_TABLES = ("users", "message_revisions", "competency_stats")
+EXPECTED_TABLES = ("users", "message_revisions", "competency_stats", "question_history")
 
 
 def connect(db_path: str) -> sqlite3.Connection:
@@ -49,6 +57,10 @@ def _migrate_users(conn: sqlite3.Connection) -> None:
     if "quiz_streak" not in cols:
         conn.execute(
             "ALTER TABLE users ADD COLUMN quiz_streak INTEGER NOT NULL DEFAULT 0",
+        )
+    if "best_streak" not in cols:
+        conn.execute(
+            "ALTER TABLE users ADD COLUMN best_streak INTEGER NOT NULL DEFAULT 0",
         )
 
 
@@ -113,7 +125,8 @@ def record_quiz_result(
             UPDATE users
             SET quiz_total = quiz_total + 1,
                 quiz_correct = quiz_correct + 1,
-                quiz_streak = quiz_streak + 1
+                quiz_streak = quiz_streak + 1,
+                best_streak = MAX(best_streak, quiz_streak + 1)
             WHERE chat_id = ?
             """,
             (chat_id,),
@@ -141,6 +154,16 @@ def record_quiz_result(
         )
     conn.commit()
     return get_streak(conn, chat_id)
+
+
+def get_best_streak(conn: sqlite3.Connection, chat_id: int) -> int:
+    row = conn.execute(
+        "SELECT best_streak FROM users WHERE chat_id=?",
+        (chat_id,),
+    ).fetchone()
+    if row is None:
+        return 0
+    return int(row["best_streak"])
 
 
 def get_streak(conn: sqlite3.Connection, chat_id: int) -> int:
@@ -181,16 +204,46 @@ def get_stats(conn: sqlite3.Connection, chat_id: int) -> Stats:
     return Stats(correct=int(row["quiz_correct"]), total=int(row["quiz_total"]))
 
 
+def record_question_attempt(
+    conn: sqlite3.Connection,
+    chat_id: int,
+    question_id: str,
+    *,
+    is_correct: bool,
+) -> None:
+    conn.execute(
+        """
+        INSERT INTO question_history (chat_id, question_id, attempts, correct_count)
+        VALUES (?, ?, 1, ?)
+        ON CONFLICT(chat_id, question_id) DO UPDATE SET
+          attempts = attempts + 1,
+          correct_count = correct_count + excluded.correct_count
+        """,
+        (chat_id, question_id, 1 if is_correct else 0),
+    )
+    conn.commit()
+
+
+def get_seen_question_ids(conn: sqlite3.Connection, chat_id: int) -> set[str]:
+    rows = conn.execute(
+        "SELECT question_id FROM question_history WHERE chat_id=?",
+        (chat_id,),
+    ).fetchall()
+    return {str(r["question_id"]) for r in rows}
+
+
 def reset_user(conn: sqlite3.Connection, chat_id: int) -> None:
     conn.execute(
         """
         UPDATE users
-        SET quiz_correct=0, quiz_total=0, quiz_streak=0, active_question_id=NULL
+        SET quiz_correct=0, quiz_total=0, quiz_streak=0,
+            best_streak=0, active_question_id=NULL
         WHERE chat_id=?
         """,
         (chat_id,),
     )
     conn.execute("DELETE FROM competency_stats WHERE chat_id=?", (chat_id,))
+    conn.execute("DELETE FROM question_history WHERE chat_id=?", (chat_id,))
     conn.commit()
 
 
