@@ -114,12 +114,18 @@ def pick_next(
     exclude_id: str | None,
     *,
     competency_filter: str | None = None,
+    difficulty_filter: int | None = None,
     competency_weights: dict[str, float] | None = None,
     seen_ids: set[str] | None = None,
+    only_ids: set[str] | None = None,
 ) -> Question:
     qs = list(questions)
     if competency_filter is not None:
         qs = [q for q in qs if q.competency_id == competency_filter]
+    if difficulty_filter is not None:
+        qs = [q for q in qs if q.difficulty == difficulty_filter]
+    if only_ids is not None:
+        qs = [q for q in qs if q.id in only_ids]
     if exclude_id is not None:
         qs = [q for q in qs if q.id != exclude_id]
     if not qs:

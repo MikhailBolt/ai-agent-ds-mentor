@@ -16,7 +16,7 @@ from mentor import competencies as mentor_comp
 from mentor import db as mentor_db
 from mentor import quiz as mentor_quiz
 from mentor.telegram import iter_chunks
-from mentor.textutil import command_prefix, quiz_competency_arg
+from mentor.textutil import command_prefix, parse_quiz_args, reset_is_confirmed
 
 POLL_TIMEOUT_S = 30
 HTTP_TIMEOUT_S = POLL_TIMEOUT_S + 10
@@ -31,6 +31,8 @@ BOT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("map", "Карта компетенций"),
     ("topics", "Список тем (id)"),
     ("hint", "Подсказка к вопросу"),
+    ("explain", "Пояснение к вопросу"),
+    ("review", "Повтор ошибок"),
     ("stats", "Статистика и прогресс"),
     ("progress", "Прогресс по банку"),
     ("skip", "Пропустить вопрос"),
@@ -129,7 +131,10 @@ def _help_text() -> str:
         "Команды:\n"
         "/quiz — вопрос (приоритет слабым темам)\n"
         "/quiz <id> — вопрос по теме, напр. /quiz ml-metrics\n"
+        "/quiz 2 или /quiz hard — по сложности (1–3)\n"
         "/practice — вопрос по самой слабой/новой теме\n"
+        "/review — повторить вопрос с ошибкой\n"
+        "/explain — пояснение к текущему вопросу\n"
         "/map — карта компетенций и прогресс\n"
         "/topics — список id тем\n"
         "/skip или /cancel — пропустить текущий вопрос\n"
@@ -195,6 +200,8 @@ def deliver_quiz_question(
     competencies: list[mentor_comp.Competency],
     *,
     comp_filter: str = "",
+    difficulty_filter: int | None = None,
+    only_ids: set[str] | None = None,
     intro: str | None = None,
 ) -> None:
     comp_index = mentor_comp.competency_by_id(competencies)
@@ -219,14 +226,16 @@ def deliver_quiz_question(
             questions,
             prev,
             competency_filter=comp_filter or None,
-            competency_weights=weights if not comp_filter else None,
-            seen_ids=seen_ids,
+            difficulty_filter=difficulty_filter,
+            competency_weights=weights if not comp_filter and not only_ids else None,
+            seen_ids=seen_ids if only_ids is None else None,
+            only_ids=only_ids,
         )
     except ValueError:
-        api.send_message(
-            chat_id,
-            "Нет вопросов по этой теме. Попробуй /map или /quiz без аргумента.",
-        )
+        hint = "Попробуй /map или /quiz без аргумента."
+        if difficulty_filter:
+            hint = f"Нет вопросов сложности {difficulty_filter}. {hint}"
+        api.send_message(chat_id, f"Нет подходящих вопросов. {hint}")
         return
 
     title = None
@@ -348,16 +357,46 @@ def handle_text(
         )
         return
 
-    if cmd == "/hint":
+    if cmd in {"/hint", "/explain"}:
         active = mentor_db.get_active_question(conn, chat_id)
         if active is None:
             api.send_message(chat_id, "Сейчас нет активного вопроса. Напиши /quiz.")
             return
         q = mentor_quiz.find_by_id(questions, active)
-        if q is None or not q.hint:
+        if q is None:
+            api.send_message(chat_id, "Вопрос не найден. Напиши /quiz.")
+            return
+        if cmd == "/explain":
+            if q.explanation:
+                api.send_message(chat_id, f"Пояснение: {q.explanation}")
+            elif q.hint:
+                api.send_message(chat_id, f"Подсказка: {q.hint}")
+            else:
+                api.send_message(chat_id, "Пояснения для этого вопроса нет.")
+            return
+        if not q.hint:
             api.send_message(chat_id, "Для этого вопроса подсказки нет.")
             return
         api.send_message(chat_id, f"Подсказка: {q.hint}")
+        return
+
+    if cmd == "/review":
+        review_ids = mentor_db.get_review_question_ids(conn, chat_id)
+        if not review_ids:
+            api.send_message(
+                chat_id,
+                "Пока нет вопросов с ошибками. Напиши /quiz чтобы потренироваться.",
+            )
+            return
+        deliver_quiz_question(
+            api,
+            conn,
+            chat_id,
+            questions,
+            competencies,
+            only_ids=set(review_ids),
+            intro="Повтор вопроса, где была ошибка",
+        )
         return
 
     if cmd == "/status":
@@ -386,6 +425,17 @@ def handle_text(
         return
 
     if cmd == "/reset":
+        try:
+            confirmed = reset_is_confirmed(text)
+        except ValueError:
+            confirmed = False
+        if not confirmed:
+            api.send_message(
+                chat_id,
+                "Сбросить весь прогресс (статистика, серии, история)?\n"
+                "Напиши /reset confirm чтобы подтвердить.",
+            )
+            return
         mentor_db.reset_user(conn, chat_id)
         api.send_message(chat_id, "Готово. Прогресс сброшен. Напиши /quiz чтобы начать заново.")
         return
@@ -401,9 +451,12 @@ def handle_text(
 
     if cmd == "/quiz":
         try:
-            comp_filter = quiz_competency_arg(text)
+            comp_filter, difficulty = parse_quiz_args(
+                text,
+                valid_competency_ids=set(comp_index),
+            )
         except ValueError:
-            comp_filter = ""
+            comp_filter, difficulty = "", None
         deliver_quiz_question(
             api,
             conn,
@@ -411,6 +464,7 @@ def handle_text(
             questions,
             competencies,
             comp_filter=comp_filter,
+            difficulty_filter=difficulty,
         )
         return
 

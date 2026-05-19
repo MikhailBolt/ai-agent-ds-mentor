@@ -1,6 +1,6 @@
 import pytest
 
-from mentor.textutil import quiz_competency_arg
+from mentor.textutil import parse_quiz_args, quiz_competency_arg, reset_is_confirmed
 
 
 def test_quiz_competency_arg_empty() -> None:
@@ -13,6 +13,26 @@ def test_quiz_competency_arg_with_topic() -> None:
     assert quiz_competency_arg("/quiz@Bot ml-foundations") == "ml-foundations"
 
 
+def test_parse_quiz_args_difficulty_only() -> None:
+    assert parse_quiz_args("/quiz 2") == ("", 2)
+    assert parse_quiz_args("/quiz hard") == ("", 3)
+
+
+def test_parse_quiz_args_topic_and_difficulty() -> None:
+    comp, diff = parse_quiz_args(
+        "/quiz ml-metrics 2",
+        valid_competency_ids={"ml-metrics", "other"},
+    )
+    assert comp == "ml-metrics"
+    assert diff == 2
+
+
 def test_quiz_competency_arg_not_quiz() -> None:
     with pytest.raises(ValueError):
         quiz_competency_arg("/help")
+
+
+def test_reset_is_confirmed() -> None:
+    assert reset_is_confirmed("/reset") is False
+    assert reset_is_confirmed("/reset confirm") is True
+    assert reset_is_confirmed("/reset да") is True

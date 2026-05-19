@@ -244,5 +244,41 @@
       "очистка от NaN"
     ],
     "hint": "Параметры axis и how."
+  },
+  {
+    "id": "ml-013",
+    "competency_id": "ml-metrics",
+    "difficulty": 3,
+    "prompt": "Чем ROC-AUC отличается от accuracy на несбалансированных классах?",
+    "answer": "auc учитывает ранжирование по скору и устойчивее к дисбалансу чем доля верных",
+    "aliases": [
+      "roc auc не зависит от порога так сильно как accuracy",
+      "площадь под roc кривой"
+    ],
+    "explanation": "Accuracy может быть обманчивой при редком классе; AUC смотрит на TPR/FPR при всех порогах."
+  },
+  {
+    "id": "ml-014",
+    "competency_id": "ml-foundations",
+    "difficulty": 3,
+    "prompt": "Что такое регуляризация L1 (Lasso) по смыслу?",
+    "answer": "штраф суммы модулей весов, часть коэффициентов обнуляется отбор признаков",
+    "aliases": [
+      "l1 penalty sparse weights",
+      "lasso зануляет слабые признаки"
+    ],
+    "hint": "L2 размазывает веса, L1 — обнуляет."
+  },
+  {
+    "id": "py-006",
+    "competency_id": "python-ds",
+    "difficulty": 2,
+    "prompt": "Зачем в pandas вызывают df.merge?",
+    "answer": "объединить таблицы по ключам как sql join",
+    "aliases": [
+      "join dataframes on columns",
+      "слияние по общим колонкам"
+    ],
+    "explanation": "merge поддерживает inner/left/right/outer как в SQL."
   }
 ]

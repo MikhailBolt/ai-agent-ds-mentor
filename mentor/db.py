@@ -224,6 +224,26 @@ def record_question_attempt(
     conn.commit()
 
 
+def get_review_question_ids(
+    conn: sqlite3.Connection,
+    chat_id: int,
+    *,
+    limit: int = 20,
+) -> list[str]:
+    """Question ids where the user missed at least once (attempts > correct_count)."""
+    rows = conn.execute(
+        """
+        SELECT question_id
+        FROM question_history
+        WHERE chat_id=? AND attempts > correct_count
+        ORDER BY (attempts - correct_count) DESC, attempts DESC
+        LIMIT ?
+        """,
+        (chat_id, limit),
+    ).fetchall()
+    return [str(r["question_id"]) for r in rows]
+
+
 def get_seen_question_ids(conn: sqlite3.Connection, chat_id: int) -> set[str]:
     rows = conn.execute(
         "SELECT question_id FROM question_history WHERE chat_id=?",

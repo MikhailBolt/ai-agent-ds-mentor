@@ -77,6 +77,13 @@ def test_best_streak_tracked(conn: sqlite3.Connection) -> None:
     assert mentor_db.get_best_streak(conn, 1) == 2
 
 
+def test_review_question_ids(conn: sqlite3.Connection) -> None:
+    mentor_db.record_question_attempt(conn, 1, "q1", is_correct=False)
+    mentor_db.record_question_attempt(conn, 1, "q2", is_correct=True)
+    ids = mentor_db.get_review_question_ids(conn, 1)
+    assert ids == ["q1"]
+
+
 def test_question_history_attempts(conn: sqlite3.Connection) -> None:
     mentor_db.record_question_attempt(conn, 1, "q1", is_correct=False)
     mentor_db.record_question_attempt(conn, 1, "q1", is_correct=True)

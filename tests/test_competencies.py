@@ -52,6 +52,25 @@ def test_questions_require_valid_competency(tmp_path: Path) -> None:
         qz.load_questions(str(q), valid_competency_ids={"ok"})
 
 
+def test_pick_next_filters_difficulty() -> None:
+    qs = [
+        qz.Question(id="1", prompt="p", answer="a", difficulty=1),
+        qz.Question(id="2", prompt="p", answer="b", difficulty=3),
+    ]
+    for _ in range(10):
+        picked = qz.pick_next(qs, None, difficulty_filter=3)
+        assert picked.difficulty == 3
+
+
+def test_pick_next_only_ids() -> None:
+    qs = [
+        qz.Question(id="a", prompt="p", answer="x"),
+        qz.Question(id="b", prompt="p", answer="y"),
+    ]
+    picked = qz.pick_next(qs, None, only_ids={"b"})
+    assert picked.id == "b"
+
+
 def test_pick_next_prefers_unseen() -> None:
     qs = [
         qz.Question(id="seen", prompt="p", answer="a"),

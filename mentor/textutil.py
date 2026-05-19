@@ -12,11 +12,54 @@ def command_prefix(text: str) -> str | None:
     return head.split("@", 1)[0].lower()
 
 
-def quiz_competency_arg(text: str) -> str:
-    """For `/quiz` or `/quiz@bot [id]`, return competency id or '' for any topic."""
+_DIFFICULTY_WORDS: dict[str, int] = {
+    "easy": 1,
+    "легко": 1,
+    "medium": 2,
+    "средне": 2,
+    "hard": 3,
+    "сложно": 3,
+}
+
+
+def parse_quiz_args(
+    text: str,
+    *,
+    valid_competency_ids: set[str] | None = None,
+) -> tuple[str, int | None]:
+    """`/quiz [topic] [1-3|easy|hard]` → competency filter and optional difficulty."""
     if command_prefix(text) != "/quiz":
         raise ValueError("not a quiz command")
     parts = (text or "").strip().split(maxsplit=1)
     if len(parts) < 2:
-        return ""
-    return parts[1].strip().lower()
+        return "", None
+
+    comp = ""
+    difficulty: int | None = None
+    for tok in parts[1].strip().lower().split():
+        if tok in _DIFFICULTY_WORDS:
+            difficulty = _DIFFICULTY_WORDS[tok]
+        elif tok in ("1", "2", "3"):
+            difficulty = int(tok)
+        elif valid_competency_ids and tok in valid_competency_ids:
+            comp = tok
+        elif valid_competency_ids is None:
+            comp = tok
+        elif not comp and difficulty is None:
+            comp = tok
+    return comp, difficulty
+
+
+def quiz_competency_arg(text: str) -> str:
+    """For `/quiz` or `/quiz@bot [id]`, return competency id or '' for any topic."""
+    comp, _ = parse_quiz_args(text)
+    return comp
+
+
+def reset_is_confirmed(text: str) -> bool:
+    if command_prefix(text) != "/reset":
+        raise ValueError("not a reset command")
+    parts = (text or "").strip().split(maxsplit=1)
+    if len(parts) < 2:
+        return False
+    return parts[1].strip().lower() in {"confirm", "yes", "да"}
