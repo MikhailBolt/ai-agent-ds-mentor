@@ -111,7 +111,7 @@ def format_stats_summary(
             c_acc = c_ok / c_tot * 100.0
             lines.append(f"• {c.title} — {c_ok}/{c_tot} ({c_acc:.0f}%)")
     lines.append("")
-    lines.append("/map — карта · /quiz — новый вопрос")
+    lines.append("/map — карта · /quiz или /next — вопрос · /review — ошибки")
     return "\n".join(lines)
 
 

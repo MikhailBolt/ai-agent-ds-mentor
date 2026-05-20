@@ -27,6 +27,7 @@ DEFAULT_REPO_URL = "https://github.com/MikhailBolt/ai-agent-ds-mentor"
 BOT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("start", "Начать и помощь"),
     ("quiz", "Новый вопрос"),
+    ("next", "Следующий вопрос"),
     ("practice", "Вопрос по слабой теме"),
     ("map", "Карта компетенций"),
     ("topics", "Список тем (id)"),
@@ -130,6 +131,7 @@ def _help_text() -> str:
         "AI DS Mentor запущен.\n\n"
         "Команды:\n"
         "/quiz — вопрос (приоритет слабым темам)\n"
+        "/next — то же, что /quiz\n"
         "/quiz <id> — вопрос по теме, напр. /quiz ml-metrics\n"
         "/quiz 2 или /quiz hard — по сложности (1–3)\n"
         "/practice — вопрос по самой слабой/новой теме\n"
@@ -142,7 +144,7 @@ def _help_text() -> str:
         "/hint — подсказка к текущему вопросу\n"
         "/status — состояние бота\n"
         "/about — версия и ссылка на проект\n"
-        "/reset — сбросить прогресс\n"
+        "/reset — запрос подтверждения; /reset confirm — сброс прогресса\n"
         "/help — помощь\n\n"
         "Если бот задал вопрос — ответь сообщением "
         "(можно поправить текст после отправки — учтём правку)."
@@ -449,14 +451,16 @@ def handle_text(
         api.send_message(chat_id, "Ок, пропустили. Напиши /quiz чтобы получить следующий вопрос.")
         return
 
-    if cmd == "/quiz":
-        try:
-            comp_filter, difficulty = parse_quiz_args(
-                text,
-                valid_competency_ids=set(comp_index),
-            )
-        except ValueError:
-            comp_filter, difficulty = "", None
+    if cmd in {"/quiz", "/next"}:
+        comp_filter, difficulty = "", None
+        if cmd == "/quiz":
+            try:
+                comp_filter, difficulty = parse_quiz_args(
+                    text,
+                    valid_competency_ids=set(comp_index),
+                )
+            except ValueError:
+                pass
         deliver_quiz_question(
             api,
             conn,
@@ -475,6 +479,13 @@ def handle_text(
         if q is None:
             mentor_db.set_active_question(conn, chat_id, None)
             api.send_message(chat_id, "Похоже, банк вопросов обновился. Напиши /quiz.")
+            return
+
+        if not mentor_quiz.normalize(text):
+            api.send_message(
+                chat_id,
+                "Пустой ответ не засчитывается. Напиши развёрнуто или /hint.",
+            )
             return
 
         is_correct = q.matches(text)

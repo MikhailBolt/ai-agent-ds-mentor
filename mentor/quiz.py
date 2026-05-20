@@ -29,6 +29,8 @@ class Question:
         for c in candidates:
             if len(c) >= min_len and c in a:
                 return True
+            if token_overlap_match(a, c):
+                return True
         return False
 
 
@@ -37,6 +39,20 @@ def normalize(s: str) -> str:
     t = (s or "").strip().casefold()
     t = re.sub(r"[^\w\s]+", " ", t, flags=re.UNICODE)
     return " ".join(t.split())
+
+
+def token_overlap_match(user_normalized: str, reference_normalized: str) -> bool:
+    """True if user's words cover enough of a multi-word reference (free-form answers)."""
+    ref_words = reference_normalized.split()
+    if len(ref_words) < 4:
+        return False
+    user_words = set(user_normalized.split())
+    if not user_words:
+        return False
+    ref_set = set(ref_words)
+    overlap = ref_set & user_words
+    need = max(3, int(0.65 * len(ref_set)))
+    return len(overlap) >= need
 
 
 def default_questions_path() -> str:

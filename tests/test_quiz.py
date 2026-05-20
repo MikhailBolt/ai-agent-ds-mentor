@@ -27,6 +27,33 @@ def test_matches_exact_and_substring() -> None:
     assert q.matches("Ответ: когда модель хорошо запоминает обучающие данные, это переобучение.")
 
 
+def test_matches_word_overlap_free_form() -> None:
+    q = qz.Question(
+        id="t3",
+        prompt="p",
+        answer="когда модель хорошо запоминает обучающие данные но плохо обобщает",
+        aliases=(),
+    )
+    loose = (
+        "думаю это когда модель запоминает обучающие данные и при этом "
+        "плохо обобщает на новые примеры"
+    )
+    assert q.matches(loose)
+    assert not q.matches("ок")
+
+
+def test_token_overlap_not_for_short_reference() -> None:
+    assert not qz.token_overlap_match(
+        qz.normalize("tp fp ratio"),
+        qz.normalize("tp divided by fp"),
+    )
+
+
+def test_token_overlap_false_when_too_few_words() -> None:
+    ref = "one two three four"
+    assert not qz.token_overlap_match(qz.normalize("wrong wrong wrong"), qz.normalize(ref))
+
+
 def test_matches_ignores_punctuation_on_short_answers() -> None:
     q = qz.Question(id="t2", prompt="p", answer="overfitting", aliases=("переобучение",))
     assert q.matches("Overfitting!!!")
