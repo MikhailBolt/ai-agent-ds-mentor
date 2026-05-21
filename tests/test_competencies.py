@@ -103,11 +103,15 @@ def test_format_stats_summary() -> None:
         best_streak=3,
         bank_total=10,
         bank_seen=4,
+        bank_mastered=2,
         competencies=competencies,
         comp_stats={"a": (1, 2), "b": (0, 0)},
+        achievement_lines=["Первый ответ"],
     )
     assert "лучшая: 3" in text
     assert "4/10" in text
+    assert "Освоено" in text
+    assert "Достижения" in text
     assert "серия" in text.lower()
     assert "A" in text
     assert "ещё не решал" in text

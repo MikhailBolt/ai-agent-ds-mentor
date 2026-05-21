@@ -280,5 +280,41 @@
       "слияние по общим колонкам"
     ],
     "explanation": "merge поддерживает inner/left/right/outer как в SQL."
+  },
+  {
+    "id": "ml-015",
+    "competency_id": "ml-metrics",
+    "difficulty": 2,
+    "prompt": "Что показывает confusion matrix (матрица ошибок)?",
+    "answer": "распределение предсказаний по классам tp fp fn tn",
+    "aliases": [
+      "таблица сопряжённости классов",
+      "сколько tp fp fn tn по классам"
+    ],
+    "explanation": "По диагонали — верные предсказания, вне диагонали — ошибки."
+  },
+  {
+    "id": "ml-016",
+    "competency_id": "ml-metrics",
+    "difficulty": 3,
+    "prompt": "Зачем при дисбалансе классов применяют oversampling (например SMOTE)?",
+    "answer": "увеличить представительство редкого класса чтобы модель его лучше учила",
+    "aliases": [
+      "синтетические примеры минорного класса",
+      "балансировка обучающей выборки"
+    ],
+    "hint": "Без этого модель часто предсказывает только majority class."
+  },
+  {
+    "id": "py-007",
+    "competency_id": "python-ds",
+    "difficulty": 1,
+    "prompt": "Для чего в анализе данных строят графики (matplotlib/seaborn)?",
+    "answer": "исследовать распределения связи и выбросы визуально",
+    "aliases": [
+      "eda визуализация",
+      "проверить гипотезы глазами"
+    ],
+    "hint": "EDA — exploratory data analysis."
   }
 ]

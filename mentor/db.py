@@ -244,6 +244,19 @@ def get_review_question_ids(
     return [str(r["question_id"]) for r in rows]
 
 
+def get_mastered_question_ids(conn: sqlite3.Connection, chat_id: int) -> set[str]:
+    """Questions answered correctly at least once."""
+    rows = conn.execute(
+        """
+        SELECT question_id
+        FROM question_history
+        WHERE chat_id=? AND correct_count >= 1
+        """,
+        (chat_id,),
+    ).fetchall()
+    return {str(r["question_id"]) for r in rows}
+
+
 def get_seen_question_ids(conn: sqlite3.Connection, chat_id: int) -> set[str]:
     rows = conn.execute(
         "SELECT question_id FROM question_history WHERE chat_id=?",

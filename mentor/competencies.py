@@ -79,17 +79,25 @@ def format_stats_summary(
     best_streak: int,
     bank_total: int,
     bank_seen: int,
+    bank_mastered: int,
     competencies: list[Competency],
     comp_stats: dict[str, tuple[int, int]],
+    achievement_lines: list[str] | None = None,
 ) -> str:
     acc = (correct / total * 100.0) if total else 0.0
     bank_pct = (bank_seen / bank_total * 100.0) if bank_total else 0.0
+    mastered_pct = (bank_mastered / bank_total * 100.0) if bank_total else 0.0
     lines = [
         "Статистика",
         f"Верно: {correct} · всего: {total} · точность: {acc:.1f}%",
         f"Текущая серия: {streak} · лучшая: {best_streak}",
-        f"Банк: встречено {bank_seen}/{bank_total} вопросов ({bank_pct:.0f}%)",
+        f"Банк: встречено {bank_seen}/{bank_total} ({bank_pct:.0f}%)",
+        f"Освоено (хотя бы 1 верный): {bank_mastered}/{bank_total} ({mastered_pct:.0f}%)",
     ]
+    if achievement_lines:
+        lines.append("")
+        lines.append("Достижения:")
+        lines.extend(f"• {line}" for line in achievement_lines)
     tip = suggest_practice_competency(competencies, comp_stats)
     if tip is not None:
         _, tip_total = comp_stats.get(tip.id, (0, 0))

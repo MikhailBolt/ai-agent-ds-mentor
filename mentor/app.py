@@ -14,6 +14,7 @@ from dotenv import load_dotenv
 from mentor import __version__
 from mentor import competencies as mentor_comp
 from mentor import db as mentor_db
+from mentor import progress as mentor_progress
 from mentor import quiz as mentor_quiz
 from mentor.telegram import iter_chunks
 from mentor.textutil import command_prefix, parse_quiz_args, reset_is_confirmed
@@ -34,6 +35,7 @@ BOT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("hint", "Подсказка к вопросу"),
     ("explain", "Пояснение к вопросу"),
     ("review", "Повтор ошибок"),
+    ("achievements", "Достижения"),
     ("stats", "Статистика и прогресс"),
     ("progress", "Прогресс по банку"),
     ("skip", "Пропустить вопрос"),
@@ -141,6 +143,7 @@ def _help_text() -> str:
         "/topics — список id тем\n"
         "/skip или /cancel — пропустить текущий вопрос\n"
         "/stats, /progress — статистика и прогресс по банку\n"
+        "/achievements — достижения\n"
         "/hint — подсказка к текущему вопросу\n"
         "/status — состояние бота\n"
         "/about — версия и ссылка на проект\n"
@@ -298,8 +301,40 @@ def handle_text(
     cmd = command_prefix(text)
     comp_index = mentor_comp.competency_by_id(competencies)
 
-    if cmd in {"/start", "/help"}:
+    if cmd == "/help":
         api.send_message(chat_id, _help_text())
+        return
+
+    if cmd == "/start":
+        st = mentor_db.get_stats(conn, chat_id)
+        streak = mentor_db.get_streak(conn, chat_id)
+        mastered = len(mentor_db.get_mastered_question_ids(conn, chat_id))
+        comp_stats = mentor_db.get_competency_stats(conn, chat_id)
+        tip = mentor_comp.suggest_practice_competency(competencies, comp_stats)
+        api.send_message(
+            chat_id,
+            mentor_progress.format_start_welcome(
+                total=st.total,
+                streak=streak,
+                bank_mastered=mastered,
+                bank_total=len(questions),
+                tip=tip,
+            ),
+        )
+        return
+
+    if cmd == "/achievements":
+        st = mentor_db.get_stats(conn, chat_id)
+        best = mentor_db.get_best_streak(conn, chat_id)
+        mastered = len(mentor_db.get_mastered_question_ids(conn, chat_id))
+        labels = mentor_progress.collect_achievement_labels(
+            total=st.total,
+            correct=st.correct,
+            best_streak=best,
+            bank_total=len(questions),
+            bank_mastered=mastered,
+        )
+        api.send_message(chat_id, mentor_progress.format_achievements_text(labels))
         return
 
     if cmd in {"/map", "/competencies"}:
@@ -343,7 +378,15 @@ def handle_text(
         streak = mentor_db.get_streak(conn, chat_id)
         best = mentor_db.get_best_streak(conn, chat_id)
         seen = mentor_db.get_seen_question_ids(conn, chat_id)
+        mastered = len(mentor_db.get_mastered_question_ids(conn, chat_id))
         comp_stats = mentor_db.get_competency_stats(conn, chat_id)
+        achievements = mentor_progress.collect_achievement_labels(
+            total=st.total,
+            correct=st.correct,
+            best_streak=best,
+            bank_total=len(questions),
+            bank_mastered=mastered,
+        )
         api.send_message(
             chat_id,
             mentor_comp.format_stats_summary(
@@ -353,8 +396,10 @@ def handle_text(
                 best_streak=best,
                 bank_total=len(questions),
                 bank_seen=len(seen),
+                bank_mastered=mastered,
                 competencies=competencies,
                 comp_stats=comp_stats,
+                achievement_lines=achievements,
             ),
         )
         return
