@@ -62,6 +62,12 @@ def _migrate_users(conn: sqlite3.Connection) -> None:
         conn.execute(
             "ALTER TABLE users ADD COLUMN best_streak INTEGER NOT NULL DEFAULT 0",
         )
+    if "daily_answer_date" not in cols:
+        conn.execute("ALTER TABLE users ADD COLUMN daily_answer_date TEXT")
+    if "daily_answer_count" not in cols:
+        conn.execute(
+            "ALTER TABLE users ADD COLUMN daily_answer_count INTEGER NOT NULL DEFAULT 0",
+        )
 
 
 def ensure_schema(conn: sqlite3.Connection) -> None:
@@ -152,8 +158,38 @@ def record_quiz_result(
             """,
             (chat_id, competency_id, 1 if is_correct else 0),
         )
+    conn.execute(
+        """
+        UPDATE users
+        SET daily_answer_count = CASE
+              WHEN daily_answer_date = date('now') THEN daily_answer_count + 1
+              ELSE 1
+            END,
+            daily_answer_date = date('now')
+        WHERE chat_id = ?
+        """,
+        (chat_id,),
+    )
     conn.commit()
     return get_streak(conn, chat_id)
+
+
+def get_daily_answer_count(conn: sqlite3.Connection, chat_id: int) -> int:
+    row = conn.execute(
+        """
+        SELECT daily_answer_count, daily_answer_date
+        FROM users WHERE chat_id=?
+        """,
+        (chat_id,),
+    ).fetchone()
+    if row is None:
+        return 0
+    today = str(
+        conn.execute("SELECT date('now')").fetchone()[0],
+    )
+    if str(row["daily_answer_date"] or "") != today:
+        return 0
+    return int(row["daily_answer_count"])
 
 
 def get_best_streak(conn: sqlite3.Connection, chat_id: int) -> int:
@@ -270,7 +306,8 @@ def reset_user(conn: sqlite3.Connection, chat_id: int) -> None:
         """
         UPDATE users
         SET quiz_correct=0, quiz_total=0, quiz_streak=0,
-            best_streak=0, active_question_id=NULL
+            best_streak=0, daily_answer_count=0, daily_answer_date=NULL,
+            active_question_id=NULL
         WHERE chat_id=?
         """,
         (chat_id,),

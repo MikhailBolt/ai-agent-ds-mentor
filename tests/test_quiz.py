@@ -61,6 +61,15 @@ def test_matches_ignores_punctuation_on_short_answers() -> None:
     assert q.matches("«Переобучение»")
 
 
+def test_question_counts_by_difficulty() -> None:
+    qs = [
+        qz.Question(id="1", prompt="p", answer="a", difficulty=1),
+        qz.Question(id="2", prompt="p", answer="b", difficulty=3),
+        qz.Question(id="3", prompt="p", answer="c", difficulty=3),
+    ]
+    assert qz.question_counts_by_difficulty(qs) == {1: 1, 3: 2}
+
+
 def test_load_questions_minimal(tmp_path: Path) -> None:
     p = tmp_path / "q.json"
     p.write_text(

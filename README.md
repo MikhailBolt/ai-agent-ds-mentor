@@ -8,9 +8,9 @@ Telegram bot that runs a **Data Science quiz** from a JSON question bank, tracks
 
 ## Features
 
-- Commands: `/quiz`, `/next`, `/practice`, `/review`, `/map`, `/topics`, `/hint`, `/explain`, `/achievements`, `/skip`, `/stats`, `/progress`, `/status`, `/about`, `/reset`, `/help`
+- Commands: `/quiz`, `/next`, `/practice`, `/challenge`, `/review`, `/current`, `/map`, `/topics`, `/hint`, `/explain`, `/achievements`, `/skip`, `/stats`, `/progress`, `/status`, `/about`, `/reset`, `/help`
 - **Competency map** (`/map`) with per-topic progress bars
-- Personalized `/start`; achievements and bank mastery in `/stats`; unseen-first quizzes; `/review`; safe `/reset confirm`
+- Daily goal (`DAILY_GOAL`); `/challenge` hard questions; `/current`; achievements; safe `/reset confirm`
 - Telegram command menu registered on startup (`setMyCommands`)
 - `/stats` shows per-topic progress and what to practice next
 - Normalizes `/cmd@BotUsername` (Telegram menu / groups)
@@ -160,6 +160,7 @@ See `CONTRIBUTING.md` for details.
 | `DB_PATH` | no | `bot.db` |
 | `QUESTIONS_PATH` | no | packaged `mentor/data/questions.json` |
 | `COMPETENCIES_PATH` | no | packaged `mentor/data/competencies.json` |
+| `DAILY_GOAL` | no | daily answer target in `/stats` (default `5`; `0` = off) |
 | `PROJECT_REPO_URL` | no | default GitHub repo URL (shown in `/about`) |
 
 ## Changelog

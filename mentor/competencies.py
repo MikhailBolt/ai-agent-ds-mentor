@@ -83,6 +83,8 @@ def format_stats_summary(
     competencies: list[Competency],
     comp_stats: dict[str, tuple[int, int]],
     achievement_lines: list[str] | None = None,
+    daily_count: int = 0,
+    daily_goal: int | None = None,
 ) -> str:
     acc = (correct / total * 100.0) if total else 0.0
     bank_pct = (bank_seen / bank_total * 100.0) if bank_total else 0.0
@@ -94,6 +96,11 @@ def format_stats_summary(
         f"Банк: встречено {bank_seen}/{bank_total} ({bank_pct:.0f}%)",
         f"Освоено (хотя бы 1 верный): {bank_mastered}/{bank_total} ({mastered_pct:.0f}%)",
     ]
+    if daily_goal:
+        if daily_count >= daily_goal:
+            lines.append(f"Дневная цель: {daily_count}/{daily_goal} — выполнена!")
+        else:
+            lines.append(f"Дневная цель: {daily_count}/{daily_goal} ответов сегодня")
     if achievement_lines:
         lines.append("")
         lines.append("Достижения:")

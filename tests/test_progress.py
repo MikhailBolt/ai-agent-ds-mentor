@@ -38,6 +38,24 @@ def test_format_start_welcome_new_user() -> None:
     assert "/quiz" in text
 
 
+def test_daily_goal_achievement() -> None:
+    labels = prog.collect_achievement_labels(
+        total=10,
+        correct=8,
+        best_streak=3,
+        bank_total=20,
+        bank_mastered=5,
+        daily_count=5,
+        daily_goal=5,
+    )
+    assert "Дневная цель" in labels
+
+
+def test_format_daily_goal_line() -> None:
+    assert "выполнена" in prog.format_daily_goal_line(5, 5)
+    assert "3/5" in prog.format_daily_goal_line(3, 5)
+
+
 def test_format_start_welcome_returning() -> None:
     tip = Competency(id="ml-metrics", title="Метрики", description="")
     text = prog.format_start_welcome(

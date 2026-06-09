@@ -5,6 +5,12 @@ from __future__ import annotations
 from mentor.competencies import Competency
 
 
+def format_daily_goal_line(count: int, goal: int) -> str:
+    if count >= goal:
+        return f"Дневная цель: {count}/{goal} — выполнена!"
+    return f"Дневная цель: {count}/{goal} ответов сегодня"
+
+
 def collect_achievement_labels(
     *,
     total: int,
@@ -12,6 +18,8 @@ def collect_achievement_labels(
     best_streak: int,
     bank_total: int,
     bank_mastered: int,
+    daily_count: int = 0,
+    daily_goal: int | None = None,
 ) -> list[str]:
     labels: list[str] = []
     if total >= 1:
@@ -28,6 +36,8 @@ def collect_achievement_labels(
         labels.append("Весь банк освоен")
     elif bank_total > 0 and bank_mastered * 2 >= bank_total:
         labels.append("Половина банка")
+    if daily_goal and daily_count >= daily_goal:
+        labels.append("Дневная цель")
     return labels
 
 
@@ -46,6 +56,8 @@ def format_start_welcome(
     bank_mastered: int,
     bank_total: int,
     tip: Competency | None,
+    daily_count: int = 0,
+    daily_goal: int | None = None,
 ) -> str:
     if total == 0:
         return (
@@ -60,6 +72,8 @@ def format_start_welcome(
     ]
     if bank_total:
         lines.append(f"Освоено вопросов банка: {bank_mastered}/{bank_total}")
+    if daily_goal:
+        lines.append(format_daily_goal_line(daily_count, daily_goal))
     if tip is not None:
         lines.append(f"Сейчас полезно: /practice или /quiz {tip.id}")
     lines.append("")

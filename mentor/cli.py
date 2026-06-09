@@ -15,6 +15,7 @@ from mentor.db import connect, ensure_schema, verify_schema
 from mentor.quiz import (
     default_questions_path,
     load_questions,
+    question_counts_by_difficulty,
     validate_competency_coverage,
 )
 
@@ -192,6 +193,9 @@ def cmd_check(args: argparse.Namespace) -> int:
         print(f"competencies_path={comp_path}")
         print(f"competency_count={len(competencies)}")
         print(f"question_count={len(qs)}")
+        diff_counts = question_counts_by_difficulty(qs)
+        for level in sorted(diff_counts):
+            print(f"questions_difficulty_{level}={diff_counts[level]}")
         print(f"db_path={args.db_path}")
         print(f"log_level={os.getenv('LOG_LEVEL', 'INFO')}")
         print(f"project_repo_url={os.getenv('PROJECT_REPO_URL', DEFAULT_REPO_URL)}")

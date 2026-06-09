@@ -77,6 +77,17 @@ def test_best_streak_tracked(conn: sqlite3.Connection) -> None:
     assert mentor_db.get_best_streak(conn, 1) == 2
 
 
+def test_daily_answer_count_resets_by_date(conn: sqlite3.Connection) -> None:
+    mentor_db.touch_user(conn, 1)
+    mentor_db.record_quiz_result(conn, 1, True)
+    assert mentor_db.get_daily_answer_count(conn, 1) == 1
+    conn.execute(
+        "UPDATE users SET daily_answer_date='2000-01-01' WHERE chat_id=1",
+    )
+    conn.commit()
+    assert mentor_db.get_daily_answer_count(conn, 1) == 0
+
+
 def test_mastered_question_ids(conn: sqlite3.Connection) -> None:
     mentor_db.record_question_attempt(conn, 1, "q1", is_correct=False)
     mentor_db.record_question_attempt(conn, 1, "q1", is_correct=True)

@@ -162,6 +162,13 @@ def pick_next(
     return random.choice(qs)
 
 
+def question_counts_by_difficulty(questions: Iterable[Question]) -> dict[int, int]:
+    counts: dict[int, int] = {}
+    for q in questions:
+        counts[q.difficulty] = counts.get(q.difficulty, 0) + 1
+    return counts
+
+
 def question_counts_by_competency(questions: Iterable[Question]) -> dict[str, int]:
     counts: dict[str, int] = {}
     for q in questions:
