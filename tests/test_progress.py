@@ -26,6 +26,29 @@ def test_collect_achievement_labels_milestones() -> None:
     assert "Весь банк освоен" in labels
 
 
+def test_format_progress_export() -> None:
+    comp = Competency(id="a", title="A", description="")
+    text = prog.format_progress_export(
+        version="0.4.8",
+        correct=3,
+        total=5,
+        streak=1,
+        best_streak=2,
+        bank_total=10,
+        bank_seen=4,
+        bank_mastered=2,
+        review_count=1,
+        daily_count=2,
+        daily_goal=5,
+        competencies=[comp],
+        comp_stats={"a": (2, 3)},
+        achievements=["Первый ответ"],
+    )
+    assert "Отчёт AI DS Mentor" in text
+    assert "review" in text.lower() or "ошибк" in text.lower()
+    assert "Первый ответ" in text
+
+
 def test_format_start_welcome_new_user() -> None:
     text = prog.format_start_welcome(
         total=0,

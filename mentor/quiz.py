@@ -162,6 +162,23 @@ def pick_next(
     return random.choice(qs)
 
 
+def competency_mastery_counts(
+    questions: Iterable[Question],
+    mastered_ids: set[str],
+) -> dict[str, tuple[int, int]]:
+    """competency_id -> (mastered in bank, total in bank)."""
+    totals: dict[str, int] = {}
+    mastered: dict[str, int] = {}
+    for q in questions:
+        if not q.competency_id:
+            continue
+        cid = q.competency_id
+        totals[cid] = totals.get(cid, 0) + 1
+        if q.id in mastered_ids:
+            mastered[cid] = mastered.get(cid, 0) + 1
+    return {cid: (mastered.get(cid, 0), totals[cid]) for cid in totals}
+
+
 def question_counts_by_difficulty(questions: Iterable[Question]) -> dict[int, int]:
     counts: dict[int, int] = {}
     for q in questions:

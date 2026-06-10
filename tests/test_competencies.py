@@ -40,6 +40,17 @@ def test_format_competency_map() -> None:
     assert "в банке 5" in text
 
 
+def test_format_competency_map_bank_mastery() -> None:
+    competencies = [comp.Competency(id="x", title="Topic X", description="")]
+    text = comp.format_competency_map(
+        competencies,
+        {"x": (0, 0)},
+        bank_counts={"x": 4},
+        bank_mastery={"x": (2, 4)},
+    )
+    assert "освоено 2/4" in text
+
+
 def test_questions_require_valid_competency(tmp_path: Path) -> None:
     c = tmp_path / "c.json"
     c.write_text(json.dumps([{"id": "ok", "title": "T", "description": ""}]), encoding="utf-8")

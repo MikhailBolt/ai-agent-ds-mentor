@@ -61,6 +61,16 @@ def test_matches_ignores_punctuation_on_short_answers() -> None:
     assert q.matches("«Переобучение»")
 
 
+def test_competency_mastery_counts() -> None:
+    qs = [
+        qz.Question(id="1", prompt="p", answer="a", competency_id="x"),
+        qz.Question(id="2", prompt="p", answer="b", competency_id="x"),
+        qz.Question(id="3", prompt="p", answer="c", competency_id="y"),
+    ]
+    counts = qz.competency_mastery_counts(qs, {"1", "3"})
+    assert counts == {"x": (1, 2), "y": (1, 1)}
+
+
 def test_question_counts_by_difficulty() -> None:
     qs = [
         qz.Question(id="1", prompt="p", answer="a", difficulty=1),

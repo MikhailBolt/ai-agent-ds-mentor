@@ -150,6 +150,7 @@ def format_competency_map(
     *,
     title: str = "Карта компетенций (Data Science)",
     bank_counts: dict[str, int] | None = None,
+    bank_mastery: dict[str, tuple[int, int]] | None = None,
 ) -> str:
     """stats: competency_id -> (correct, total)."""
     lines = [title, ""]
@@ -157,6 +158,9 @@ def format_competency_map(
         correct, total = stats.get(c.id, (0, 0))
         bank_n = bank_counts.get(c.id, 0) if bank_counts else 0
         bank_s = f" · в банке {bank_n}" if bank_n else ""
+        if bank_mastery and c.id in bank_mastery:
+            m_ok, m_tot = bank_mastery[c.id]
+            bank_s += f" · освоено {m_ok}/{m_tot}"
         if total == 0:
             bar = progress_bar(0)
             detail = "ещё не решал"

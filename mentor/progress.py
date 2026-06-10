@@ -79,3 +79,46 @@ def format_start_welcome(
     lines.append("")
     lines.append("/next — новый вопрос · /stats — прогресс · /help — команды")
     return "\n".join(lines)
+
+
+def format_progress_export(
+    *,
+    version: str,
+    correct: int,
+    total: int,
+    streak: int,
+    best_streak: int,
+    bank_total: int,
+    bank_seen: int,
+    bank_mastered: int,
+    review_count: int,
+    daily_count: int,
+    daily_goal: int | None,
+    competencies: list[Competency],
+    comp_stats: dict[str, tuple[int, int]],
+    achievements: list[str],
+) -> str:
+    acc = (correct / total * 100.0) if total else 0.0
+    lines = [
+        f"Отчёт AI DS Mentor v{version}",
+        "",
+        f"Ответов: {total} · верно: {correct} ({acc:.1f}%)",
+        f"Серия: {streak} · лучшая: {best_streak}",
+        f"Банк: встречено {bank_seen}/{bank_total}, освоено {bank_mastered}/{bank_total}",
+        f"Вопросов с ошибками для /review: {review_count}",
+    ]
+    if daily_goal:
+        lines.append(format_daily_goal_line(daily_count, daily_goal))
+    if achievements:
+        lines.append("")
+        lines.append("Достижения: " + ", ".join(achievements))
+    lines.append("")
+    lines.append("По темам:")
+    for c in competencies:
+        c_ok, c_tot = comp_stats.get(c.id, (0, 0))
+        if c_tot == 0:
+            lines.append(f"• {c.title} ({c.id}) — ещё не решал")
+        else:
+            c_acc = c_ok / c_tot * 100.0
+            lines.append(f"• {c.title} ({c.id}) — {c_ok}/{c_tot} ({c_acc:.0f}%)")
+    return "\n".join(lines)
