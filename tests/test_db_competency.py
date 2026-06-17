@@ -77,6 +77,14 @@ def test_best_streak_tracked(conn: sqlite3.Connection) -> None:
     assert mentor_db.get_best_streak(conn, 1) == 2
 
 
+def test_retry_question_id(conn: sqlite3.Connection) -> None:
+    mentor_db.set_active_question(conn, 1, "q1")
+    mentor_db.set_retry_question_id(conn, 1, "q1")
+    assert mentor_db.get_retry_question_id(conn, 1) == "q1"
+    mentor_db.set_active_question(conn, 1, None)
+    assert mentor_db.get_retry_question_id(conn, 1) is None
+
+
 def test_daily_answer_count_resets_by_date(conn: sqlite3.Connection) -> None:
     mentor_db.touch_user(conn, 1)
     mentor_db.record_quiz_result(conn, 1, True)

@@ -158,7 +158,8 @@ def _help_text() -> str:
         "/explain — пояснение к текущему вопросу\n"
         "/map — карта компетенций и прогресс\n"
         "/topics — список id тем\n"
-        "/skip или /cancel — пропустить текущий вопрос\n"
+        "/skip или /cancel — пропустить (без штрафа)\n"
+        "/giveup — показать ответ и завершить вопрос\n"
         "/stats, /progress — статистика и прогресс по банку\n"
         "/achievements — достижения\n"
         "/hint — подсказка к текущему вопросу\n"
@@ -185,13 +186,42 @@ def _format_question(
     meta = f"Вопрос ({q.id}) · сложность {stars}"
     if competency_title:
         meta += f"\nТема: {competency_title}"
-    return f"{meta}\n{q.prompt}\n\nОтветь одним сообщением."
+    return f"{meta}\n{q.prompt}\n\nОтветь одним сообщением.\n/hint · /giveup · /skip"
 
 
 def streak_bonus_message(streak: int) -> str:
     if streak in (3, 5, 10):
         return f" Серия верных ответов: {streak}!"
     return ""
+
+
+def finish_wrong_answer(
+    api: TelegramAPI,
+    conn: sqlite3.Connection,
+    chat_id: int,
+    q: mentor_quiz.Question,
+    comp_index: dict[str, mentor_comp.Competency],
+) -> None:
+    mentor_db.record_quiz_result(
+        conn,
+        chat_id,
+        is_correct=False,
+        competency_id=q.competency_id,
+    )
+    mentor_db.record_question_attempt(conn, chat_id, q.id, is_correct=False)
+    mentor_db.set_active_question(conn, chat_id, None)
+    comp_title = None
+    comp_id = q.competency_id
+    if comp_id and comp_id in comp_index:
+        comp_title = comp_index[comp_id].title
+    api.send_message(
+        chat_id,
+        format_wrong_answer_message(
+            q,
+            competency_title=comp_title,
+            competency_id=comp_id,
+        ),
+    )
 
 
 def format_wrong_answer_message(
@@ -239,6 +269,7 @@ def deliver_quiz_question(
     prev = mentor_db.get_active_question(conn, chat_id)
     seen_ids = mentor_db.get_seen_question_ids(conn, chat_id)
     comp_stats = mentor_db.get_competency_stats(conn, chat_id)
+    review_ids = set(mentor_db.get_review_question_ids(conn, chat_id))
     weights = mentor_quiz.competency_weights_for_practice(
         comp_stats,
         (c.id for c in competencies),
@@ -252,6 +283,7 @@ def deliver_quiz_question(
             competency_weights=weights if not comp_filter and not only_ids else None,
             seen_ids=seen_ids if only_ids is None else None,
             only_ids=only_ids,
+            boost_ids=review_ids if not only_ids and not comp_filter else None,
         )
     except ValueError:
         hint = "Попробуй /map или /quiz без аргумента."
@@ -600,6 +632,19 @@ def handle_text(
         api.send_message(chat_id, "Готово. Прогресс сброшен. Напиши /quiz чтобы начать заново.")
         return
 
+    if cmd == "/giveup":
+        active = mentor_db.get_active_question(conn, chat_id)
+        if active is None:
+            api.send_message(chat_id, "Сейчас нет активного вопроса. Напиши /quiz.")
+            return
+        q = mentor_quiz.find_by_id(questions, active)
+        if q is None:
+            mentor_db.set_active_question(conn, chat_id, None)
+            api.send_message(chat_id, "Вопрос не найден. Напиши /quiz.")
+            return
+        finish_wrong_answer(api, conn, chat_id, q, comp_index)
+        return
+
     if cmd in {"/skip", "/cancel"}:
         active = mentor_db.get_active_question(conn, chat_id)
         if active is None:
@@ -647,39 +692,37 @@ def handle_text(
             return
 
         is_correct = q.matches(text)
+        if not is_correct:
+            retry_q = mentor_db.get_retry_question_id(conn, chat_id)
+            if retry_q != active_id:
+                mentor_db.set_retry_question_id(conn, chat_id, active_id)
+                api.send_message(
+                    chat_id,
+                    "Пока не зачтено. Ещё одна попытка — /hint, /giveup или /skip.",
+                )
+                return
+            finish_wrong_answer(api, conn, chat_id, q, comp_index)
+            return
+
+        had_retry = mentor_db.get_retry_question_id(conn, chat_id) == active_id
         streak = mentor_db.record_quiz_result(
             conn,
             chat_id,
-            is_correct=is_correct,
+            is_correct=True,
             competency_id=q.competency_id,
         )
-        mentor_db.record_question_attempt(
-            conn, chat_id, q.id, is_correct=is_correct
-        )
+        mentor_db.record_question_attempt(conn, chat_id, q.id, is_correct=True)
         mentor_db.set_active_question(conn, chat_id, None)
-        if is_correct:
-            bonus = streak_bonus_message(streak)
-            seen = mentor_db.get_seen_question_ids(conn, chat_id)
-            bank_done = ""
-            if len(seen) >= len(questions):
-                bank_done = "\nТы прошёл все вопросы банка — дальше будут повторы."
-            api.send_message(
-                chat_id,
-                f"Верно. Отлично!{bonus}{bank_done}\nНапиши /quiz или /map.",
-            )
-        else:
-            comp_title = None
-            comp_id = q.competency_id
-            if comp_id and comp_id in comp_index:
-                comp_title = comp_index[comp_id].title
-            api.send_message(
-                chat_id,
-                format_wrong_answer_message(
-                    q,
-                    competency_title=comp_title,
-                    competency_id=comp_id,
-                ),
-            )
+        bonus = streak_bonus_message(streak)
+        retry_note = " (со второй попытки)" if had_retry else ""
+        seen = mentor_db.get_seen_question_ids(conn, chat_id)
+        bank_done = ""
+        if len(seen) >= len(questions):
+            bank_done = "\nТы прошёл все вопросы банка — дальше будут повторы."
+        api.send_message(
+            chat_id,
+            f"Верно. Отлично!{retry_note}{bonus}{bank_done}\nНапиши /quiz или /map.",
+        )
         return
 
     api.send_message(chat_id, "Команда не распознана. Напиши /help")

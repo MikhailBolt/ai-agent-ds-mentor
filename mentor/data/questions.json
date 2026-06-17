@@ -387,5 +387,40 @@
       "данные из population",
       "часть объектов для анализа"
     ]
+  },
+  {
+    "id": "ml-020",
+    "competency_id": "ml-foundations",
+    "difficulty": 2,
+    "prompt": "Что делает dropout при обучении нейросети?",
+    "answer": "случайно отключает часть нейронов чтобы снизить переобучение",
+    "aliases": [
+      "regularization через random dropout",
+      "выключает нейроны на train"
+    ],
+    "explanation": "На inference dropout обычно выключен или масштабируют выход."
+  },
+  {
+    "id": "ml-021",
+    "competency_id": "ml-validation",
+    "difficulty": 2,
+    "prompt": "Что такое stratified split при разбиении данных?",
+    "answer": "разбиение с сохранением долей классов в train и test",
+    "aliases": [
+      "стратифицированная выборка",
+      "одинаковые пропорции классов в фолдах"
+    ],
+    "hint": "Важно при дисбалансе классов."
+  },
+  {
+    "id": "py-009",
+    "competency_id": "python-ds",
+    "difficulty": 1,
+    "prompt": "Что возвращает df.shape в pandas?",
+    "answer": "кортеж числа строк и столбцов",
+    "aliases": [
+      "размерность таблицы",
+      "n rows n columns"
+    ]
   }
 ]

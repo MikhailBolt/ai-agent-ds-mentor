@@ -134,6 +134,7 @@ def pick_next(
     competency_weights: dict[str, float] | None = None,
     seen_ids: set[str] | None = None,
     only_ids: set[str] | None = None,
+    boost_ids: set[str] | None = None,
 ) -> Question:
     qs = list(questions)
     if competency_filter is not None:
@@ -152,11 +153,16 @@ def pick_next(
         if unseen:
             qs = unseen
 
-    if competency_weights:
+    if competency_weights or boost_ids:
         weights: list[float] = []
         for q in qs:
-            cid = q.competency_id or ""
-            weights.append(max(0.1, competency_weights.get(cid, 1.0)))
+            w = 1.0
+            if competency_weights:
+                cid = q.competency_id or ""
+                w *= max(0.1, competency_weights.get(cid, 1.0))
+            if boost_ids and q.id in boost_ids:
+                w *= 2.5
+            weights.append(w)
         return random.choices(qs, weights=weights, k=1)[0]
 
     return random.choice(qs)

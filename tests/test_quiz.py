@@ -61,6 +61,18 @@ def test_matches_ignores_punctuation_on_short_answers() -> None:
     assert q.matches("«Переобучение»")
 
 
+def test_pick_next_boosts_mistake_ids() -> None:
+    qs = [
+        qz.Question(id="mistake", prompt="p", answer="a"),
+        qz.Question(id="other", prompt="p", answer="b"),
+    ]
+    counts = {"mistake": 0, "other": 0}
+    for _ in range(40):
+        picked = qz.pick_next(qs, None, boost_ids={"mistake"})
+        counts[picked.id] += 1
+    assert counts["mistake"] > counts["other"]
+
+
 def test_competency_mastery_counts() -> None:
     qs = [
         qz.Question(id="1", prompt="p", answer="a", competency_id="x"),
