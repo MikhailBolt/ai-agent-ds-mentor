@@ -20,6 +20,8 @@ def collect_achievement_labels(
     bank_mastered: int,
     daily_count: int = 0,
     daily_goal: int | None = None,
+    bank_mastery: dict[str, tuple[int, int]] | None = None,
+    competency_titles: dict[str, str] | None = None,
 ) -> list[str]:
     labels: list[str] = []
     if total >= 1:
@@ -38,6 +40,11 @@ def collect_achievement_labels(
         labels.append("Половина банка")
     if daily_goal and daily_count >= daily_goal:
         labels.append("Дневная цель")
+    if bank_mastery and competency_titles:
+        for cid, (mastered, total) in bank_mastery.items():
+            if total > 0 and mastered >= total:
+                title = competency_titles.get(cid, cid)
+                labels.append(f"Освоена тема: {title}")
     return labels
 
 

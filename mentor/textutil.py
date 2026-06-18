@@ -63,3 +63,14 @@ def reset_is_confirmed(text: str) -> bool:
     if len(parts) < 2:
         return False
     return parts[1].strip().lower() in {"confirm", "yes", "да"}
+
+
+def parse_question_id_arg(text: str) -> str:
+    """`/question ml-001` or `/q ml-001` → question id."""
+    cmd = command_prefix(text)
+    if cmd not in {"/question", "/q"}:
+        raise ValueError("not a question command")
+    parts = (text or "").strip().split(maxsplit=1)
+    if len(parts) < 2:
+        return ""
+    return parts[1].strip().lower()

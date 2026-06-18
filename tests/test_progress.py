@@ -61,6 +61,20 @@ def test_format_start_welcome_new_user() -> None:
     assert "/quiz" in text
 
 
+def test_competency_topic_achievement() -> None:
+    labels = prog.collect_achievement_labels(
+        total=5,
+        correct=4,
+        best_streak=2,
+        bank_total=4,
+        bank_mastered=2,
+        bank_mastery={"ml-metrics": (2, 2), "stats-basics": (1, 2)},
+        competency_titles={"ml-metrics": "Метрики", "stats-basics": "Статистика"},
+    )
+    assert "Освоена тема: Метрики" in labels
+    assert "Освоена тема: Статистика" not in labels
+
+
 def test_daily_goal_achievement() -> None:
     labels = prog.collect_achievement_labels(
         total=10,

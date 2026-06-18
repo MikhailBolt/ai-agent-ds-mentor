@@ -61,6 +61,14 @@ def test_matches_ignores_punctuation_on_short_answers() -> None:
     assert q.matches("«Переобучение»")
 
 
+def test_unseen_question_ids() -> None:
+    qs = [
+        qz.Question(id="a", prompt="p", answer="x"),
+        qz.Question(id="b", prompt="p", answer="y"),
+    ]
+    assert qz.unseen_question_ids(qs, {"a"}) == {"b"}
+
+
 def test_pick_next_boosts_mistake_ids() -> None:
     qs = [
         qz.Question(id="mistake", prompt="p", answer="a"),

@@ -1,6 +1,11 @@
 import pytest
 
-from mentor.textutil import parse_quiz_args, quiz_competency_arg, reset_is_confirmed
+from mentor.textutil import (
+    parse_question_id_arg,
+    parse_quiz_args,
+    quiz_competency_arg,
+    reset_is_confirmed,
+)
 
 
 def test_quiz_competency_arg_empty() -> None:
@@ -30,6 +35,11 @@ def test_parse_quiz_args_topic_and_difficulty() -> None:
 def test_quiz_competency_arg_not_quiz() -> None:
     with pytest.raises(ValueError):
         quiz_competency_arg("/help")
+
+
+def test_parse_question_id_arg() -> None:
+    assert parse_question_id_arg("/question ml-001") == "ml-001"
+    assert parse_question_id_arg("/q@Bot py-010") == "py-010"
 
 
 def test_reset_is_confirmed() -> None:

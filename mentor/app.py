@@ -17,7 +17,12 @@ from mentor import db as mentor_db
 from mentor import progress as mentor_progress
 from mentor import quiz as mentor_quiz
 from mentor.telegram import iter_chunks
-from mentor.textutil import command_prefix, parse_quiz_args, reset_is_confirmed
+from mentor.textutil import (
+    command_prefix,
+    parse_question_id_arg,
+    parse_quiz_args,
+    reset_is_confirmed,
+)
 
 POLL_TIMEOUT_S = 30
 HTTP_TIMEOUT_S = POLL_TIMEOUT_S + 10
@@ -37,6 +42,7 @@ def parse_daily_goal() -> int | None:
 BOT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("start", "Начать и помощь"),
     ("quiz", "Новый вопрос"),
+    ("new", "Вопрос, который ещё не встречался"),
     ("next", "Следующий вопрос"),
     ("practice", "Вопрос по слабой теме"),
     ("challenge", "Сложный вопрос"),
@@ -146,6 +152,8 @@ def _help_text() -> str:
         "AI DS Mentor запущен.\n\n"
         "Команды:\n"
         "/quiz — вопрос (приоритет слабым темам)\n"
+        "/new — вопрос, который вы ещё не видели\n"
+        "/question <id> — конкретный вопрос, напр. /question ml-001\n"
         "/next — то же, что /quiz\n"
         "/quiz <id> — вопрос по теме, напр. /quiz ml-metrics\n"
         "/quiz 2 или /quiz hard — по сложности (1–3)\n"
@@ -304,6 +312,29 @@ def deliver_quiz_question(
     api.send_message(chat_id, body)
 
 
+def start_question_by_id(
+    api: TelegramAPI,
+    conn: sqlite3.Connection,
+    chat_id: int,
+    questions: list[mentor_quiz.Question],
+    competencies: list[mentor_comp.Competency],
+    question_id: str,
+) -> None:
+    q = mentor_quiz.find_by_id(questions, question_id)
+    if q is None:
+        api.send_message(
+            chat_id,
+            f"Вопрос «{question_id}» не найден. /topics — темы, /quiz — случайный.",
+        )
+        return
+    comp_index = mentor_comp.competency_by_id(competencies)
+    title = None
+    if q.competency_id and q.competency_id in comp_index:
+        title = comp_index[q.competency_id].title
+    mentor_db.set_active_question(conn, chat_id, q.id)
+    api.send_message(chat_id, _format_question(q, competency_title=title))
+
+
 def format_status_text(
     *,
     started_at: float,
@@ -313,6 +344,9 @@ def format_status_text(
     streak: int = 0,
     best_streak: int = 0,
     bank_seen: int = 0,
+    bank_mastered: int = 0,
+    daily_count: int = 0,
+    daily_goal: int | None = None,
     active_question_id: str | None = None,
 ) -> str:
     uptime_sec = max(0, int(now - started_at))
@@ -327,7 +361,10 @@ def format_status_text(
         f"Твоя статистика: {stats.correct}/{stats.total} ({acc:.1f}%)",
         f"Серия верных: {streak} (лучшая: {best_streak})",
         f"Встречено вопросов из банка: {bank_seen}/{question_count}",
+        f"Освоено банка (≥1 верный): {bank_mastered}/{question_count}",
     ]
+    if daily_goal:
+        lines.append(mentor_progress.format_daily_goal_line(daily_count, daily_goal))
     if active_question_id:
         lines.append(f"Активный вопрос: {active_question_id}")
     return "\n".join(lines)
@@ -379,7 +416,9 @@ def handle_text(
     if cmd == "/achievements":
         st = mentor_db.get_stats(conn, chat_id)
         best = mentor_db.get_best_streak(conn, chat_id)
-        mastered = len(mentor_db.get_mastered_question_ids(conn, chat_id))
+        mastered_ids = mentor_db.get_mastered_question_ids(conn, chat_id)
+        bank_mastery = mentor_quiz.competency_mastery_counts(questions, mastered_ids)
+        comp_titles = {c.id: c.title for c in competencies}
         daily_goal = parse_daily_goal()
         daily_count = mentor_db.get_daily_answer_count(conn, chat_id)
         labels = mentor_progress.collect_achievement_labels(
@@ -387,9 +426,11 @@ def handle_text(
             correct=st.correct,
             best_streak=best,
             bank_total=len(questions),
-            bank_mastered=mastered,
+            bank_mastered=len(mastered_ids),
             daily_count=daily_count,
             daily_goal=daily_goal,
+            bank_mastery=bank_mastery,
+            competency_titles=comp_titles,
         )
         api.send_message(chat_id, mentor_progress.format_achievements_text(labels))
         return
@@ -517,7 +558,9 @@ def handle_text(
         streak = mentor_db.get_streak(conn, chat_id)
         best = mentor_db.get_best_streak(conn, chat_id)
         seen = mentor_db.get_seen_question_ids(conn, chat_id)
-        mastered = len(mentor_db.get_mastered_question_ids(conn, chat_id))
+        mastered_ids = mentor_db.get_mastered_question_ids(conn, chat_id)
+        bank_mastery = mentor_quiz.competency_mastery_counts(questions, mastered_ids)
+        comp_titles = {c.id: c.title for c in competencies}
         daily_goal = parse_daily_goal()
         daily_count = mentor_db.get_daily_answer_count(conn, chat_id)
         comp_stats = mentor_db.get_competency_stats(conn, chat_id)
@@ -526,9 +569,11 @@ def handle_text(
             correct=st.correct,
             best_streak=best,
             bank_total=len(questions),
-            bank_mastered=mastered,
+            bank_mastered=len(mastered_ids),
             daily_count=daily_count,
             daily_goal=daily_goal,
+            bank_mastery=bank_mastery,
+            competency_titles=comp_titles,
         )
         api.send_message(
             chat_id,
@@ -539,7 +584,7 @@ def handle_text(
                 best_streak=best,
                 bank_total=len(questions),
                 bank_seen=len(seen),
-                bank_mastered=mastered,
+                bank_mastered=len(mastered_ids),
                 competencies=competencies,
                 comp_stats=comp_stats,
                 achievement_lines=achievements,
@@ -596,6 +641,9 @@ def handle_text(
         streak = mentor_db.get_streak(conn, chat_id)
         best = mentor_db.get_best_streak(conn, chat_id)
         seen = len(mentor_db.get_seen_question_ids(conn, chat_id))
+        mastered = len(mentor_db.get_mastered_question_ids(conn, chat_id))
+        daily_goal = parse_daily_goal()
+        daily_count = mentor_db.get_daily_answer_count(conn, chat_id)
         active = mentor_db.get_active_question(conn, chat_id)
         api.send_message(
             chat_id,
@@ -607,6 +655,9 @@ def handle_text(
                 streak=streak,
                 best_streak=best,
                 bank_seen=seen,
+                bank_mastered=mastered,
+                daily_count=daily_count,
+                daily_goal=daily_goal,
                 active_question_id=active,
             ),
         )
@@ -652,6 +703,40 @@ def handle_text(
             return
         mentor_db.set_active_question(conn, chat_id, None)
         api.send_message(chat_id, "Ок, пропустили. Напиши /quiz чтобы получить следующий вопрос.")
+        return
+
+    if cmd == "/new":
+        seen = mentor_db.get_seen_question_ids(conn, chat_id)
+        unseen = mentor_quiz.unseen_question_ids(questions, seen)
+        if not unseen:
+            api.send_message(
+                chat_id,
+                "Все вопросы банка уже встречались. /quiz — повторы, /review — ошибки.",
+            )
+            return
+        deliver_quiz_question(
+            api,
+            conn,
+            chat_id,
+            questions,
+            competencies,
+            only_ids=unseen,
+            intro="Новый вопрос из банка",
+        )
+        return
+
+    if cmd in {"/question", "/q"}:
+        try:
+            qid = parse_question_id_arg(text)
+        except ValueError:
+            qid = ""
+        if not qid:
+            api.send_message(
+                chat_id,
+                "Укажи id вопроса: /question ml-001\n/topics — темы, /map — карта",
+            )
+            return
+        start_question_by_id(api, conn, chat_id, questions, competencies, qid)
         return
 
     if cmd in {"/quiz", "/next"}:

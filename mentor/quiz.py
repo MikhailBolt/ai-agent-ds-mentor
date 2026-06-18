@@ -168,6 +168,13 @@ def pick_next(
     return random.choice(qs)
 
 
+def unseen_question_ids(
+    questions: Iterable[Question],
+    seen_ids: set[str],
+) -> set[str]:
+    return {q.id for q in questions if q.id not in seen_ids}
+
+
 def competency_mastery_counts(
     questions: Iterable[Question],
     mastered_ids: set[str],

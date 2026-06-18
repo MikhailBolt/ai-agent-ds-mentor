@@ -422,5 +422,39 @@
       "размерность таблицы",
       "n rows n columns"
     ]
+  },
+  {
+    "id": "ml-022",
+    "competency_id": "ml-metrics",
+    "difficulty": 1,
+    "prompt": "Что такое specificity (специфичность) в бинарной классификации?",
+    "answer": "доля истинных отрицательных среди всех реальных отрицательных tn/(tn+fp)",
+    "aliases": [
+      "true negative rate",
+      "tn делить на tn плюс fp"
+    ],
+    "hint": "Зеркальная метрика к recall для класса 0."
+  },
+  {
+    "id": "st-007",
+    "competency_id": "stats-basics",
+    "difficulty": 2,
+    "prompt": "Что означает нулевая гипотеза H0?",
+    "answer": "базовое предположение об отсутствии эффекта или различий пока данные его не опровергли",
+    "aliases": [
+      "hypothesis of no effect",
+      "проверяем отсутствие эффекта"
+    ]
+  },
+  {
+    "id": "py-010",
+    "competency_id": "python-ds",
+    "difficulty": 2,
+    "prompt": "Зачем вызывают df.describe() в pandas?",
+    "answer": "получить сводную статистику числовых колонок count mean std min max",
+    "aliases": [
+      "краткая статистика по числам",
+      "summary statistics"
+    ]
   }
 ]
