@@ -285,6 +285,43 @@ def record_question_attempt(
     conn.commit()
 
 
+@dataclass(frozen=True)
+class MistakeRow:
+    question_id: str
+    wrong: int
+    attempts: int
+
+
+def get_mistake_rows(
+    conn: sqlite3.Connection,
+    chat_id: int,
+    *,
+    limit: int = 10,
+) -> list[MistakeRow]:
+    rows = conn.execute(
+        """
+        SELECT question_id, attempts, correct_count
+        FROM question_history
+        WHERE chat_id=? AND attempts > correct_count
+        ORDER BY (attempts - correct_count) DESC, attempts DESC
+        LIMIT ?
+        """,
+        (chat_id, limit),
+    ).fetchall()
+    out: list[MistakeRow] = []
+    for r in rows:
+        attempts = int(r["attempts"])
+        correct = int(r["correct_count"])
+        out.append(
+            MistakeRow(
+                question_id=str(r["question_id"]),
+                wrong=attempts - correct,
+                attempts=attempts,
+            )
+        )
+    return out
+
+
 def get_review_question_ids(
     conn: sqlite3.Connection,
     chat_id: int,

@@ -26,6 +26,28 @@ def test_collect_achievement_labels_milestones() -> None:
     assert "Весь банк освоен" in labels
 
 
+def test_format_mistakes_summary_empty() -> None:
+    text = prog.format_mistakes_summary([])
+    assert "Ошибок пока нет" in text
+
+
+def test_format_mistakes_summary_with_rows() -> None:
+    text = prog.format_mistakes_summary([("ml-001", 2, 3)])
+    assert "ml-001" in text
+    assert "/review" in text
+
+
+def test_accuracy_achievement() -> None:
+    labels = prog.collect_achievement_labels(
+        total=10,
+        correct=8,
+        best_streak=2,
+        bank_total=20,
+        bank_mastered=5,
+    )
+    assert "Точность 80%+" in labels
+
+
 def test_format_progress_export() -> None:
     comp = Competency(id="a", title="A", description="")
     text = prog.format_progress_export(
@@ -45,7 +67,7 @@ def test_format_progress_export() -> None:
         achievements=["Первый ответ"],
     )
     assert "Отчёт AI DS Mentor" in text
-    assert "review" in text.lower() or "ошибк" in text.lower()
+    assert "Не встречалось" in text
     assert "Первый ответ" in text
 
 

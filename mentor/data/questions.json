@@ -456,5 +456,39 @@
       "краткая статистика по числам",
       "summary statistics"
     ]
+  },
+  {
+    "id": "ml-023",
+    "competency_id": "ml-metrics",
+    "difficulty": 2,
+    "prompt": "Как связаны precision и recall при сдвиге порога классификации?",
+    "answer": "обычно при повышении порога растёт precision и падает recall",
+    "aliases": [
+      "tradeoff precision recall threshold",
+      "выше порог меньше false positive"
+    ],
+    "explanation": "На PR-кривой виден компромисс между метриками."
+  },
+  {
+    "id": "ml-024",
+    "competency_id": "ml-validation",
+    "difficulty": 1,
+    "prompt": "Зачем фиксируют random_state при разбиении train/test?",
+    "answer": "чтобы получать воспроизводимое одинаковое разбиение данных",
+    "aliases": [
+      "reproducible split",
+      "один и тот же seed даёт тот же split"
+    ]
+  },
+  {
+    "id": "py-011",
+    "competency_id": "python-ds",
+    "difficulty": 1,
+    "prompt": "Что делает df.head() в pandas?",
+    "answer": "показывает первые n строк таблицы по умолчанию пять",
+    "aliases": [
+      "первые строки датафрейма",
+      "preview данных"
+    ]
   }
 ]

@@ -62,7 +62,7 @@ def test_format_status_text_includes_streak() -> None:
 
 
 def test_streak_bonus_message() -> None:
-    assert "3" in streak_bonus_message(3)
+    assert "7" in streak_bonus_message(7)
     assert streak_bonus_message(4) == ""
 
 

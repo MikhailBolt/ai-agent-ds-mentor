@@ -65,6 +65,16 @@ def reset_is_confirmed(text: str) -> bool:
     return parts[1].strip().lower() in {"confirm", "yes", "да"}
 
 
+def parse_new_topic_arg(text: str) -> str:
+    """`/new` or `/new ml-metrics` → optional competency id."""
+    if command_prefix(text) != "/new":
+        raise ValueError("not a new command")
+    parts = (text or "").strip().split(maxsplit=1)
+    if len(parts) < 2:
+        return ""
+    return parts[1].strip().lower()
+
+
 def parse_question_id_arg(text: str) -> str:
     """`/question ml-001` or `/q ml-001` → question id."""
     cmd = command_prefix(text)

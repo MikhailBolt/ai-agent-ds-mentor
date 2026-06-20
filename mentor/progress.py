@@ -34,6 +34,10 @@ def collect_achievement_labels(
         labels.append("Серия 5+")
     if best_streak >= 10:
         labels.append("Серия 10+")
+    if best_streak >= 15:
+        labels.append("Серия 15+")
+    if total >= 10 and correct / total >= 0.8:
+        labels.append("Точность 80%+")
     if bank_total > 0 and bank_mastered >= bank_total:
         labels.append("Весь банк освоен")
     elif bank_total > 0 and bank_mastered * 2 >= bank_total:
@@ -112,6 +116,7 @@ def format_progress_export(
         f"Ответов: {total} · верно: {correct} ({acc:.1f}%)",
         f"Серия: {streak} · лучшая: {best_streak}",
         f"Банк: встречено {bank_seen}/{bank_total}, освоено {bank_mastered}/{bank_total}",
+        f"Не встречалось: {max(0, bank_total - bank_seen)} вопросов",
         f"Вопросов с ошибками для /review: {review_count}",
     ]
     if daily_goal:
@@ -128,4 +133,25 @@ def format_progress_export(
         else:
             c_acc = c_ok / c_tot * 100.0
             lines.append(f"• {c.title} ({c.id}) — {c_ok}/{c_tot} ({c_acc:.0f}%)")
+    return "\n".join(lines)
+
+
+def format_mistakes_summary(
+    rows: list[tuple[str, int, int]],
+    *,
+    limit: int = 8,
+) -> str:
+    """rows: (question_id, wrong_count, total_attempts)."""
+    if not rows:
+        return (
+            "Ошибок пока нет — отлично!\n"
+            "Напиши /quiz или /new для новых вопросов."
+        )
+    lines = [f"Вопросы с ошибками ({len(rows)}):", ""]
+    for qid, wrong, attempts in rows[:limit]:
+        lines.append(f"• {qid} — {wrong} ошибок из {attempts} попыток")
+    if len(rows) > limit:
+        lines.append(f"… и ещё {len(rows) - limit}")
+    lines.append("")
+    lines.append("/review — повторить · /question <id> — открыть вопрос")
     return "\n".join(lines)

@@ -19,6 +19,7 @@ from mentor import quiz as mentor_quiz
 from mentor.telegram import iter_chunks
 from mentor.textutil import (
     command_prefix,
+    parse_new_topic_arg,
     parse_question_id_arg,
     parse_quiz_args,
     reset_is_confirmed,
@@ -46,6 +47,7 @@ BOT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("next", "Следующий вопрос"),
     ("practice", "Вопрос по слабой теме"),
     ("challenge", "Сложный вопрос"),
+    ("medium", "Средний вопрос"),
     ("easy", "Лёгкий вопрос"),
     ("export", "Экспорт прогресса"),
     ("current", "Текущий вопрос"),
@@ -153,13 +155,16 @@ def _help_text() -> str:
         "Команды:\n"
         "/quiz — вопрос (приоритет слабым темам)\n"
         "/new — вопрос, который вы ещё не видели\n"
+        "/new ml-metrics — новый вопрос по теме\n"
         "/question <id> — конкретный вопрос, напр. /question ml-001\n"
         "/next — то же, что /quiz\n"
         "/quiz <id> — вопрос по теме, напр. /quiz ml-metrics\n"
         "/quiz 2 или /quiz hard — по сложности (1–3)\n"
         "/practice — вопрос по самой слабой/новой теме\n"
         "/challenge — случайный сложный вопрос (★★★)\n"
+        "/medium — средний вопрос (★★☆)\n"
         "/easy — лёгкий вопрос (★☆☆)\n"
+        "/mistakes — список вопросов с ошибками\n"
         "/export — текстовый отчёт о прогрессе\n"
         "/current — информация о текущем вопросе\n"
         "/review — повторить вопрос с ошибкой\n"
@@ -198,7 +203,7 @@ def _format_question(
 
 
 def streak_bonus_message(streak: int) -> str:
-    if streak in (3, 5, 10):
+    if streak in (3, 5, 7, 10, 15):
         return f" Серия верных ответов: {streak}!"
     return ""
 
@@ -481,6 +486,18 @@ def handle_text(
         )
         return
 
+    if cmd == "/medium":
+        deliver_quiz_question(
+            api,
+            conn,
+            chat_id,
+            questions,
+            competencies,
+            difficulty_filter=2,
+            intro="Средний вопрос",
+        )
+        return
+
     if cmd == "/export":
         st = mentor_db.get_stats(conn, chat_id)
         streak = mentor_db.get_streak(conn, chat_id)
@@ -617,7 +634,16 @@ def handle_text(
         api.send_message(chat_id, f"Подсказка: {q.hint}")
         return
 
-    if cmd in {"/review", "/mistakes"}:
+    if cmd == "/mistakes":
+        rows = mentor_db.get_mistake_rows(conn, chat_id, limit=20)
+        summary_rows = [(r.question_id, r.wrong, r.attempts) for r in rows]
+        api.send_message(
+            chat_id,
+            mentor_progress.format_mistakes_summary(summary_rows),
+        )
+        return
+
+    if cmd == "/review":
         review_ids = mentor_db.get_review_question_ids(conn, chat_id)
         if not review_ids:
             api.send_message(
@@ -706,14 +732,34 @@ def handle_text(
         return
 
     if cmd == "/new":
-        seen = mentor_db.get_seen_question_ids(conn, chat_id)
-        unseen = mentor_quiz.unseen_question_ids(questions, seen)
-        if not unseen:
+        try:
+            topic = parse_new_topic_arg(text)
+        except ValueError:
+            topic = ""
+        if topic and topic not in comp_index:
+            ids = ", ".join(c.id for c in competencies)
             api.send_message(
                 chat_id,
-                "Все вопросы банка уже встречались. /quiz — повторы, /review — ошибки.",
+                f"Неизвестная тема «{topic}».\nДоступные id: {ids}\n/topics — список",
             )
             return
+        seen = mentor_db.get_seen_question_ids(conn, chat_id)
+        unseen = mentor_quiz.unseen_question_ids(questions, seen)
+        if topic:
+            unseen = {
+                q.id
+                for q in questions
+                if q.id in unseen and q.competency_id == topic
+            }
+        if not unseen:
+            hint = "Все вопросы банка уже встречались."
+            if topic:
+                hint = f"Новых вопросов по теме «{comp_index[topic].title}» не осталось."
+            api.send_message(chat_id, f"{hint} /quiz — повторы, /review — ошибки.")
+            return
+        intro = "Новый вопрос из банка"
+        if topic:
+            intro = f"Новый вопрос: {comp_index[topic].title}"
         deliver_quiz_question(
             api,
             conn,
@@ -721,7 +767,7 @@ def handle_text(
             questions,
             competencies,
             only_ids=unseen,
-            intro="Новый вопрос из банка",
+            intro=intro,
         )
         return
 

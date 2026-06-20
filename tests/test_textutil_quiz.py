@@ -1,6 +1,7 @@
 import pytest
 
 from mentor.textutil import (
+    parse_new_topic_arg,
     parse_question_id_arg,
     parse_quiz_args,
     quiz_competency_arg,
@@ -35,6 +36,11 @@ def test_parse_quiz_args_topic_and_difficulty() -> None:
 def test_quiz_competency_arg_not_quiz() -> None:
     with pytest.raises(ValueError):
         quiz_competency_arg("/help")
+
+
+def test_parse_new_topic_arg() -> None:
+    assert parse_new_topic_arg("/new") == ""
+    assert parse_new_topic_arg("/new ml-metrics") == "ml-metrics"
 
 
 def test_parse_question_id_arg() -> None:
