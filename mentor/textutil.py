@@ -65,6 +65,15 @@ def reset_is_confirmed(text: str) -> bool:
     return parts[1].strip().lower() in {"confirm", "yes", "да"}
 
 
+def parse_search_query(text: str) -> str:
+    if command_prefix(text) != "/search":
+        raise ValueError("not a search command")
+    parts = (text or "").strip().split(maxsplit=1)
+    if len(parts) < 2:
+        return ""
+    return parts[1].strip()
+
+
 def parse_new_topic_arg(text: str) -> str:
     """`/new` or `/new ml-metrics` → optional competency id."""
     if command_prefix(text) != "/new":

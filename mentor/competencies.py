@@ -130,14 +130,56 @@ def format_stats_summary(
     return "\n".join(lines)
 
 
+def format_search_results(questions: list, query: str) -> str:
+    if not query.strip():
+        return "Укажи слово для поиска: /search precision"
+    if not questions:
+        return f"По запросу «{query}» ничего не найдено. /bank — обзор банка"
+    lines = [f"Найдено ({len(questions)}):", ""]
+    for q in questions:
+        preview = q.prompt if len(q.prompt) <= 60 else q.prompt[:57] + "..."
+        lines.append(f"• {q.id} — {preview}")
+    lines.append("")
+    lines.append("Открыть: /question <id>")
+    return "\n".join(lines)
+
+
+def format_bank_summary(
+    *,
+    total: int,
+    diff_counts: dict[int, int],
+    competencies: list[Competency],
+    bank_counts: dict[str, int],
+) -> str:
+    lines = [
+        f"Банк вопросов: {total}",
+        "",
+        "По сложности:",
+    ]
+    stars = {1: "★☆☆", 2: "★★☆", 3: "★★★"}
+    for level in sorted(diff_counts):
+        lines.append(f"• {stars.get(level, str(level))} — {diff_counts[level]}")
+    lines.append("")
+    lines.append("По темам:")
+    for c in competencies:
+        n = bank_counts.get(c.id, 0)
+        lines.append(f"• {c.title} ({c.id}) — {n}")
+    lines.append("")
+    lines.append("/search <слово> · /question <id> · /new")
+    return "\n".join(lines)
+
+
 def format_topics_list(
     competencies: list[Competency],
     bank_counts: dict[str, int] | None = None,
+    unseen_counts: dict[str, int] | None = None,
 ) -> str:
     lines = ["Темы (id для /quiz):", ""]
     for c in competencies:
         n = bank_counts.get(c.id, 0) if bank_counts else 0
         suffix = f" — {n} вопр. в банке" if n else ""
+        if unseen_counts is not None and c.id in unseen_counts:
+            suffix += f", новых: {unseen_counts[c.id]}"
         lines.append(f"• {c.id}: {c.title}{suffix}")
     lines.append("")
     lines.append("/map — прогресс · /practice — слабая тема")

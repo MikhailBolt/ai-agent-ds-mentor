@@ -26,6 +26,20 @@ def test_collect_achievement_labels_milestones() -> None:
     assert "Весь банк освоен" in labels
 
 
+def test_format_today_summary() -> None:
+    text = prog.format_today_summary(count=2, goal=5, streak=3)
+    assert "Осталось ответов: 3" in text
+    assert "Текущая серия: 3" in text
+    done = prog.format_today_summary(count=5, goal=5, streak=0)
+    assert "выполнена" in done
+
+
+def test_format_streak_summary() -> None:
+    text = prog.format_streak_summary(streak=3, best=7)
+    assert "Текущая: 3" in text
+    assert "До рекорда: 4" in text
+
+
 def test_format_mistakes_summary_empty() -> None:
     text = prog.format_mistakes_summary([])
     assert "Ошибок пока нет" in text

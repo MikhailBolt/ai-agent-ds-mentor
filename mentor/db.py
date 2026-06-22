@@ -70,6 +70,8 @@ def _migrate_users(conn: sqlite3.Connection) -> None:
         )
     if "quiz_retry_question_id" not in cols:
         conn.execute("ALTER TABLE users ADD COLUMN quiz_retry_question_id TEXT")
+    if "last_question_id" not in cols:
+        conn.execute("ALTER TABLE users ADD COLUMN last_question_id TEXT")
 
 
 def ensure_schema(conn: sqlite3.Connection) -> None:
@@ -129,6 +131,25 @@ def set_retry_question_id(conn: sqlite3.Connection, chat_id: int, qid: str) -> N
         (qid, chat_id),
     )
     conn.commit()
+
+
+def set_last_question_id(conn: sqlite3.Connection, chat_id: int, qid: str | None) -> None:
+    conn.execute(
+        "UPDATE users SET last_question_id=? WHERE chat_id=?",
+        (qid, chat_id),
+    )
+    conn.commit()
+
+
+def get_last_question_id(conn: sqlite3.Connection, chat_id: int) -> str | None:
+    row = conn.execute(
+        "SELECT last_question_id FROM users WHERE chat_id=?",
+        (chat_id,),
+    ).fetchone()
+    if row is None:
+        return None
+    qid = row["last_question_id"]
+    return str(qid) if qid is not None else None
 
 
 def get_active_question(conn: sqlite3.Connection, chat_id: int) -> str | None:
@@ -369,7 +390,8 @@ def reset_user(conn: sqlite3.Connection, chat_id: int) -> None:
         UPDATE users
         SET quiz_correct=0, quiz_total=0, quiz_streak=0,
             best_streak=0, daily_answer_count=0, daily_answer_date=NULL,
-            quiz_retry_question_id=NULL, active_question_id=NULL
+            quiz_retry_question_id=NULL, last_question_id=NULL,
+            active_question_id=NULL
         WHERE chat_id=?
         """,
         (chat_id,),

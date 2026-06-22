@@ -102,6 +102,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     check = sub.add_parser("check", help="Validate configuration and question bank")
     check.add_argument(
+        "--list-questions",
+        action="store_true",
+        help="List question ids grouped by competency (implies validation)",
+    )
+    check.add_argument(
         "--questions",
         default=os.getenv("QUESTIONS_PATH", default_questions_path()),
         help="Path to questions JSON (default: QUESTIONS_PATH or packaged questions.json)",
@@ -160,6 +165,16 @@ def cmd_check(args: argparse.Namespace) -> int:
     except Exception as e:
         print(f"Config load failed: {e}", file=sys.stderr)
         return 2
+
+    if getattr(args, "list_questions", False):
+        by_comp: dict[str, list[str]] = {cid: [] for cid in comp_ids}
+        for q in qs:
+            if q.competency_id:
+                by_comp.setdefault(q.competency_id, []).append(q.id)
+        for c in competencies:
+            ids = ", ".join(by_comp.get(c.id, []))
+            print(f"{c.id}\t{c.title}\t{ids}")
+        return 0
 
     if getattr(args, "init_db", False):
         try:

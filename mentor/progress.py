@@ -5,10 +5,38 @@ from __future__ import annotations
 from mentor.competencies import Competency
 
 
+def format_streak_summary(*, streak: int, best: int) -> str:
+    lines = [
+        "Серия верных ответов",
+        f"Текущая: {streak}",
+        f"Лучшая: {best}",
+    ]
+    if streak == 0:
+        lines.append("")
+        lines.append("Напиши /quiz чтобы начать серию.")
+    elif streak < best:
+        lines.append(f"До рекорда: {best - streak}")
+    return "\n".join(lines)
+
+
 def format_daily_goal_line(count: int, goal: int) -> str:
     if count >= goal:
         return f"Дневная цель: {count}/{goal} — выполнена!"
     return f"Дневная цель: {count}/{goal} ответов сегодня"
+
+
+def format_today_summary(*, count: int, goal: int, streak: int) -> str:
+    lines = ["Сегодня", format_daily_goal_line(count, goal)]
+    if count < goal:
+        lines.append(f"Осталось ответов: {goal - count}")
+        lines.append("")
+        lines.append("/quiz — следующий вопрос")
+    else:
+        lines.append("")
+        lines.append("Цель выполнена! /stats — полная статистика")
+    if streak > 0:
+        lines.append(f"Текущая серия: {streak}")
+    return "\n".join(lines)
 
 
 def collect_achievement_labels(

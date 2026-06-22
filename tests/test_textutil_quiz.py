@@ -4,6 +4,7 @@ from mentor.textutil import (
     parse_new_topic_arg,
     parse_question_id_arg,
     parse_quiz_args,
+    parse_search_query,
     quiz_competency_arg,
     reset_is_confirmed,
 )
@@ -36,6 +37,11 @@ def test_parse_quiz_args_topic_and_difficulty() -> None:
 def test_quiz_competency_arg_not_quiz() -> None:
     with pytest.raises(ValueError):
         quiz_competency_arg("/help")
+
+
+def test_parse_search_query() -> None:
+    assert parse_search_query("/search precision") == "precision"
+    assert parse_search_query("/search") == ""
 
 
 def test_parse_new_topic_arg() -> None:

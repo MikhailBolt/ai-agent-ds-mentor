@@ -168,6 +168,28 @@ def pick_next(
     return random.choice(qs)
 
 
+def search_questions(
+    questions: Iterable[Question],
+    query: str,
+    *,
+    limit: int = 5,
+) -> list[Question]:
+    needle = normalize(query)
+    if not needle:
+        return []
+    tokens = needle.split()
+    out: list[Question] = []
+    for q in questions:
+        hay = normalize(
+            " ".join([q.id, q.prompt, q.answer, *(q.aliases or ())]),
+        )
+        if all(tok in hay for tok in tokens):
+            out.append(q)
+        if len(out) >= limit:
+            break
+    return out
+
+
 def unseen_question_ids(
     questions: Iterable[Question],
     seen_ids: set[str],

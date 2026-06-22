@@ -490,5 +490,75 @@
       "первые строки датафрейма",
       "preview данных"
     ]
+  },
+  {
+    "id": "ml-025",
+    "competency_id": "ml-foundations",
+    "difficulty": 2,
+    "prompt": "Что такое learning rate в градиентном спуске?",
+    "answer": "шаг обновления весов пропорциональный градиенту с коэффициентом lr",
+    "aliases": [
+      "step size при оптимизации",
+      "коэффициент шага градиентного спуска"
+    ],
+    "hint": "Слишком большой lr может расходиться."
+  },
+  {
+    "id": "st-008",
+    "competency_id": "stats-basics",
+    "difficulty": 1,
+    "prompt": "Чем среднее арифметическое отличается от медианы?",
+    "answer": "среднее сумма делить на n медиана центральное значение устойчивее к выбросам",
+    "aliases": [
+      "mean vs median",
+      "среднее чувствительно к экстремумам"
+    ]
+  },
+  {
+    "id": "py-012",
+    "competency_id": "python-ds",
+    "difficulty": 2,
+    "prompt": "Зачем в pandas используют df.info()?",
+    "answer": "посмотреть типы столбцов число non-null значений и память",
+    "aliases": [
+      "обзор структуры датафрейма",
+      "dtypes и пропуски"
+    ]
+  },
+  {
+    "id": "ml-026",
+    "competency_id": "ml-validation",
+    "difficulty": 2,
+    "prompt": "Что такое data leakage при обучении модели?",
+    "answer": "использование информации из теста или будущего при обучении что завышает оценку качества",
+    "aliases": [
+      "утечка данных",
+      "target leakage train test contamination"
+    ],
+    "explanation": "Например, нормализация по всему датасету до split — типичная утечка."
+  },
+  {
+    "id": "ml-027",
+    "competency_id": "ml-foundations",
+    "difficulty": 3,
+    "prompt": "Чем bagging отличается от boosting?",
+    "answer": "bagging обучает модели параллельно на бутстрэп выборках и усредняет boosting последовательно исправляет ошибки предыдущих",
+    "aliases": [
+      "random forest vs gradient boosting",
+      "параллельные vs последовательные ансамбли"
+    ],
+    "hint": "Random Forest — bagging, XGBoost — boosting."
+  },
+  {
+    "id": "st-009",
+    "competency_id": "stats-basics",
+    "difficulty": 2,
+    "prompt": "Что такое p-value в статистическом тесте?",
+    "answer": "вероятность получить такие или более экстремальные данные при верной нулевой гипотезе",
+    "aliases": [
+      "уровень значимости наблюдения",
+      "probability under H0"
+    ],
+    "hint": "Малое p-value — аргумент против H0, но не размер эффекта."
   }
 ]

@@ -8,8 +8,9 @@ Telegram bot that runs a **Data Science quiz** from a JSON question bank, tracks
 
 ## Features
 
-- Commands: `/quiz`, `/new`, `/question`, `/next`, `/practice`, `/easy`, `/medium`, `/challenge`, `/review`, `/mistakes`, `/export`, `/current`, `/map`, `/topics`, `/hint`, `/explain`, `/achievements`, `/skip`, `/giveup`, `/stats`, `/progress`, `/status`, `/about`, `/reset`, `/help`
-- `/new <topic>`; `/mistakes` list; `/medium`; topic mastery; second chance; `/giveup` vs `/skip`
+- Commands: `/quiz`, `/new`, `/search`, `/bank`, `/streak`, `/last`, `/today`, `/question`, `/next`, `/practice`, `/easy`, `/medium`, `/hard`, `/challenge`, `/review`, `/mistakes`, `/export`, `/current`, `/map`, `/topics`, `/hint`, `/explain`, `/achievements`, `/skip`, `/giveup`, `/stats`, `/progress`, `/status`, `/about`, `/reset`, `/help`
+- `/last` repeats last answered question; `/today` shows daily goal; `/hard` is alias for `/challenge`
+- `/search` in question bank (including by id); `/bank` overview; `/topics` with unseen counts; `mentor check --list-questions`
 - Telegram command menu registered on startup (`setMyCommands`)
 - `/stats` shows per-topic progress and what to practice next
 - Normalizes `/cmd@BotUsername` (Telegram menu / groups)

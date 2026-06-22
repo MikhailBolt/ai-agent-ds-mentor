@@ -22,6 +22,7 @@ from mentor.textutil import (
     parse_new_topic_arg,
     parse_question_id_arg,
     parse_quiz_args,
+    parse_search_query,
     reset_is_confirmed,
 )
 
@@ -47,9 +48,15 @@ BOT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("next", "Следующий вопрос"),
     ("practice", "Вопрос по слабой теме"),
     ("challenge", "Сложный вопрос"),
+    ("hard", "Сложный вопрос (алиас)"),
     ("medium", "Средний вопрос"),
     ("easy", "Лёгкий вопрос"),
+    ("last", "Последний вопрос"),
+    ("today", "Дневная цель"),
     ("export", "Экспорт прогресса"),
+    ("search", "Поиск по банку"),
+    ("bank", "Обзор банка"),
+    ("streak", "Серия ответов"),
     ("current", "Текущий вопрос"),
     ("map", "Карта компетенций"),
     ("topics", "Список тем (id)"),
@@ -161,11 +168,16 @@ def _help_text() -> str:
         "/quiz <id> — вопрос по теме, напр. /quiz ml-metrics\n"
         "/quiz 2 или /quiz hard — по сложности (1–3)\n"
         "/practice — вопрос по самой слабой/новой теме\n"
-        "/challenge — случайный сложный вопрос (★★★)\n"
+        "/challenge или /hard — случайный сложный вопрос (★★★)\n"
         "/medium — средний вопрос (★★☆)\n"
         "/easy — лёгкий вопрос (★☆☆)\n"
+        "/last — повторить последний отвеченный вопрос\n"
+        "/today — дневная цель\n"
         "/mistakes — список вопросов с ошибками\n"
         "/export — текстовый отчёт о прогрессе\n"
+        "/search <слово> — поиск вопроса в банке\n"
+        "/bank — обзор банка (темы и сложность)\n"
+        "/streak — текущая и лучшая серия\n"
         "/current — информация о текущем вопросе\n"
         "/review — повторить вопрос с ошибкой\n"
         "/explain — пояснение к текущему вопросу\n"
@@ -223,6 +235,7 @@ def finish_wrong_answer(
     )
     mentor_db.record_question_attempt(conn, chat_id, q.id, is_correct=False)
     mentor_db.set_active_question(conn, chat_id, None)
+    mentor_db.set_last_question_id(conn, chat_id, q.id)
     comp_title = None
     comp_id = q.competency_id
     if comp_id and comp_id in comp_index:
@@ -352,6 +365,7 @@ def format_status_text(
     bank_mastered: int = 0,
     daily_count: int = 0,
     daily_goal: int | None = None,
+    last_question_id: str | None = None,
     active_question_id: str | None = None,
 ) -> str:
     uptime_sec = max(0, int(now - started_at))
@@ -370,6 +384,8 @@ def format_status_text(
     ]
     if daily_goal:
         lines.append(mentor_progress.format_daily_goal_line(daily_count, daily_goal))
+    if last_question_id:
+        lines.append(f"Последний вопрос: {last_question_id} — /last")
     if active_question_id:
         lines.append(f"Активный вопрос: {active_question_id}")
     return "\n".join(lines)
@@ -456,13 +472,59 @@ def handle_text(
         return
 
     if cmd == "/topics":
+        seen = mentor_db.get_seen_question_ids(conn, chat_id)
+        unseen_counts: dict[str, int] = {}
+        for c in competencies:
+            unseen_counts[c.id] = sum(
+                1
+                for q in questions
+                if q.competency_id == c.id and q.id not in seen
+            )
         api.send_message(
             chat_id,
-            mentor_comp.format_topics_list(competencies, bank_counts),
+            mentor_comp.format_topics_list(
+                competencies,
+                bank_counts,
+                unseen_counts=unseen_counts,
+            ),
         )
         return
 
-    if cmd == "/challenge":
+    if cmd == "/bank":
+        diff_counts = mentor_quiz.question_counts_by_difficulty(questions)
+        api.send_message(
+            chat_id,
+            mentor_comp.format_bank_summary(
+                total=len(questions),
+                diff_counts=diff_counts,
+                competencies=competencies,
+                bank_counts=bank_counts,
+            ),
+        )
+        return
+
+    if cmd == "/search":
+        try:
+            query = parse_search_query(text)
+        except ValueError:
+            query = ""
+        found = mentor_quiz.search_questions(questions, query)
+        api.send_message(
+            chat_id,
+            mentor_comp.format_search_results(found, query),
+        )
+        return
+
+    if cmd == "/streak":
+        streak = mentor_db.get_streak(conn, chat_id)
+        best = mentor_db.get_best_streak(conn, chat_id)
+        api.send_message(
+            chat_id,
+            mentor_progress.format_streak_summary(streak=streak, best=best),
+        )
+        return
+
+    if cmd in {"/challenge", "/hard"}:
         deliver_quiz_question(
             api,
             conn,
@@ -471,6 +533,31 @@ def handle_text(
             competencies,
             difficulty_filter=3,
             intro="Челлендж: сложный вопрос",
+        )
+        return
+
+    if cmd == "/last":
+        last_q = mentor_db.get_last_question_id(conn, chat_id)
+        if not last_q:
+            api.send_message(
+                chat_id,
+                "Пока нет последнего вопроса. Напиши /quiz.",
+            )
+            return
+        start_question_by_id(api, conn, chat_id, questions, competencies, last_q)
+        return
+
+    if cmd == "/today":
+        daily_goal = parse_daily_goal()
+        daily_count = mentor_db.get_daily_answer_count(conn, chat_id)
+        streak = mentor_db.get_streak(conn, chat_id)
+        api.send_message(
+            chat_id,
+            mentor_progress.format_today_summary(
+                count=daily_count,
+                goal=daily_goal,
+                streak=streak,
+            ),
         )
         return
 
@@ -670,6 +757,7 @@ def handle_text(
         mastered = len(mentor_db.get_mastered_question_ids(conn, chat_id))
         daily_goal = parse_daily_goal()
         daily_count = mentor_db.get_daily_answer_count(conn, chat_id)
+        last_q = mentor_db.get_last_question_id(conn, chat_id)
         active = mentor_db.get_active_question(conn, chat_id)
         api.send_message(
             chat_id,
@@ -684,6 +772,7 @@ def handle_text(
                 bank_mastered=mastered,
                 daily_count=daily_count,
                 daily_goal=daily_goal,
+                last_question_id=last_q,
                 active_question_id=active,
             ),
         )
@@ -843,6 +932,7 @@ def handle_text(
             competency_id=q.competency_id,
         )
         mentor_db.record_question_attempt(conn, chat_id, q.id, is_correct=True)
+        mentor_db.set_last_question_id(conn, chat_id, q.id)
         mentor_db.set_active_question(conn, chat_id, None)
         bonus = streak_bonus_message(streak)
         retry_note = " (со второй попытки)" if had_retry else ""
