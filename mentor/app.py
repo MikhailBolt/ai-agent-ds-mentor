@@ -41,6 +41,7 @@ def parse_daily_goal() -> int | None:
         return 5
     return None if goal <= 0 else goal
 
+
 BOT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("start", "Начать и помощь"),
     ("quiz", "Новый вопрос"),
@@ -141,9 +142,7 @@ class TelegramAPI:
             self.request("sendMessage", {"chat_id": chat_id, "text": chunk})
 
     def set_my_commands(self) -> None:
-        commands = [
-            {"command": name, "description": desc} for name, desc in BOT_COMMANDS
-        ]
+        commands = [{"command": name, "description": desc} for name, desc in BOT_COMMANDS]
         self.request("setMyCommands", {"commands": commands})
 
     def get_updates(self, offset: int | None) -> list[dict[str, Any]]:
@@ -291,8 +290,7 @@ def deliver_quiz_question(
         ids = ", ".join(c.id for c in competencies)
         api.send_message(
             chat_id,
-            f"Неизвестная компетенция «{comp_filter}».\n"
-            f"Доступные id: {ids}\n/topics — список тем",
+            f"Неизвестная компетенция «{comp_filter}».\nДоступные id: {ids}\n/topics — список тем",
         )
         return
 
@@ -482,9 +480,7 @@ def handle_text(
         unseen_counts: dict[str, int] = {}
         for c in competencies:
             unseen_counts[c.id] = sum(
-                1
-                for q in questions
-                if q.competency_id == c.id and q.id not in seen
+                1 for q in questions if q.competency_id == c.id and q.id not in seen
             )
         api.send_message(
             chat_id,
@@ -861,11 +857,7 @@ def handle_text(
         seen = mentor_db.get_seen_question_ids(conn, chat_id)
         unseen = mentor_quiz.unseen_question_ids(questions, seen)
         if topic:
-            unseen = {
-                q.id
-                for q in questions
-                if q.id in unseen and q.competency_id == topic
-            }
+            unseen = {q.id for q in questions if q.id in unseen and q.competency_id == topic}
         if not unseen:
             hint = "Все вопросы банка уже встречались."
             if topic:

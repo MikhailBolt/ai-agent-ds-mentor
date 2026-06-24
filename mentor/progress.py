@@ -199,10 +199,7 @@ def format_mistakes_summary(
 ) -> str:
     """rows: (question_id, wrong_count, total_attempts)."""
     if not rows:
-        return (
-            "Ошибок пока нет — отлично!\n"
-            "Напиши /quiz или /new для новых вопросов."
-        )
+        return "Ошибок пока нет — отлично!\nНапиши /quiz или /new для новых вопросов."
     lines = [f"Вопросы с ошибками ({len(rows)}):", ""]
     for qid, wrong, attempts in rows[:limit]:
         lines.append(f"• {qid} — {wrong} ошибок из {attempts} попыток")

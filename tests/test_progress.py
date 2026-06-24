@@ -3,13 +3,16 @@ from mentor.competencies import Competency
 
 
 def test_collect_achievement_labels_empty() -> None:
-    assert prog.collect_achievement_labels(
-        total=0,
-        correct=0,
-        best_streak=0,
-        bank_total=10,
-        bank_mastered=0,
-    ) == []
+    assert (
+        prog.collect_achievement_labels(
+            total=0,
+            correct=0,
+            best_streak=0,
+            bank_total=10,
+            bank_mastered=0,
+        )
+        == []
+    )
 
 
 def test_collect_achievement_labels_milestones() -> None:
