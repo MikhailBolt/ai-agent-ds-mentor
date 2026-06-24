@@ -53,6 +53,7 @@ BOT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("easy", "Лёгкий вопрос"),
     ("last", "Последний вопрос"),
     ("today", "Дневная цель"),
+    ("remain", "Сколько нового осталось"),
     ("export", "Экспорт прогресса"),
     ("search", "Поиск по банку"),
     ("bank", "Обзор банка"),
@@ -63,6 +64,7 @@ BOT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("hint", "Подсказка к вопросу"),
     ("explain", "Пояснение к вопросу"),
     ("review", "Повтор ошибок"),
+    ("mistakes", "Список ошибок"),
     ("achievements", "Достижения"),
     ("stats", "Статистика и прогресс"),
     ("progress", "Прогресс по банку"),
@@ -161,6 +163,7 @@ def _help_text() -> str:
         "AI DS Mentor запущен.\n\n"
         "Команды:\n"
         "/quiz — вопрос (приоритет слабым темам)\n"
+        "/random или /next — случайный вопрос\n"
         "/new — вопрос, который вы ещё не видели\n"
         "/new ml-metrics — новый вопрос по теме\n"
         "/question <id> — конкретный вопрос, напр. /question ml-001\n"
@@ -173,6 +176,7 @@ def _help_text() -> str:
         "/easy — лёгкий вопрос (★☆☆)\n"
         "/last — повторить последний отвеченный вопрос\n"
         "/today — дневная цель\n"
+        "/remain — сколько новых вопросов осталось\n"
         "/mistakes — список вопросов с ошибками\n"
         "/export — текстовый отчёт о прогрессе\n"
         "/search <слово> — поиск вопроса в банке\n"
@@ -185,7 +189,7 @@ def _help_text() -> str:
         "/topics — список id тем\n"
         "/skip или /cancel — пропустить (без штрафа)\n"
         "/giveup — показать ответ и завершить вопрос\n"
-        "/stats, /progress — статистика и прогресс по банку\n"
+        "/stats, /progress, /score — статистика и прогресс по банку\n"
         "/achievements — достижения\n"
         "/hint — подсказка к текущему вопросу\n"
         "/status — состояние бота\n"
@@ -452,6 +456,8 @@ def handle_text(
             daily_goal=daily_goal,
             bank_mastery=bank_mastery,
             competency_titles=comp_titles,
+            comp_stats=mentor_db.get_competency_stats(conn, chat_id),
+            all_competency_ids={c.id for c in competencies},
         )
         api.send_message(chat_id, mentor_progress.format_achievements_text(labels))
         return
@@ -603,6 +609,8 @@ def handle_text(
             bank_mastered=len(mastered),
             daily_count=daily_count,
             daily_goal=daily_goal,
+            comp_stats=comp_stats,
+            all_competency_ids={c.id for c in competencies},
         )
         api.send_message(
             chat_id,
@@ -657,7 +665,7 @@ def handle_text(
         )
         return
 
-    if cmd in {"/stats", "/progress"}:
+    if cmd in {"/stats", "/progress", "/score"}:
         st = mentor_db.get_stats(conn, chat_id)
         streak = mentor_db.get_streak(conn, chat_id)
         best = mentor_db.get_best_streak(conn, chat_id)
@@ -678,6 +686,8 @@ def handle_text(
             daily_goal=daily_goal,
             bank_mastery=bank_mastery,
             competency_titles=comp_titles,
+            comp_stats=comp_stats,
+            all_competency_ids={c.id for c in competencies},
         )
         api.send_message(
             chat_id,
@@ -746,6 +756,22 @@ def handle_text(
             competencies,
             only_ids=set(review_ids),
             intro="Повтор вопроса, где была ошибка",
+        )
+        return
+
+    if cmd in {"/remain", "/left"}:
+        seen = mentor_db.get_seen_question_ids(conn, chat_id)
+        unseen = len(mentor_quiz.unseen_question_ids(questions, seen))
+        mastered = len(mentor_db.get_mastered_question_ids(conn, chat_id))
+        review_count = len(mentor_db.get_review_question_ids(conn, chat_id))
+        api.send_message(
+            chat_id,
+            mentor_progress.format_remaining_summary(
+                bank_total=len(questions),
+                bank_unseen=unseen,
+                review_count=review_count,
+                bank_mastered=mastered,
+            ),
         )
         return
 
@@ -874,7 +900,7 @@ def handle_text(
         start_question_by_id(api, conn, chat_id, questions, competencies, qid)
         return
 
-    if cmd in {"/quiz", "/next"}:
+    if cmd in {"/quiz", "/next", "/random"}:
         comp_filter, difficulty = "", None
         if cmd == "/quiz":
             try:

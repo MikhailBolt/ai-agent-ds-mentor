@@ -181,7 +181,15 @@ def search_questions(
     out: list[Question] = []
     for q in questions:
         hay = normalize(
-            " ".join([q.id, q.prompt, q.answer, *(q.aliases or ())]),
+            " ".join(
+                [
+                    q.id,
+                    q.competency_id or "",
+                    q.prompt,
+                    q.answer,
+                    *(q.aliases or ()),
+                ],
+            ),
         )
         if all(tok in hay for tok in tokens):
             out.append(q)

@@ -39,6 +39,27 @@ def format_today_summary(*, count: int, goal: int, streak: int) -> str:
     return "\n".join(lines)
 
 
+def format_remaining_summary(
+    *,
+    bank_total: int,
+    bank_unseen: int,
+    review_count: int,
+    bank_mastered: int,
+) -> str:
+    lines = [
+        "Осталось в банке",
+        f"Новых вопросов: {bank_unseen}/{bank_total}",
+        f"Освоено (≥1 верный): {bank_mastered}/{bank_total}",
+        f"Для повтора (/review): {review_count}",
+        "",
+    ]
+    if bank_unseen:
+        lines.append("/new — новый вопрос · /quiz — любой")
+    else:
+        lines.append("Все вопросы банка уже встречались — /review или /quiz")
+    return "\n".join(lines)
+
+
 def collect_achievement_labels(
     *,
     total: int,
@@ -50,6 +71,8 @@ def collect_achievement_labels(
     daily_goal: int | None = None,
     bank_mastery: dict[str, tuple[int, int]] | None = None,
     competency_titles: dict[str, str] | None = None,
+    comp_stats: dict[str, tuple[int, int]] | None = None,
+    all_competency_ids: set[str] | None = None,
 ) -> list[str]:
     labels: list[str] = []
     if total >= 1:
@@ -58,6 +81,8 @@ def collect_achievement_labels(
         labels.append("5 верных ответов")
     if correct >= 20:
         labels.append("20 верных ответов")
+    if correct >= 50:
+        labels.append("50 верных ответов")
     if best_streak >= 5:
         labels.append("Серия 5+")
     if best_streak >= 10:
@@ -72,6 +97,9 @@ def collect_achievement_labels(
         labels.append("Половина банка")
     if daily_goal and daily_count >= daily_goal:
         labels.append("Дневная цель")
+    if all_competency_ids and comp_stats:
+        if all(comp_stats.get(cid, (0, 0))[1] > 0 for cid in all_competency_ids):
+            labels.append("Все темы начаты")
     if bank_mastery and competency_titles:
         for cid, (mastered, total) in bank_mastery.items():
             if total > 0 and mastered >= total:

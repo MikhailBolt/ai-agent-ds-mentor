@@ -560,5 +560,40 @@
       "probability under H0"
     ],
     "hint": "Малое p-value — аргумент против H0, но не размер эффекта."
+  },
+  {
+    "id": "ml-028",
+    "competency_id": "ml-metrics",
+    "difficulty": 2,
+    "prompt": "Что показывает ROC-AUC?",
+    "answer": "способность модели ранжировать положительные примеры выше отрицательных по всем порогам",
+    "aliases": [
+      "area under roc curve",
+      "качество ранжирования классов"
+    ],
+    "hint": "AUC=0.5 — как случайное угадывание."
+  },
+  {
+    "id": "ml-029",
+    "competency_id": "ml-validation",
+    "difficulty": 3,
+    "prompt": "Зачем нужен nested cross-validation?",
+    "answer": "чтобы подбор гиперпараметров и оценка качества были на разных фолдах без оптимистичной утечки",
+    "aliases": [
+      "вложенная кросс валидация",
+      "inner outer cv hyperparameter tuning"
+    ],
+    "explanation": "Внешний CV оценивает модель, внутренний — подбирает гиперпараметры."
+  },
+  {
+    "id": "py-013",
+    "competency_id": "python-ds",
+    "difficulty": 1,
+    "prompt": "Что возвращает arr.shape у numpy-массива?",
+    "answer": "кортеж размеров по каждой оси массива",
+    "aliases": [
+      "размерность ndarray",
+      "tuple of dimension lengths"
+    ]
   }
 ]

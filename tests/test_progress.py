@@ -26,6 +26,51 @@ def test_collect_achievement_labels_milestones() -> None:
     assert "Весь банк освоен" in labels
 
 
+def test_format_remaining_summary() -> None:
+    text = prog.format_remaining_summary(
+        bank_total=48,
+        bank_unseen=10,
+        review_count=3,
+        bank_mastered=20,
+    )
+    assert "Новых вопросов: 10/48" in text
+    assert "/new" in text
+    done = prog.format_remaining_summary(
+        bank_total=10,
+        bank_unseen=0,
+        review_count=1,
+        bank_mastered=10,
+    )
+    assert "встречались" in done
+
+
+def test_all_topics_started_achievement() -> None:
+    labels = prog.collect_achievement_labels(
+        total=20,
+        correct=15,
+        best_streak=3,
+        bank_total=30,
+        bank_mastered=10,
+        comp_stats={
+            "a": (2, 3),
+            "b": (1, 2),
+        },
+        all_competency_ids={"a", "b"},
+    )
+    assert "Все темы начаты" in labels
+
+
+def test_fifty_correct_achievement() -> None:
+    labels = prog.collect_achievement_labels(
+        total=60,
+        correct=50,
+        best_streak=5,
+        bank_total=30,
+        bank_mastered=10,
+    )
+    assert "50 верных ответов" in labels
+
+
 def test_format_today_summary() -> None:
     text = prog.format_today_summary(count=2, goal=5, streak=3)
     assert "Осталось ответов: 3" in text
