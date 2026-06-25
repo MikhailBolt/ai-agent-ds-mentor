@@ -172,6 +172,7 @@ def search_questions(
     questions: Iterable[Question],
     query: str,
     *,
+    competency_titles: dict[str, str] | None = None,
     limit: int = 5,
 ) -> list[Question]:
     needle = normalize(query)
@@ -180,11 +181,15 @@ def search_questions(
     tokens = needle.split()
     out: list[Question] = []
     for q in questions:
+        title = ""
+        if competency_titles and q.competency_id:
+            title = competency_titles.get(q.competency_id, "")
         hay = normalize(
             " ".join(
                 [
                     q.id,
                     q.competency_id or "",
+                    title,
                     q.prompt,
                     q.answer,
                     *(q.aliases or ()),

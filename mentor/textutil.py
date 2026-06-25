@@ -84,6 +84,16 @@ def parse_new_topic_arg(text: str) -> str:
     return parts[1].strip().lower()
 
 
+def parse_topic_arg(text: str) -> str:
+    """`/topic ml-metrics` → competency id."""
+    if command_prefix(text) != "/topic":
+        raise ValueError("not a topic command")
+    parts = (text or "").strip().split(maxsplit=1)
+    if len(parts) < 2:
+        return ""
+    return parts[1].strip().lower()
+
+
 def parse_question_id_arg(text: str) -> str:
     """`/question ml-001` or `/q ml-001` → question id."""
     cmd = command_prefix(text)

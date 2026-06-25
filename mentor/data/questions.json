@@ -595,5 +595,39 @@
       "размерность ndarray",
       "tuple of dimension lengths"
     ]
+  },
+  {
+    "id": "ml-030",
+    "competency_id": "ml-foundations",
+    "difficulty": 2,
+    "prompt": "Зачем добавляют L2-регуляризацию в линейную модель?",
+    "answer": "штрафует большие веса снижает переобучение и стабилизирует решение",
+    "aliases": [
+      "ridge penalty",
+      "weight decay l2 norm"
+    ],
+    "hint": "L1 даёт разреженность, L2 — сжатие весов."
+  },
+  {
+    "id": "st-010",
+    "competency_id": "stats-basics",
+    "difficulty": 1,
+    "prompt": "Что показывает стандартное отклонение выборки?",
+    "answer": "среднее квадратичное отклонение значений от среднего мера разброса",
+    "aliases": [
+      "standard deviation",
+      "sqrt variance sample spread"
+    ]
+  },
+  {
+    "id": "py-014",
+    "competency_id": "python-ds",
+    "difficulty": 2,
+    "prompt": "Что делает df.dropna() в pandas?",
+    "answer": "удаляет строки или столбцы с пропущенными значениями nan",
+    "aliases": [
+      "убрать missing values",
+      "drop rows with nulls"
+    ]
   }
 ]

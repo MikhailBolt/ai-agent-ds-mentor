@@ -5,6 +5,7 @@ from mentor.textutil import (
     parse_question_id_arg,
     parse_quiz_args,
     parse_search_query,
+    parse_topic_arg,
     quiz_competency_arg,
     reset_is_confirmed,
 )
@@ -42,6 +43,11 @@ def test_quiz_competency_arg_not_quiz() -> None:
 def test_parse_search_query() -> None:
     assert parse_search_query("/search precision") == "precision"
     assert parse_search_query("/search") == ""
+
+
+def test_parse_topic_arg() -> None:
+    assert parse_topic_arg("/topic ml-metrics") == "ml-metrics"
+    assert parse_topic_arg("/topic") == ""
 
 
 def test_parse_new_topic_arg() -> None:

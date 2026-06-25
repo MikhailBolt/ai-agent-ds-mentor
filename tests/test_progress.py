@@ -29,6 +29,17 @@ def test_collect_achievement_labels_milestones() -> None:
     assert "Весь банк освоен" in labels
 
 
+def test_hundred_answers_achievement() -> None:
+    labels = prog.collect_achievement_labels(
+        total=100,
+        correct=70,
+        best_streak=5,
+        bank_total=50,
+        bank_mastered=20,
+    )
+    assert "100 ответов" in labels
+
+
 def test_format_remaining_summary() -> None:
     text = prog.format_remaining_summary(
         bank_total=48,

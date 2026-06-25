@@ -43,6 +43,19 @@ def test_search_questions_finds_by_competency_id() -> None:
     assert qz.search_questions(qs, "ml-metrics")
 
 
+def test_search_questions_finds_by_competency_title() -> None:
+    qs = [
+        qz.Question(
+            id="1",
+            prompt="Other",
+            answer="x",
+            competency_id="ml-metrics",
+        ),
+    ]
+    titles = {"ml-metrics": "Метрики классификации"}
+    assert qz.search_questions(qs, "метрики", competency_titles=titles)
+
+
 def test_format_bank_summary() -> None:
     comps = [Competency(id="a", title="A", description="")]
     text = format_bank_summary(

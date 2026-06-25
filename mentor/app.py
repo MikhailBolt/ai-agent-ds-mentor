@@ -23,6 +23,7 @@ from mentor.textutil import (
     parse_question_id_arg,
     parse_quiz_args,
     parse_search_query,
+    parse_topic_arg,
     reset_is_confirmed,
 )
 
@@ -47,6 +48,8 @@ BOT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("quiz", "Новый вопрос"),
     ("new", "Вопрос, который ещё не встречался"),
     ("next", "Следующий вопрос"),
+    ("go", "Следующий вопрос (алиас)"),
+    ("topic", "Вопрос по теме"),
     ("practice", "Вопрос по слабой теме"),
     ("challenge", "Сложный вопрос"),
     ("hard", "Сложный вопрос (алиас)"),
@@ -55,6 +58,7 @@ BOT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("last", "Последний вопрос"),
     ("today", "Дневная цель"),
     ("remain", "Сколько нового осталось"),
+    ("mastered", "Освоение по темам"),
     ("export", "Экспорт прогресса"),
     ("search", "Поиск по банку"),
     ("bank", "Обзор банка"),
@@ -162,8 +166,9 @@ def _help_text() -> str:
         "AI DS Mentor запущен.\n\n"
         "Команды:\n"
         "/quiz — вопрос (приоритет слабым темам)\n"
-        "/random или /next — случайный вопрос\n"
+        "/random или /next или /go — случайный вопрос\n"
         "/new — вопрос, который вы ещё не видели\n"
+        "/topic ml-metrics — вопрос по теме\n"
         "/new ml-metrics — новый вопрос по теме\n"
         "/question <id> — конкретный вопрос, напр. /question ml-001\n"
         "/next — то же, что /quiz\n"
@@ -176,13 +181,14 @@ def _help_text() -> str:
         "/last — повторить последний отвеченный вопрос\n"
         "/today — дневная цель\n"
         "/remain — сколько новых вопросов осталось\n"
+        "/mastered — освоение банка по темам\n"
         "/mistakes — список вопросов с ошибками\n"
         "/export — текстовый отчёт о прогрессе\n"
         "/search <слово> — поиск вопроса в банке\n"
         "/bank — обзор банка (темы и сложность)\n"
         "/streak — текущая и лучшая серия\n"
         "/current — информация о текущем вопросе\n"
-        "/review — повторить вопрос с ошибкой\n"
+        "/review или /wrong — повторить вопрос с ошибкой\n"
         "/explain — пояснение к текущему вопросу\n"
         "/map — карта компетенций и прогресс\n"
         "/topics — список id тем\n"
@@ -510,7 +516,11 @@ def handle_text(
             query = parse_search_query(text)
         except ValueError:
             query = ""
-        found = mentor_quiz.search_questions(questions, query)
+        found = mentor_quiz.search_questions(
+            questions,
+            query,
+            competency_titles={c.id: c.title for c in competencies},
+        )
         api.send_message(
             chat_id,
             mentor_comp.format_search_results(found, query),
@@ -736,7 +746,7 @@ def handle_text(
         )
         return
 
-    if cmd == "/review":
+    if cmd in {"/review", "/wrong"}:
         review_ids = mentor_db.get_review_question_ids(conn, chat_id)
         if not review_ids:
             api.send_message(
@@ -752,6 +762,15 @@ def handle_text(
             competencies,
             only_ids=set(review_ids),
             intro="Повтор вопроса, где была ошибка",
+        )
+        return
+
+    if cmd == "/mastered":
+        mastered_ids = mentor_db.get_mastered_question_ids(conn, chat_id)
+        bank_mastery = mentor_quiz.competency_mastery_counts(questions, mastered_ids)
+        api.send_message(
+            chat_id,
+            mentor_comp.format_mastered_summary(competencies, bank_mastery),
         )
         return
 
@@ -892,7 +911,36 @@ def handle_text(
         start_question_by_id(api, conn, chat_id, questions, competencies, qid)
         return
 
-    if cmd in {"/quiz", "/next", "/random"}:
+    if cmd == "/topic":
+        try:
+            topic = parse_topic_arg(text)
+        except ValueError:
+            topic = ""
+        if not topic:
+            api.send_message(
+                chat_id,
+                "Укажи тему: /topic ml-metrics\n/topics — список id",
+            )
+            return
+        if topic not in comp_index:
+            ids = ", ".join(c.id for c in competencies)
+            api.send_message(
+                chat_id,
+                f"Неизвестная тема «{topic}».\nДоступные id: {ids}",
+            )
+            return
+        deliver_quiz_question(
+            api,
+            conn,
+            chat_id,
+            questions,
+            competencies,
+            comp_filter=topic,
+            intro=f"Тема: {comp_index[topic].title}",
+        )
+        return
+
+    if cmd in {"/quiz", "/next", "/random", "/go"}:
         comp_filter, difficulty = "", None
         if cmd == "/quiz":
             try:

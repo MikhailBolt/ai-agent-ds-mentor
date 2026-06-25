@@ -77,6 +77,8 @@ def collect_achievement_labels(
     labels: list[str] = []
     if total >= 1:
         labels.append("Первый ответ")
+    if total >= 100:
+        labels.append("100 ответов")
     if correct >= 5:
         labels.append("5 верных ответов")
     if correct >= 20:

@@ -169,6 +169,25 @@ def format_bank_summary(
     return "\n".join(lines)
 
 
+def format_mastered_summary(
+    competencies: list[Competency],
+    bank_mastery: dict[str, tuple[int, int]],
+) -> str:
+    lines = ["Освоение банка (≥1 верный ответ):", ""]
+    total_m = 0
+    total_b = 0
+    for c in competencies:
+        mastered, bank_n = bank_mastery.get(c.id, (0, 0))
+        total_m += mastered
+        total_b += bank_n
+        bar = progress_bar(mastered / bank_n * 100.0) if bank_n else progress_bar(0)
+        lines.append(f"• {c.title} — {mastered}/{bank_n} {bar}")
+    lines.append("")
+    lines.append(f"Итого: {total_m}/{total_b}")
+    lines.append("/map — подробнее · /new — новые вопросы")
+    return "\n".join(lines)
+
+
 def format_topics_list(
     competencies: list[Competency],
     bank_counts: dict[str, int] | None = None,

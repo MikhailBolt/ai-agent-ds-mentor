@@ -8,8 +8,8 @@ Telegram bot that runs a **Data Science quiz** from a JSON question bank, tracks
 
 ## Features
 
-- Commands: `/quiz`, `/random`, `/new`, `/search`, `/bank`, `/streak`, `/last`, `/today`, `/remain`, `/question`, `/next`, `/practice`, `/easy`, `/medium`, `/hard`, `/challenge`, `/review`, `/mistakes`, `/export`, `/current`, `/map`, `/topics`, `/hint`, `/explain`, `/achievements`, `/skip`, `/giveup`, `/stats`, `/score`, `/progress`, `/status`, `/about`, `/reset`, `/help`
-- `/remain` shows unseen questions left; `/random` is alias for `/quiz`; `/score` is alias for `/stats`
+- Commands: `/quiz`, `/random`, `/go`, `/new`, `/topic`, `/search`, `/bank`, `/streak`, `/last`, `/today`, `/remain`, `/mastered`, `/question`, `/next`, `/practice`, `/easy`, `/medium`, `/hard`, `/challenge`, `/review`, `/wrong`, `/mistakes`, `/export`, `/current`, `/map`, `/topics`, `/hint`, `/explain`, `/achievements`, `/skip`, `/giveup`, `/stats`, `/score`, `/progress`, `/status`, `/about`, `/reset`, `/help`
+- `/topic <id>` for competency quiz; `/mastered` shows bank mastery per topic; `/go` and `/wrong` are aliases
 - `/search` in question bank (including by id); `/bank` overview; `/topics` with unseen counts; `mentor check --list-questions`
 - Telegram command menu registered on startup (`setMyCommands`)
 - `/stats` shows per-topic progress and what to practice next
