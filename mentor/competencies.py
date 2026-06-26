@@ -71,6 +71,15 @@ def suggest_practice_competency(
     return pick
 
 
+def format_weaktopic_tip(tip: Competency | None) -> str:
+    if tip is None:
+        return "Все темы уже тренировались — /quiz или /review"
+    return (
+        f"Слабая или новая тема: {tip.title} ({tip.id})\n"
+        f"/practice · /topic {tip.id} · /quiz {tip.id}"
+    )
+
+
 def format_stats_summary(
     *,
     correct: int,

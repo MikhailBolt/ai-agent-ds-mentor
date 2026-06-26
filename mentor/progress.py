@@ -60,6 +60,26 @@ def format_remaining_summary(
     return "\n".join(lines)
 
 
+def format_count_summary(
+    *,
+    correct: int,
+    total: int,
+    streak: int,
+    best_streak: int,
+    bank_unseen: int,
+    review_count: int,
+) -> str:
+    acc = (correct / total * 100.0) if total else 0.0
+    lines = [
+        f"Ответов: {total} · верно: {correct} ({acc:.0f}%)",
+        f"Серия: {streak} · лучшая: {best_streak}",
+        f"Новых вопросов: {bank_unseen} · на повтор: {review_count}",
+        "",
+        "/quiz · /new · /stats",
+    ]
+    return "\n".join(lines)
+
+
 def collect_achievement_labels(
     *,
     total: int,
@@ -91,6 +111,8 @@ def collect_achievement_labels(
         labels.append("Серия 10+")
     if best_streak >= 15:
         labels.append("Серия 15+")
+    if best_streak >= 20:
+        labels.append("Серия 20+")
     if total >= 10 and correct / total >= 0.8:
         labels.append("Точность 80%+")
     if bank_total > 0 and bank_mastered >= bank_total:

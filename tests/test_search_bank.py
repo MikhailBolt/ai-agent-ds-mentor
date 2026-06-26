@@ -56,6 +56,19 @@ def test_search_questions_finds_by_competency_title() -> None:
     assert qz.search_questions(qs, "метрики", competency_titles=titles)
 
 
+def test_search_questions_finds_by_competency_description() -> None:
+    qs = [
+        qz.Question(
+            id="1",
+            prompt="Other",
+            answer="x",
+            competency_id="ml-validation",
+        ),
+    ]
+    descs = {"ml-validation": "кросс валидация train val test"}
+    assert qz.search_questions(qs, "кросс", competency_descriptions=descs)
+
+
 def test_format_bank_summary() -> None:
     comps = [Competency(id="a", title="A", description="")]
     text = format_bank_summary(

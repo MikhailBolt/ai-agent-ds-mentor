@@ -629,5 +629,39 @@
       "убрать missing values",
       "drop rows with nulls"
     ]
+  },
+  {
+    "id": "ml-031",
+    "competency_id": "ml-metrics",
+    "difficulty": 2,
+    "prompt": "Чем F1-score отличается от accuracy при дисбалансе классов?",
+    "answer": "f1 балансирует precision и recall accuracy может быть высокой за счёт доминирующего класса",
+    "aliases": [
+      "f1 vs accuracy imbalance",
+      "гармоническое среднее precision recall"
+    ],
+    "hint": "Accuracy вводит в заблуждение при 99% одного класса."
+  },
+  {
+    "id": "ml-032",
+    "competency_id": "ml-validation",
+    "difficulty": 2,
+    "prompt": "Зачем откладывают test set до самого конца эксперимента?",
+    "answer": "чтобы финальная оценка была честной и не подстроенной под многократные подборы на валидации",
+    "aliases": [
+      "holdout test set once",
+      "не подглядывать в test при тюнинге"
+    ]
+  },
+  {
+    "id": "st-011",
+    "competency_id": "stats-basics",
+    "difficulty": 2,
+    "prompt": "Что такое доверительный интервал для среднего?",
+    "answer": "диапазон значений в котором с заданной вероятностью лежит истинное среднее генеральной совокупности",
+    "aliases": [
+      "confidence interval mean",
+      "оценка неопределённости среднего"
+    ]
   }
 ]

@@ -58,6 +58,7 @@ BOT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("last", "Последний вопрос"),
     ("today", "Дневная цель"),
     ("remain", "Сколько нового осталось"),
+    ("count", "Краткая сводка"),
     ("mastered", "Освоение по темам"),
     ("export", "Экспорт прогресса"),
     ("search", "Поиск по банку"),
@@ -167,18 +168,18 @@ def _help_text() -> str:
         "Команды:\n"
         "/quiz — вопрос (приоритет слабым темам)\n"
         "/random или /next или /go — случайный вопрос\n"
-        "/new — вопрос, который вы ещё не видели\n"
-        "/topic ml-metrics — вопрос по теме\n"
+        "/new или /unseen — вопрос, который вы ещё не видели\n"
         "/new ml-metrics — новый вопрос по теме\n"
-        "/question <id> — конкретный вопрос, напр. /question ml-001\n"
-        "/next — то же, что /quiz\n"
+        "/topic ml-metrics — вопрос по теме\n"
         "/quiz <id> — вопрос по теме, напр. /quiz ml-metrics\n"
         "/quiz 2 или /quiz hard — по сложности (1–3)\n"
-        "/practice — вопрос по самой слабой/новой теме\n"
+        "/practice — вопрос по слабой теме · /weaktopic — только подсказка\n"
+        "/count — краткая сводка прогресса\n"
+        "/question <id> или /id <id> — конкретный вопрос\n"
         "/challenge или /hard — случайный сложный вопрос (★★★)\n"
         "/medium — средний вопрос (★★☆)\n"
         "/easy — лёгкий вопрос (★☆☆)\n"
-        "/last — повторить последний отвеченный вопрос\n"
+        "/last или /repeat — повторить последний отвеченный вопрос\n"
         "/today — дневная цель\n"
         "/remain — сколько новых вопросов осталось\n"
         "/mastered — освоение банка по темам\n"
@@ -187,7 +188,7 @@ def _help_text() -> str:
         "/search <слово> — поиск вопроса в банке\n"
         "/bank — обзор банка (темы и сложность)\n"
         "/streak — текущая и лучшая серия\n"
-        "/current — информация о текущем вопросе\n"
+        "/current или /show — информация о текущем вопросе\n"
         "/review или /wrong — повторить вопрос с ошибкой\n"
         "/explain — пояснение к текущему вопросу\n"
         "/map — карта компетенций и прогресс\n"
@@ -520,6 +521,7 @@ def handle_text(
             questions,
             query,
             competency_titles={c.id: c.title for c in competencies},
+            competency_descriptions={c.id: c.description for c in competencies},
         )
         api.send_message(
             chat_id,
@@ -548,7 +550,7 @@ def handle_text(
         )
         return
 
-    if cmd == "/last":
+    if cmd in {"/last", "/repeat"}:
         last_q = mentor_db.get_last_question_id(conn, chat_id)
         if not last_q:
             api.send_message(
@@ -557,6 +559,26 @@ def handle_text(
             )
             return
         start_question_by_id(api, conn, chat_id, questions, competencies, last_q)
+        return
+
+    if cmd == "/count":
+        st = mentor_db.get_stats(conn, chat_id)
+        streak = mentor_db.get_streak(conn, chat_id)
+        best = mentor_db.get_best_streak(conn, chat_id)
+        seen = mentor_db.get_seen_question_ids(conn, chat_id)
+        unseen = len(mentor_quiz.unseen_question_ids(questions, seen))
+        review_count = len(mentor_db.get_review_question_ids(conn, chat_id))
+        api.send_message(
+            chat_id,
+            mentor_progress.format_count_summary(
+                correct=st.correct,
+                total=st.total,
+                streak=streak,
+                best_streak=best,
+                bank_unseen=unseen,
+                review_count=review_count,
+            ),
+        )
         return
 
     if cmd == "/today":
@@ -639,7 +661,7 @@ def handle_text(
         )
         return
 
-    if cmd == "/current":
+    if cmd in {"/current", "/show"}:
         active = mentor_db.get_active_question(conn, chat_id)
         if active is None:
             api.send_message(chat_id, "Сейчас нет активного вопроса. Напиши /quiz.")
@@ -652,6 +674,12 @@ def handle_text(
         if q.competency_id and q.competency_id in comp_index:
             title = comp_index[q.competency_id].title
         api.send_message(chat_id, _format_question(q, competency_title=title))
+        return
+
+    if cmd == "/weaktopic":
+        comp_stats = mentor_db.get_competency_stats(conn, chat_id)
+        tip = mentor_comp.suggest_practice_competency(competencies, comp_stats)
+        api.send_message(chat_id, mentor_comp.format_weaktopic_tip(tip))
         return
 
     if cmd in {"/practice", "/weak"}:
@@ -861,7 +889,7 @@ def handle_text(
         api.send_message(chat_id, "Ок, пропустили. Напиши /quiz чтобы получить следующий вопрос.")
         return
 
-    if cmd == "/new":
+    if cmd in {"/new", "/unseen"}:
         try:
             topic = parse_new_topic_arg(text)
         except ValueError:
@@ -897,7 +925,7 @@ def handle_text(
         )
         return
 
-    if cmd in {"/question", "/q"}:
+    if cmd in {"/question", "/q", "/id"}:
         try:
             qid = parse_question_id_arg(text)
         except ValueError:
