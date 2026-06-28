@@ -198,6 +198,8 @@ def search_questions(
                     description,
                     q.prompt,
                     q.answer,
+                    q.hint or "",
+                    q.explanation or "",
                     *(q.aliases or ()),
                 ],
             ),

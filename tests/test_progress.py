@@ -85,6 +85,33 @@ def test_fifty_correct_achievement() -> None:
     assert "50 верных ответов" in labels
 
 
+def test_format_accuracy_summary() -> None:
+    empty = prog.format_accuracy_summary(correct=0, total=0)
+    assert "Пока нет ответов" in empty
+    text = prog.format_accuracy_summary(correct=18, total=20)
+    assert "90.0%" in text
+    assert "/challenge" in text
+
+
+def test_format_due_summary() -> None:
+    empty = prog.format_due_summary(review_ids=[])
+    assert "Нет вопросов" in empty
+    text = prog.format_due_summary(review_ids=["ml-001", "ml-002"])
+    assert "2 вопросов" in text
+    assert "/fix" in text
+
+
+def test_accuracy_90_achievement() -> None:
+    labels = prog.collect_achievement_labels(
+        total=20,
+        correct=18,
+        best_streak=3,
+        bank_total=30,
+        bank_mastered=10,
+    )
+    assert "Точность 90%+" in labels
+
+
 def test_format_count_summary() -> None:
     text = prog.format_count_summary(
         correct=8,

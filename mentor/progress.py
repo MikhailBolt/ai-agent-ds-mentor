@@ -80,6 +80,33 @@ def format_count_summary(
     return "\n".join(lines)
 
 
+def format_accuracy_summary(*, correct: int, total: int) -> str:
+    if total == 0:
+        return "Пока нет ответов. Напиши /quiz!"
+    acc = correct / total * 100.0
+    lines = [f"Точность: {correct}/{total} ({acc:.1f}%)"]
+    if acc < 70:
+        lines.append("/practice — слабая тема · /review — ошибки")
+    elif acc >= 90:
+        lines.append("/challenge — сложный вопрос · /stats — детали")
+    else:
+        lines.append("/quiz — продолжить · /stats — детали")
+    return "\n".join(lines)
+
+
+def format_due_summary(*, review_ids: list[str]) -> str:
+    if not review_ids:
+        return "Нет вопросов на повтор — /quiz или /new"
+    lines = [f"На повтор: {len(review_ids)} вопросов", ""]
+    for qid in review_ids[:5]:
+        lines.append(f"• {qid}")
+    if len(review_ids) > 5:
+        lines.append(f"… и ещё {len(review_ids) - 5}")
+    lines.append("")
+    lines.append("/review или /fix — начать повтор")
+    return "\n".join(lines)
+
+
 def collect_achievement_labels(
     *,
     total: int,
@@ -115,6 +142,8 @@ def collect_achievement_labels(
         labels.append("Серия 20+")
     if total >= 10 and correct / total >= 0.8:
         labels.append("Точность 80%+")
+    if total >= 20 and correct / total >= 0.9:
+        labels.append("Точность 90%+")
     if bank_total > 0 and bank_mastered >= bank_total:
         labels.append("Весь банк освоен")
     elif bank_total > 0 and bank_mastered * 2 >= bank_total:

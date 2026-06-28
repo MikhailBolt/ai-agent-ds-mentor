@@ -663,5 +663,40 @@
       "confidence interval mean",
       "оценка неопределённости среднего"
     ]
+  },
+  {
+    "id": "ml-033",
+    "competency_id": "ml-foundations",
+    "difficulty": 1,
+    "prompt": "Что такое переобучение overfitting?",
+    "answer": "модель слишком подстроилась под обучающую выборку и плохо обобщает на новые данные",
+    "aliases": [
+      "high variance on train",
+      "отлично на train плохо на test"
+    ],
+    "hint": "Часто лечат регуляризацией и больше данных."
+  },
+  {
+    "id": "py-015",
+    "competency_id": "python-ds",
+    "difficulty": 2,
+    "prompt": "Чем pd.merge отличается от pd.concat?",
+    "answer": "merge соединяет таблицы по ключам concat склеивает по оси строк или столбцов",
+    "aliases": [
+      "sql join vs stack dataframes",
+      "join on columns vs append rows"
+    ]
+  },
+  {
+    "id": "ml-034",
+    "competency_id": "ml-metrics",
+    "difficulty": 3,
+    "prompt": "Зачем используют log loss вместо accuracy для вероятностей?",
+    "answer": "штрафует уверенные ошибочные прогнозы и учитывает калибровку вероятностей",
+    "aliases": [
+      "cross entropy loss",
+      "logarithmic loss probabilistic predictions"
+    ],
+    "explanation": "Log loss чувствителен к p=0.99 при ошибке."
   }
 ]

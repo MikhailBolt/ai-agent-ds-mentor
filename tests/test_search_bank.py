@@ -69,6 +69,18 @@ def test_search_questions_finds_by_competency_description() -> None:
     assert qz.search_questions(qs, "кросс", competency_descriptions=descs)
 
 
+def test_search_questions_finds_by_hint() -> None:
+    qs = [
+        qz.Question(
+            id="1",
+            prompt="Q",
+            answer="a",
+            hint="важно при дисбалансе классов",
+        ),
+    ]
+    assert qz.search_questions(qs, "дисбалансе")
+
+
 def test_format_bank_summary() -> None:
     comps = [Competency(id="a", title="A", description="")]
     text = format_bank_summary(

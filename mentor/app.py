@@ -57,6 +57,7 @@ BOT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("easy", "Лёгкий вопрос"),
     ("last", "Последний вопрос"),
     ("today", "Дневная цель"),
+    ("due", "Очередь на повтор"),
     ("remain", "Сколько нового осталось"),
     ("count", "Краткая сводка"),
     ("mastered", "Освоение по темам"),
@@ -173,14 +174,16 @@ def _help_text() -> str:
         "/topic ml-metrics — вопрос по теме\n"
         "/quiz <id> — вопрос по теме, напр. /quiz ml-metrics\n"
         "/quiz 2 или /quiz hard — по сложности (1–3)\n"
-        "/practice — вопрос по слабой теме · /weaktopic — только подсказка\n"
+        "/practice — вопрос по слабой теме · /learn — то же самое\n"
         "/count — краткая сводка прогресса\n"
         "/question <id> или /id <id> — конкретный вопрос\n"
         "/challenge или /hard — случайный сложный вопрос (★★★)\n"
         "/medium — средний вопрос (★★☆)\n"
         "/easy — лёгкий вопрос (★☆☆)\n"
         "/last или /repeat — повторить последний отвеченный вопрос\n"
-        "/today — дневная цель\n"
+        "/today или /daily — дневная цель\n"
+        "/due — вопросы на повтор\n"
+        "/accuracy — точность ответов\n"
         "/remain — сколько новых вопросов осталось\n"
         "/mastered — освоение банка по темам\n"
         "/mistakes — список вопросов с ошибками\n"
@@ -189,7 +192,7 @@ def _help_text() -> str:
         "/bank — обзор банка (темы и сложность)\n"
         "/streak — текущая и лучшая серия\n"
         "/current или /show — информация о текущем вопросе\n"
-        "/review или /wrong — повторить вопрос с ошибкой\n"
+        "/review, /wrong или /fix — повторить вопрос с ошибкой\n"
         "/explain — пояснение к текущему вопросу\n"
         "/map — карта компетенций и прогресс\n"
         "/topics — список id тем\n"
@@ -198,7 +201,7 @@ def _help_text() -> str:
         "/stats, /progress, /score — статистика и прогресс по банку\n"
         "/achievements — достижения\n"
         "/hint — подсказка к текущему вопросу\n"
-        "/status — состояние бота\n"
+        "/status или /info — состояние бота\n"
         "/about — версия и ссылка на проект\n"
         "/reset — запрос подтверждения; /reset confirm — сброс прогресса\n"
         "/help — помощь\n\n"
@@ -581,7 +584,23 @@ def handle_text(
         )
         return
 
-    if cmd == "/today":
+    if cmd == "/accuracy":
+        st = mentor_db.get_stats(conn, chat_id)
+        api.send_message(
+            chat_id,
+            mentor_progress.format_accuracy_summary(correct=st.correct, total=st.total),
+        )
+        return
+
+    if cmd == "/due":
+        review_ids = mentor_db.get_review_question_ids(conn, chat_id)
+        api.send_message(
+            chat_id,
+            mentor_progress.format_due_summary(review_ids=review_ids),
+        )
+        return
+
+    if cmd in {"/today", "/daily"}:
         daily_goal = parse_daily_goal()
         daily_count = mentor_db.get_daily_answer_count(conn, chat_id)
         streak = mentor_db.get_streak(conn, chat_id)
@@ -682,7 +701,7 @@ def handle_text(
         api.send_message(chat_id, mentor_comp.format_weaktopic_tip(tip))
         return
 
-    if cmd in {"/practice", "/weak"}:
+    if cmd in {"/practice", "/weak", "/learn"}:
         comp_stats = mentor_db.get_competency_stats(conn, chat_id)
         tip = mentor_comp.suggest_practice_competency(competencies, comp_stats)
         if tip is None:
@@ -774,7 +793,7 @@ def handle_text(
         )
         return
 
-    if cmd in {"/review", "/wrong"}:
+    if cmd in {"/review", "/wrong", "/fix"}:
         review_ids = mentor_db.get_review_question_ids(conn, chat_id)
         if not review_ids:
             api.send_message(
@@ -818,7 +837,7 @@ def handle_text(
         )
         return
 
-    if cmd == "/status":
+    if cmd in {"/status", "/info"}:
         st = mentor_db.get_stats(conn, chat_id)
         streak = mentor_db.get_streak(conn, chat_id)
         best = mentor_db.get_best_streak(conn, chat_id)
