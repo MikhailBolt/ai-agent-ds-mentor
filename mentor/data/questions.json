@@ -698,5 +698,39 @@
       "logarithmic loss probabilistic predictions"
     ],
     "explanation": "Log loss чувствителен к p=0.99 при ошибке."
+  },
+  {
+    "id": "ml-035",
+    "competency_id": "ml-validation",
+    "difficulty": 2,
+    "prompt": "Зачем используют early stopping при обучении нейросети?",
+    "answer": "остановить обучение когда качество на валидации перестаёт расти чтобы не переобучиться",
+    "aliases": [
+      "stop when val loss plateaus",
+      "ранняя остановка по val метрике"
+    ]
+  },
+  {
+    "id": "ml-036",
+    "competency_id": "ml-foundations",
+    "difficulty": 1,
+    "prompt": "Зачем нормализуют признаки перед обучением многих моделей?",
+    "answer": "привести масштабы признаков к сопоставимому виду ускорить сходимость и стабилизировать обучение",
+    "aliases": [
+      "feature scaling standardization",
+      "z score min max scaling"
+    ]
+  },
+  {
+    "id": "st-012",
+    "competency_id": "stats-basics",
+    "difficulty": 2,
+    "prompt": "Почему корреляция не означает причинность?",
+    "answer": "две переменные могут быть связаны из за третьей причины или случайности без прямого влияния",
+    "aliases": [
+      "correlation is not causation",
+      "confounding variable spurious correlation"
+    ],
+    "hint": "Классика: продажи мороженого и утопления."
   }
 ]

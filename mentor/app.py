@@ -60,6 +60,8 @@ BOT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("due", "Очередь на повтор"),
     ("remain", "Сколько нового осталось"),
     ("count", "Краткая сводка"),
+    ("level", "Уровень ученика"),
+    ("seen", "Встреченные вопросы"),
     ("mastered", "Освоение по темам"),
     ("export", "Экспорт прогресса"),
     ("search", "Поиск по банку"),
@@ -176,13 +178,15 @@ def _help_text() -> str:
         "/quiz 2 или /quiz hard — по сложности (1–3)\n"
         "/practice — вопрос по слабой теме · /learn — то же самое\n"
         "/count — краткая сводка прогресса\n"
+        "/level — уровень по ответам и банку\n"
+        "/seen — сколько вопросов банка встречалось\n"
         "/question <id> или /id <id> — конкретный вопрос\n"
         "/challenge или /hard — случайный сложный вопрос (★★★)\n"
         "/medium — средний вопрос (★★☆)\n"
         "/easy — лёгкий вопрос (★☆☆)\n"
         "/last или /repeat — повторить последний отвеченный вопрос\n"
-        "/today или /daily — дневная цель\n"
-        "/due — вопросы на повтор\n"
+        "/today, /daily или /goal — дневная цель\n"
+        "/due или /queue — вопросы на повтор\n"
         "/accuracy — точность ответов\n"
         "/remain — сколько новых вопросов осталось\n"
         "/mastered — освоение банка по темам\n"
@@ -192,7 +196,7 @@ def _help_text() -> str:
         "/bank — обзор банка (темы и сложность)\n"
         "/streak — текущая и лучшая серия\n"
         "/current или /show — информация о текущем вопросе\n"
-        "/review, /wrong или /fix — повторить вопрос с ошибкой\n"
+        "/review, /wrong, /fix или /retry — повторить вопрос с ошибкой\n"
         "/explain — пояснение к текущему вопросу\n"
         "/map — карта компетенций и прогресс\n"
         "/topics — список id тем\n"
@@ -592,7 +596,7 @@ def handle_text(
         )
         return
 
-    if cmd == "/due":
+    if cmd in {"/due", "/queue"}:
         review_ids = mentor_db.get_review_question_ids(conn, chat_id)
         api.send_message(
             chat_id,
@@ -600,7 +604,31 @@ def handle_text(
         )
         return
 
-    if cmd in {"/today", "/daily"}:
+    if cmd == "/level":
+        st = mentor_db.get_stats(conn, chat_id)
+        mastered = len(mentor_db.get_mastered_question_ids(conn, chat_id))
+        api.send_message(
+            chat_id,
+            mentor_progress.format_level_summary(
+                total=st.total,
+                bank_mastered=mastered,
+                bank_total=len(questions),
+            ),
+        )
+        return
+
+    if cmd == "/seen":
+        seen = len(mentor_db.get_seen_question_ids(conn, chat_id))
+        api.send_message(
+            chat_id,
+            mentor_progress.format_seen_summary(
+                bank_seen=seen,
+                bank_total=len(questions),
+            ),
+        )
+        return
+
+    if cmd in {"/today", "/daily", "/goal"}:
         daily_goal = parse_daily_goal()
         daily_count = mentor_db.get_daily_answer_count(conn, chat_id)
         streak = mentor_db.get_streak(conn, chat_id)
@@ -793,7 +821,7 @@ def handle_text(
         )
         return
 
-    if cmd in {"/review", "/wrong", "/fix"}:
+    if cmd in {"/review", "/wrong", "/fix", "/retry"}:
         review_ids = mentor_db.get_review_question_ids(conn, chat_id)
         if not review_ids:
             api.send_message(

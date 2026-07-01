@@ -107,6 +107,45 @@ def format_due_summary(*, review_ids: list[str]) -> str:
     return "\n".join(lines)
 
 
+def format_level_summary(
+    *,
+    total: int,
+    bank_mastered: int,
+    bank_total: int,
+) -> str:
+    if total == 0:
+        return "Уровень: Новичок\nНапиши /quiz чтобы начать!"
+    if bank_total and bank_mastered >= bank_total:
+        level = "Мастер банка"
+    elif total >= 100 or (bank_total and bank_mastered * 2 >= bank_total):
+        level = "Продвинутый"
+    elif total >= 30:
+        level = "Практик"
+    else:
+        level = "Новичок"
+    pct = bank_mastered / bank_total * 100.0 if bank_total else 0.0
+    return (
+        f"Уровень: {level}\n"
+        f"Ответов: {total} · освоено банка: {bank_mastered}/{bank_total} ({pct:.0f}%)\n"
+        "/stats · /map · /achievements"
+    )
+
+
+def format_seen_summary(*, bank_seen: int, bank_total: int) -> str:
+    unseen = max(0, bank_total - bank_seen)
+    pct = bank_seen / bank_total * 100.0 if bank_total else 0.0
+    lines = [
+        f"Встречено из банка: {bank_seen}/{bank_total} ({pct:.0f}%)",
+        f"Ещё не видели: {unseen}",
+        "",
+    ]
+    if unseen:
+        lines.append("/new или /unseen — новый вопрос")
+    else:
+        lines.append("Весь банк просмотрен — /review")
+    return "\n".join(lines)
+
+
 def collect_achievement_labels(
     *,
     total: int,
@@ -146,6 +185,8 @@ def collect_achievement_labels(
         labels.append("Точность 90%+")
     if bank_total > 0 and bank_mastered >= bank_total:
         labels.append("Весь банк освоен")
+    elif bank_total > 0 and bank_mastered * 4 >= bank_total * 3:
+        labels.append("75% банка")
     elif bank_total > 0 and bank_mastered * 2 >= bank_total:
         labels.append("Половина банка")
     if daily_goal and daily_count >= daily_goal:

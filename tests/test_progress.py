@@ -85,6 +85,35 @@ def test_fifty_correct_achievement() -> None:
     assert "50 верных ответов" in labels
 
 
+def test_format_level_summary() -> None:
+    newbie = prog.format_level_summary(total=0, bank_mastered=0, bank_total=60)
+    assert "Новичок" in newbie
+    text = prog.format_level_summary(total=35, bank_mastered=10, bank_total=60)
+    assert "Практик" in text
+    master = prog.format_level_summary(total=80, bank_mastered=60, bank_total=60)
+    assert "Мастер банка" in master
+
+
+def test_format_seen_summary() -> None:
+    text = prog.format_seen_summary(bank_seen=40, bank_total=60)
+    assert "40/60" in text
+    assert "/new" in text
+    done = prog.format_seen_summary(bank_seen=60, bank_total=60)
+    assert "/review" in done
+
+
+def test_bank_75_achievement() -> None:
+    labels = prog.collect_achievement_labels(
+        total=50,
+        correct=40,
+        best_streak=5,
+        bank_total=60,
+        bank_mastered=45,
+    )
+    assert "75% банка" in labels
+    assert "Половина банка" not in labels
+
+
 def test_format_accuracy_summary() -> None:
     empty = prog.format_accuracy_summary(correct=0, total=0)
     assert "Пока нет ответов" in empty
