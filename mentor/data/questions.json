@@ -732,5 +732,39 @@
       "confounding variable spurious correlation"
     ],
     "hint": "Классика: продажи мороженого и утопления."
+  },
+  {
+    "id": "py-016",
+    "competency_id": "python-ds",
+    "difficulty": 1,
+    "prompt": "Что делает df.isnull().sum() в pandas?",
+    "answer": "считает число пропущенных значений nan в каждом столбце",
+    "aliases": [
+      "count missing per column",
+      "сколько null в колонках"
+    ]
+  },
+  {
+    "id": "ml-037",
+    "competency_id": "ml-metrics",
+    "difficulty": 2,
+    "prompt": "Что такое PR-кривая precision-recall?",
+    "answer": "график precision и recall при разных порогах классификации",
+    "aliases": [
+      "precision recall curve",
+      "кривая точность полнота"
+    ],
+    "hint": "Полезна при дисбалансе классов."
+  },
+  {
+    "id": "st-013",
+    "competency_id": "stats-basics",
+    "difficulty": 1,
+    "prompt": "Что такое дисперсия выборки?",
+    "answer": "среднее квадратов отклонений значений от среднего мера разброса",
+    "aliases": [
+      "variance sample",
+      "squared deviations from mean"
+    ]
   }
 ]

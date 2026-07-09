@@ -97,7 +97,7 @@ def parse_topic_arg(text: str) -> str:
 def parse_question_id_arg(text: str) -> str:
     """`/question ml-001` or `/q ml-001` → question id."""
     cmd = command_prefix(text)
-    if cmd not in {"/question", "/q", "/id"}:
+    if cmd not in {"/question", "/q", "/id", "/open"}:
         raise ValueError("not a question command")
     parts = (text or "").strip().split(maxsplit=1)
     if len(parts) < 2:

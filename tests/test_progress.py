@@ -85,6 +85,43 @@ def test_fifty_correct_achievement() -> None:
     assert "50 верных ответов" in labels
 
 
+def test_format_record_summary() -> None:
+    text = prog.format_record_summary(
+        correct=18,
+        total=20,
+        best_streak=7,
+        bank_mastered=30,
+        bank_total=60,
+    )
+    assert "Лучшая серия: 7" in text
+    assert "90%" in text
+
+
+def test_format_plan_summary() -> None:
+    text = prog.format_plan_summary(
+        bank_unseen=10,
+        review_count=2,
+        daily_count=1,
+        daily_goal=5,
+        tip_title="Метрики",
+        tip_id="ml-metrics",
+    )
+    assert "Дневная цель" in text
+    assert "Повтор ошибок" in text
+    assert "Новые вопросы" in text
+
+
+def test_two_hundred_answers_achievement() -> None:
+    labels = prog.collect_achievement_labels(
+        total=200,
+        correct=150,
+        best_streak=10,
+        bank_total=60,
+        bank_mastered=40,
+    )
+    assert "200 ответов" in labels
+
+
 def test_format_level_summary() -> None:
     newbie = prog.format_level_summary(total=0, bank_mastered=0, bank_total=60)
     assert "Новичок" in newbie

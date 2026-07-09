@@ -61,6 +61,8 @@ BOT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("remain", "Сколько нового осталось"),
     ("count", "Краткая сводка"),
     ("level", "Уровень ученика"),
+    ("plan", "План тренировки"),
+    ("record", "Личные рекорды"),
     ("seen", "Встреченные вопросы"),
     ("mastered", "Освоение по темам"),
     ("export", "Экспорт прогресса"),
@@ -179,12 +181,14 @@ def _help_text() -> str:
         "/practice — вопрос по слабой теме · /learn — то же самое\n"
         "/count — краткая сводка прогресса\n"
         "/level — уровень по ответам и банку\n"
+        "/record — личные рекорды\n"
+        "/plan — что тренировать дальше\n"
         "/seen — сколько вопросов банка встречалось\n"
-        "/question <id> или /id <id> — конкретный вопрос\n"
+        "/question <id>, /id или /open — конкретный вопрос\n"
         "/challenge или /hard — случайный сложный вопрос (★★★)\n"
         "/medium — средний вопрос (★★☆)\n"
         "/easy — лёгкий вопрос (★☆☆)\n"
-        "/last или /repeat — повторить последний отвеченный вопрос\n"
+        "/last, /repeat или /again — повторить последний вопрос\n"
         "/today, /daily или /goal — дневная цель\n"
         "/due или /queue — вопросы на повтор\n"
         "/accuracy — точность ответов\n"
@@ -200,7 +204,7 @@ def _help_text() -> str:
         "/explain — пояснение к текущему вопросу\n"
         "/map — карта компетенций и прогресс\n"
         "/topics — список id тем\n"
-        "/skip или /cancel — пропустить (без штрафа)\n"
+        "/skip, /cancel или /pass — пропустить (без штрафа)\n"
         "/giveup — показать ответ и завершить вопрос\n"
         "/stats, /progress, /score — статистика и прогресс по банку\n"
         "/achievements — достижения\n"
@@ -557,7 +561,7 @@ def handle_text(
         )
         return
 
-    if cmd in {"/last", "/repeat"}:
+    if cmd in {"/last", "/repeat", "/again"}:
         last_q = mentor_db.get_last_question_id(conn, chat_id)
         if not last_q:
             api.send_message(
@@ -624,6 +628,43 @@ def handle_text(
             mentor_progress.format_seen_summary(
                 bank_seen=seen,
                 bank_total=len(questions),
+            ),
+        )
+        return
+
+    if cmd == "/record":
+        st = mentor_db.get_stats(conn, chat_id)
+        best = mentor_db.get_best_streak(conn, chat_id)
+        mastered = len(mentor_db.get_mastered_question_ids(conn, chat_id))
+        api.send_message(
+            chat_id,
+            mentor_progress.format_record_summary(
+                correct=st.correct,
+                total=st.total,
+                best_streak=best,
+                bank_mastered=mastered,
+                bank_total=len(questions),
+            ),
+        )
+        return
+
+    if cmd == "/plan":
+        seen = mentor_db.get_seen_question_ids(conn, chat_id)
+        unseen = len(mentor_quiz.unseen_question_ids(questions, seen))
+        review_count = len(mentor_db.get_review_question_ids(conn, chat_id))
+        daily_goal = parse_daily_goal()
+        daily_count = mentor_db.get_daily_answer_count(conn, chat_id)
+        comp_stats = mentor_db.get_competency_stats(conn, chat_id)
+        tip = mentor_comp.suggest_practice_competency(competencies, comp_stats)
+        api.send_message(
+            chat_id,
+            mentor_progress.format_plan_summary(
+                bank_unseen=unseen,
+                review_count=review_count,
+                daily_count=daily_count,
+                daily_goal=daily_goal,
+                tip_title=tip.title if tip else None,
+                tip_id=tip.id if tip else None,
             ),
         )
         return
@@ -927,7 +968,7 @@ def handle_text(
         finish_wrong_answer(api, conn, chat_id, q, comp_index)
         return
 
-    if cmd in {"/skip", "/cancel"}:
+    if cmd in {"/skip", "/cancel", "/pass"}:
         active = mentor_db.get_active_question(conn, chat_id)
         if active is None:
             api.send_message(chat_id, "Сейчас нет активного вопроса. Напиши /quiz.")
@@ -972,7 +1013,7 @@ def handle_text(
         )
         return
 
-    if cmd in {"/question", "/q", "/id"}:
+    if cmd in {"/question", "/q", "/id", "/open"}:
         try:
             qid = parse_question_id_arg(text)
         except ValueError:

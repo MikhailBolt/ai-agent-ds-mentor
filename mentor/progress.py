@@ -146,6 +146,52 @@ def format_seen_summary(*, bank_seen: int, bank_total: int) -> str:
     return "\n".join(lines)
 
 
+def format_record_summary(
+    *,
+    correct: int,
+    total: int,
+    best_streak: int,
+    bank_mastered: int,
+    bank_total: int,
+) -> str:
+    acc = (correct / total * 100.0) if total else 0.0
+    return (
+        "Рекорды:\n"
+        f"Лучшая серия: {best_streak}\n"
+        f"Точность: {correct}/{total} ({acc:.0f}%)\n"
+        f"Освоение банка: {bank_mastered}/{bank_total}\n"
+        "/streak · /accuracy · /mastered"
+    )
+
+
+def format_plan_summary(
+    *,
+    bank_unseen: int,
+    review_count: int,
+    daily_count: int,
+    daily_goal: int | None,
+    tip_title: str | None = None,
+    tip_id: str | None = None,
+) -> str:
+    lines = ["План на сейчас:", ""]
+    step = 1
+    if daily_goal and daily_count < daily_goal:
+        lines.append(f"{step}. Дневная цель: ещё {daily_goal - daily_count} ответов (/quiz)")
+        step += 1
+    if review_count:
+        lines.append(f"{step}. Повтор ошибок: {review_count} вопросов (/review)")
+        step += 1
+    if bank_unseen:
+        lines.append(f"{step}. Новые вопросы: {bank_unseen} в банке (/new)")
+    elif tip_id and tip_title:
+        lines.append(f"{step}. Тренировать: {tip_title} (/topic {tip_id})")
+    else:
+        lines.append(f"{step}. /challenge — сложный вопрос")
+    lines.append("")
+    lines.append("/count — сводка · /map — прогресс")
+    return "\n".join(lines)
+
+
 def collect_achievement_labels(
     *,
     total: int,
@@ -165,6 +211,8 @@ def collect_achievement_labels(
         labels.append("Первый ответ")
     if total >= 100:
         labels.append("100 ответов")
+    if total >= 200:
+        labels.append("200 ответов")
     if correct >= 5:
         labels.append("5 верных ответов")
     if correct >= 20:
@@ -238,7 +286,7 @@ def format_start_welcome(
     if tip is not None:
         lines.append(f"Сейчас полезно: /practice или /quiz {tip.id}")
     lines.append("")
-    lines.append("/next — новый вопрос · /stats — прогресс · /help — команды")
+    lines.append("/next — новый вопрос · /stats — прогресс · /plan — что дальше")
     return "\n".join(lines)
 
 

@@ -58,6 +58,10 @@ def test_parse_new_topic_arg_unseen() -> None:
     assert parse_new_topic_arg("/unseen ml-metrics") == "ml-metrics"
 
 
+def test_parse_question_id_open_alias() -> None:
+    assert parse_question_id_arg("/open ml-001") == "ml-001"
+
+
 def test_parse_new_topic_arg() -> None:
     assert parse_new_topic_arg("/new") == ""
     assert parse_new_topic_arg("/new ml-metrics") == "ml-metrics"
