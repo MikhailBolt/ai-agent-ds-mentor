@@ -766,5 +766,38 @@
       "variance sample",
       "squared deviations from mean"
     ]
+  },
+  {
+    "id": "ml-038",
+    "competency_id": "ml-foundations",
+    "difficulty": 2,
+    "prompt": "Чем supervised learning отличается от unsupervised?",
+    "answer": "в supervised есть целевая метка y в unsupervised ищем структуру в данных без меток",
+    "aliases": [
+      "labeled vs unlabeled learning",
+      "с учителем vs без учителя"
+    ]
+  },
+  {
+    "id": "ml-039",
+    "competency_id": "ml-validation",
+    "difficulty": 1,
+    "prompt": "Зачем нужен validation set отдельно от test?",
+    "answer": "на validation подбирают модель и гиперпараметры test оставляют для финальной оценки",
+    "aliases": [
+      "val for tuning test for final",
+      "не тюнить на test"
+    ]
+  },
+  {
+    "id": "py-017",
+    "competency_id": "python-ds",
+    "difficulty": 2,
+    "prompt": "Что делает df.groupby('col').agg(...) в pandas?",
+    "answer": "группирует строки по значениям столбца и считает агрегаты по группам",
+    "aliases": [
+      "group by and aggregate",
+      "сводные метрики по категориям"
+    ]
   }
 ]

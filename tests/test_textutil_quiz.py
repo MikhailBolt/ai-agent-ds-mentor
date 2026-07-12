@@ -43,6 +43,7 @@ def test_quiz_competency_arg_not_quiz() -> None:
 def test_parse_search_query() -> None:
     assert parse_search_query("/search precision") == "precision"
     assert parse_search_query("/search") == ""
+    assert parse_search_query("/find recall") == "recall"
 
 
 def test_parse_topic_arg() -> None:

@@ -66,7 +66,7 @@ def reset_is_confirmed(text: str) -> bool:
 
 
 def parse_search_query(text: str) -> str:
-    if command_prefix(text) != "/search":
+    if command_prefix(text) not in {"/search", "/find"}:
         raise ValueError("not a search command")
     parts = (text or "").strip().split(maxsplit=1)
     if len(parts) < 2:

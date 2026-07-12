@@ -192,6 +192,27 @@ def format_plan_summary(
     return "\n".join(lines)
 
 
+def format_tip_summary(
+    *,
+    bank_unseen: int,
+    review_count: int,
+    daily_count: int,
+    daily_goal: int | None,
+    tip_title: str | None = None,
+    tip_id: str | None = None,
+) -> str:
+    if daily_goal and daily_count < daily_goal:
+        left = daily_goal - daily_count
+        return f"Совет: закрой дневную цель — осталось {left} ответов.\n/quiz · /today"
+    if review_count:
+        return f"Совет: повтори ошибки — в очереди {review_count}.\n/review или /due"
+    if bank_unseen:
+        return f"Совет: открой новый вопрос — ещё {bank_unseen} не встречались.\n/new или /remain"
+    if tip_id and tip_title:
+        return f"Совет: потренируй тему «{tip_title}».\n/focus · /topic {tip_id}"
+    return "Совет: возьми сложный вопрос.\n/challenge или /hard"
+
+
 def collect_achievement_labels(
     *,
     total: int,
@@ -237,6 +258,8 @@ def collect_achievement_labels(
         labels.append("75% банка")
     elif bank_total > 0 and bank_mastered * 2 >= bank_total:
         labels.append("Половина банка")
+    elif bank_total > 0 and bank_mastered * 4 >= bank_total:
+        labels.append("25% банка")
     if daily_goal and daily_count >= daily_goal:
         labels.append("Дневная цель")
     if all_competency_ids and comp_stats:

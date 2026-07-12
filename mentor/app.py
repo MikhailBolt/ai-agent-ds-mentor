@@ -51,6 +51,7 @@ BOT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("go", "Следующий вопрос (алиас)"),
     ("topic", "Вопрос по теме"),
     ("practice", "Вопрос по слабой теме"),
+    ("focus", "Фокус на слабой теме"),
     ("challenge", "Сложный вопрос"),
     ("hard", "Сложный вопрос (алиас)"),
     ("medium", "Средний вопрос"),
@@ -62,6 +63,7 @@ BOT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("count", "Краткая сводка"),
     ("level", "Уровень ученика"),
     ("plan", "План тренировки"),
+    ("tip", "Совет на сейчас"),
     ("record", "Личные рекорды"),
     ("seen", "Встреченные вопросы"),
     ("mastered", "Освоение по темам"),
@@ -179,6 +181,8 @@ def _help_text() -> str:
         "/quiz <id> — вопрос по теме, напр. /quiz ml-metrics\n"
         "/quiz 2 или /quiz hard — по сложности (1–3)\n"
         "/practice — вопрос по слабой теме · /learn — то же самое\n"
+        "/focus — сразу фокус на слабой теме\n"
+        "/tip — один совет, что делать дальше\n"
         "/count — краткая сводка прогресса\n"
         "/level — уровень по ответам и банку\n"
         "/record — личные рекорды\n"
@@ -196,7 +200,7 @@ def _help_text() -> str:
         "/mastered — освоение банка по темам\n"
         "/mistakes — список вопросов с ошибками\n"
         "/export — текстовый отчёт о прогрессе\n"
-        "/search <слово> — поиск вопроса в банке\n"
+        "/search или /find <слово> — поиск вопроса в банке\n"
         "/bank — обзор банка (темы и сложность)\n"
         "/streak — текущая и лучшая серия\n"
         "/current или /show — информация о текущем вопросе\n"
@@ -206,8 +210,8 @@ def _help_text() -> str:
         "/topics — список id тем\n"
         "/skip, /cancel или /pass — пропустить (без штрафа)\n"
         "/giveup — показать ответ и завершить вопрос\n"
-        "/stats, /progress, /score — статистика и прогресс по банку\n"
-        "/achievements — достижения\n"
+        "/stats, /progress, /score или /me — статистика и прогресс по банку\n"
+        "/achievements или /badges — достижения\n"
         "/hint — подсказка к текущему вопросу\n"
         "/status или /info — состояние бота\n"
         "/about — версия и ссылка на проект\n"
@@ -454,7 +458,7 @@ def handle_text(
         )
         return
 
-    if cmd == "/achievements":
+    if cmd in {"/achievements", "/badges"}:
         st = mentor_db.get_stats(conn, chat_id)
         best = mentor_db.get_best_streak(conn, chat_id)
         mastered_ids = mentor_db.get_mastered_question_ids(conn, chat_id)
@@ -523,7 +527,7 @@ def handle_text(
         )
         return
 
-    if cmd == "/search":
+    if cmd in {"/search", "/find"}:
         try:
             query = parse_search_query(text)
         except ValueError:
@@ -644,6 +648,29 @@ def handle_text(
                 best_streak=best,
                 bank_mastered=mastered,
                 bank_total=len(questions),
+            ),
+        )
+        return
+
+    if cmd == "/tip":
+        seen = mentor_db.get_seen_question_ids(conn, chat_id)
+        unseen = len(mentor_quiz.unseen_question_ids(questions, seen))
+        review_count = len(mentor_db.get_review_question_ids(conn, chat_id))
+        daily_goal = parse_daily_goal()
+        daily_count = mentor_db.get_daily_answer_count(conn, chat_id)
+        tip = mentor_comp.suggest_practice_competency(
+            competencies,
+            mentor_db.get_competency_stats(conn, chat_id),
+        )
+        api.send_message(
+            chat_id,
+            mentor_progress.format_tip_summary(
+                bank_unseen=unseen,
+                review_count=review_count,
+                daily_count=daily_count,
+                daily_goal=daily_goal,
+                tip_title=tip.title if tip else None,
+                tip_id=tip.id if tip else None,
             ),
         )
         return
@@ -770,6 +797,23 @@ def handle_text(
         api.send_message(chat_id, mentor_comp.format_weaktopic_tip(tip))
         return
 
+    if cmd == "/focus":
+        comp_stats = mentor_db.get_competency_stats(conn, chat_id)
+        tip = mentor_comp.suggest_practice_competency(competencies, comp_stats)
+        if tip is None:
+            api.send_message(chat_id, "Нет тем для фокуса. /quiz — любой вопрос.")
+            return
+        deliver_quiz_question(
+            api,
+            conn,
+            chat_id,
+            questions,
+            competencies,
+            comp_filter=tip.id,
+            intro=f"Фокус: {tip.title}",
+        )
+        return
+
     if cmd in {"/practice", "/weak", "/learn"}:
         comp_stats = mentor_db.get_competency_stats(conn, chat_id)
         tip = mentor_comp.suggest_practice_competency(competencies, comp_stats)
@@ -787,7 +831,7 @@ def handle_text(
         )
         return
 
-    if cmd in {"/stats", "/progress", "/score"}:
+    if cmd in {"/stats", "/progress", "/score", "/me"}:
         st = mentor_db.get_stats(conn, chat_id)
         streak = mentor_db.get_streak(conn, chat_id)
         best = mentor_db.get_best_streak(conn, chat_id)
