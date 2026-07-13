@@ -8,8 +8,8 @@ Telegram bot that runs a **Data Science quiz** from a JSON question bank, tracks
 
 ## Features
 
-- Commands: `/quiz`, `/tip`, `/focus`, `/plan`, `/record`, `/random`, `/go`, `/new`, `/unseen`, `/topic`, `/search`, `/find`, `/bank`, `/streak`, `/last`, `/repeat`, `/again`, `/today`, `/daily`, `/goal`, `/due`, `/queue`, `/accuracy`, `/level`, `/seen`, `/remain`, `/count`, `/mastered`, `/weaktopic`, `/question`, `/id`, `/open`, `/next`, `/practice`, `/learn`, `/easy`, `/medium`, `/hard`, `/challenge`, `/review`, `/wrong`, `/fix`, `/retry`, `/mistakes`, `/export`, `/current`, `/show`, `/map`, `/topics`, `/hint`, `/explain`, `/achievements`, `/badges`, `/skip`, `/pass`, `/giveup`, `/stats`, `/me`, `/score`, `/progress`, `/status`, `/info`, `/about`, `/reset`, `/help`
-- `/tip` one coaching suggestion; `/focus` weak-topic quiz; `/find`, `/me`, `/badges` are aliases
+- Commands: `/quiz`, `/mix`, `/tip`, `/focus`, `/plan`, `/roadmap`, `/record`, `/best`, `/random`, `/go`, `/new`, `/fresh`, `/unseen`, `/topic`, `/search`, `/find`, `/bank`, `/streak`, `/last`, `/repeat`, `/again`, `/today`, `/daily`, `/goal`, `/due`, `/queue`, `/accuracy`, `/level`, `/seen`, `/remain`, `/count`, `/summary`, `/mastered`, `/weaktopic`, `/question`, `/id`, `/open`, `/next`, `/practice`, `/learn`, `/easy`, `/medium`, `/hard`, `/challenge`, `/review`, `/wrong`, `/fix`, `/retry`, `/mistakes`, `/export`, `/current`, `/show`, `/map`, `/topics`, `/hint`, `/explain`, `/achievements`, `/badges`, `/skip`, `/pass`, `/giveup`, `/stats`, `/me`, `/score`, `/progress`, `/status`, `/info`, `/about`, `/reset`, `/help`
+- `/roadmap` learning path; `/mix` uniform random quiz; `/fresh`, `/summary`, `/best` are aliases
 - `/search` in question bank (including by id); `/bank` overview; `/topics` with unseen counts; `mentor check --list-questions`
 - Telegram command menu registered on startup (`setMyCommands`)
 - `/stats` shows per-topic progress and what to practice next

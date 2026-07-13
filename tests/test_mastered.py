@@ -1,4 +1,9 @@
-from mentor.competencies import Competency, format_mastered_summary, format_weaktopic_tip
+from mentor.competencies import (
+    Competency,
+    format_mastered_summary,
+    format_roadmap_summary,
+    format_weaktopic_tip,
+)
 
 
 def test_format_mastered_summary() -> None:
@@ -21,3 +26,18 @@ def test_format_weaktopic_tip() -> None:
     assert "ml-metrics" in text
     assert "/practice" in text
     assert "тренировались" in format_weaktopic_tip(None)
+
+
+def test_format_roadmap_summary() -> None:
+    comps = [
+        Competency(id="a", title="A", description=""),
+        Competency(id="b", title="B", description=""),
+    ]
+    text = format_roadmap_summary(
+        comps,
+        {"a": (2, 2), "b": (0, 3)},
+        {"a": (2, 2)},
+    )
+    assert "готово" in text
+    assert "не начато" in text
+    assert "/focus" in text

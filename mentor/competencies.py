@@ -197,6 +197,27 @@ def format_mastered_summary(
     return "\n".join(lines)
 
 
+def format_roadmap_summary(
+    competencies: list[Competency],
+    bank_mastery: dict[str, tuple[int, int]],
+    comp_stats: dict[str, tuple[int, int]],
+) -> str:
+    lines = ["Roadmap Data Science:", ""]
+    for i, c in enumerate(competencies, start=1):
+        mastered, bank_n = bank_mastery.get(c.id, (0, 0))
+        correct, total = comp_stats.get(c.id, (0, 0))
+        if bank_n and mastered >= bank_n:
+            status = "готово"
+        elif total == 0:
+            status = "не начато"
+        else:
+            status = f"в работе {mastered}/{bank_n}"
+        lines.append(f"{i}. {c.title} ({c.id}) — {status}")
+    lines.append("")
+    lines.append("/topic <id> · /focus · /map")
+    return "\n".join(lines)
+
+
 def format_topics_list(
     competencies: list[Competency],
     bank_counts: dict[str, int] | None = None,

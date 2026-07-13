@@ -76,7 +76,7 @@ def parse_search_query(text: str) -> str:
 
 def parse_new_topic_arg(text: str) -> str:
     """`/new` or `/new ml-metrics` → optional competency id."""
-    if command_prefix(text) not in {"/new", "/unseen"}:
+    if command_prefix(text) not in {"/new", "/unseen", "/fresh"}:
         raise ValueError("not a new command")
     parts = (text or "").strip().split(maxsplit=1)
     if len(parts) < 2:

@@ -248,6 +248,8 @@ def collect_achievement_labels(
         labels.append("Серия 15+")
     if best_streak >= 20:
         labels.append("Серия 20+")
+    if total >= 10 and correct / total >= 0.7:
+        labels.append("Точность 70%+")
     if total >= 10 and correct / total >= 0.8:
         labels.append("Точность 80%+")
     if total >= 20 and correct / total >= 0.9:

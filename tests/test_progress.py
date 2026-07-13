@@ -85,6 +85,18 @@ def test_fifty_correct_achievement() -> None:
     assert "50 верных ответов" in labels
 
 
+def test_accuracy_70_achievement() -> None:
+    labels = prog.collect_achievement_labels(
+        total=10,
+        correct=7,
+        best_streak=2,
+        bank_total=20,
+        bank_mastered=5,
+    )
+    assert "Точность 70%+" in labels
+    assert "Точность 80%+" not in labels
+
+
 def test_format_tip_summary() -> None:
     text = prog.format_tip_summary(
         bank_unseen=5,

@@ -64,6 +64,7 @@ BOT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("level", "Уровень ученика"),
     ("plan", "План тренировки"),
     ("tip", "Совет на сейчас"),
+    ("roadmap", "Путь обучения"),
     ("record", "Личные рекорды"),
     ("seen", "Встреченные вопросы"),
     ("mastered", "Освоение по темам"),
@@ -174,8 +175,9 @@ def _help_text() -> str:
         "AI DS Mentor запущен.\n\n"
         "Команды:\n"
         "/quiz — вопрос (приоритет слабым темам)\n"
+        "/mix — полностью случайный вопрос\n"
         "/random или /next или /go — случайный вопрос\n"
-        "/new или /unseen — вопрос, который вы ещё не видели\n"
+        "/new, /unseen или /fresh — вопрос, который вы ещё не видели\n"
         "/new ml-metrics — новый вопрос по теме\n"
         "/topic ml-metrics — вопрос по теме\n"
         "/quiz <id> — вопрос по теме, напр. /quiz ml-metrics\n"
@@ -183,10 +185,11 @@ def _help_text() -> str:
         "/practice — вопрос по слабой теме · /learn — то же самое\n"
         "/focus — сразу фокус на слабой теме\n"
         "/tip — один совет, что делать дальше\n"
-        "/count — краткая сводка прогресса\n"
+        "/count или /summary — краткая сводка прогресса\n"
         "/level — уровень по ответам и банку\n"
-        "/record — личные рекорды\n"
+        "/record или /best — личные рекорды\n"
         "/plan — что тренировать дальше\n"
+        "/roadmap — путь обучения по темам\n"
         "/seen — сколько вопросов банка встречалось\n"
         "/question <id>, /id или /open — конкретный вопрос\n"
         "/challenge или /hard — случайный сложный вопрос (★★★)\n"
@@ -306,6 +309,7 @@ def deliver_quiz_question(
     difficulty_filter: int | None = None,
     only_ids: set[str] | None = None,
     intro: str | None = None,
+    uniform: bool = False,
 ) -> None:
     comp_index = mentor_comp.competency_by_id(competencies)
     if comp_filter and comp_filter not in comp_index:
@@ -324,16 +328,17 @@ def deliver_quiz_question(
         comp_stats,
         (c.id for c in competencies),
     )
+    use_smart = not uniform and not comp_filter and not only_ids
     try:
         q = mentor_quiz.pick_next(
             questions,
             prev,
             competency_filter=comp_filter or None,
             difficulty_filter=difficulty_filter,
-            competency_weights=weights if not comp_filter and not only_ids else None,
-            seen_ids=seen_ids if only_ids is None else None,
+            competency_weights=weights if use_smart else None,
+            seen_ids=None if uniform else (seen_ids if only_ids is None else None),
             only_ids=only_ids,
-            boost_ids=review_ids if not only_ids and not comp_filter else None,
+            boost_ids=review_ids if use_smart else None,
         )
     except ValueError:
         hint = "Попробуй /map или /quiz без аргумента."
@@ -576,7 +581,7 @@ def handle_text(
         start_question_by_id(api, conn, chat_id, questions, competencies, last_q)
         return
 
-    if cmd == "/count":
+    if cmd in {"/count", "/summary"}:
         st = mentor_db.get_stats(conn, chat_id)
         streak = mentor_db.get_streak(conn, chat_id)
         best = mentor_db.get_best_streak(conn, chat_id)
@@ -636,7 +641,7 @@ def handle_text(
         )
         return
 
-    if cmd == "/record":
+    if cmd in {"/record", "/best"}:
         st = mentor_db.get_stats(conn, chat_id)
         best = mentor_db.get_best_streak(conn, chat_id)
         mastered = len(mentor_db.get_mastered_question_ids(conn, chat_id))
@@ -648,6 +653,20 @@ def handle_text(
                 best_streak=best,
                 bank_mastered=mastered,
                 bank_total=len(questions),
+            ),
+        )
+        return
+
+    if cmd == "/roadmap":
+        mastered_ids = mentor_db.get_mastered_question_ids(conn, chat_id)
+        bank_mastery = mentor_quiz.competency_mastery_counts(questions, mastered_ids)
+        comp_stats = mentor_db.get_competency_stats(conn, chat_id)
+        api.send_message(
+            chat_id,
+            mentor_comp.format_roadmap_summary(
+                competencies,
+                bank_mastery,
+                comp_stats,
             ),
         )
         return
@@ -1021,7 +1040,19 @@ def handle_text(
         api.send_message(chat_id, "Ок, пропустили. Напиши /quiz чтобы получить следующий вопрос.")
         return
 
-    if cmd in {"/new", "/unseen"}:
+    if cmd == "/mix":
+        deliver_quiz_question(
+            api,
+            conn,
+            chat_id,
+            questions,
+            competencies,
+            intro="Случайный микс",
+            uniform=True,
+        )
+        return
+
+    if cmd in {"/new", "/unseen", "/fresh"}:
         try:
             topic = parse_new_topic_arg(text)
         except ValueError:

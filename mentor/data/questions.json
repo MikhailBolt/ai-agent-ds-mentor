@@ -799,5 +799,38 @@
       "group by and aggregate",
       "сводные метрики по категориям"
     ]
+  },
+  {
+    "id": "ml-040",
+    "competency_id": "ml-foundations",
+    "difficulty": 2,
+    "prompt": "Что такое feature engineering?",
+    "answer": "создание и преобразование признаков чтобы модели было проще найти закономерности",
+    "aliases": [
+      "создание признаков",
+      "transform raw inputs into features"
+    ]
+  },
+  {
+    "id": "st-014",
+    "competency_id": "stats-basics",
+    "difficulty": 2,
+    "prompt": "Чем выборка отличается от генеральной совокупности?",
+    "answer": "выборка это часть данных из всей совокупности по которой оценивают параметры",
+    "aliases": [
+      "sample vs population",
+      "подмножество всей популяции"
+    ]
+  },
+  {
+    "id": "py-018",
+    "competency_id": "python-ds",
+    "difficulty": 1,
+    "prompt": "Что делает df.value_counts() в pandas?",
+    "answer": "считает частоту уникальных значений в серии или столбце",
+    "aliases": [
+      "count unique values frequency",
+      "сколько раз встречается каждое значение"
+    ]
   }
 ]
