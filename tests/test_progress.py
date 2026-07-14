@@ -85,6 +85,52 @@ def test_fifty_correct_achievement() -> None:
     assert "50 верных ответов" in labels
 
 
+def test_format_session_summary() -> None:
+    text = prog.format_session_summary(
+        daily_count=2,
+        daily_goal=5,
+        streak=3,
+        review_count=1,
+        bank_unseen=8,
+    )
+    assert "Дневная цель" in text
+    assert "На повтор: 1" in text
+    assert "/quiz" in text
+
+
+def test_format_compare_summary() -> None:
+    empty = prog.format_compare_summary(
+        weak_title=None,
+        weak_id=None,
+        weak_acc=None,
+        strong_title=None,
+        strong_id=None,
+        strong_acc=None,
+    )
+    assert "мало данных" in empty
+    text = prog.format_compare_summary(
+        weak_title="Метрики",
+        weak_id="ml-metrics",
+        weak_acc=40.0,
+        strong_title="Python",
+        strong_id="python-ds",
+        strong_acc=90.0,
+    )
+    assert "Слабая: Метрики" in text
+    assert "Сильная: Python" in text
+
+
+def test_ten_correct_achievement() -> None:
+    labels = prog.collect_achievement_labels(
+        total=12,
+        correct=10,
+        best_streak=3,
+        bank_total=70,
+        bank_mastered=20,
+    )
+    assert "10 верных ответов" in labels
+
+
 def test_accuracy_70_achievement() -> None:
     labels = prog.collect_achievement_labels(
         total=10,

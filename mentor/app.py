@@ -65,6 +65,8 @@ BOT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("plan", "План тренировки"),
     ("tip", "Совет на сейчас"),
     ("roadmap", "Путь обучения"),
+    ("session", "Срез сессии"),
+    ("compare", "Слабая vs сильная тема"),
     ("record", "Личные рекорды"),
     ("seen", "Встреченные вопросы"),
     ("mastered", "Освоение по темам"),
@@ -182,14 +184,16 @@ def _help_text() -> str:
         "/topic ml-metrics — вопрос по теме\n"
         "/quiz <id> — вопрос по теме, напр. /quiz ml-metrics\n"
         "/quiz 2 или /quiz hard — по сложности (1–3)\n"
-        "/practice — вопрос по слабой теме · /learn — то же самое\n"
+        "/practice, /learn или /drill — вопрос по слабой теме\n"
         "/focus — сразу фокус на слабой теме\n"
-        "/tip — один совет, что делать дальше\n"
+        "/tip или /coach — один совет, что делать дальше\n"
         "/count или /summary — краткая сводка прогресса\n"
         "/level — уровень по ответам и банку\n"
         "/record или /best — личные рекорды\n"
         "/plan — что тренировать дальше\n"
-        "/roadmap — путь обучения по темам\n"
+        "/session — срез текущей сессии\n"
+        "/compare — слабая vs сильная тема\n"
+        "/roadmap или /path — путь обучения по темам\n"
         "/seen — сколько вопросов банка встречалось\n"
         "/question <id>, /id или /open — конкретный вопрос\n"
         "/challenge или /hard — случайный сложный вопрос (★★★)\n"
@@ -657,7 +661,47 @@ def handle_text(
         )
         return
 
-    if cmd == "/roadmap":
+    if cmd == "/session":
+        daily_goal = parse_daily_goal()
+        daily_count = mentor_db.get_daily_answer_count(conn, chat_id)
+        streak = mentor_db.get_streak(conn, chat_id)
+        seen = mentor_db.get_seen_question_ids(conn, chat_id)
+        unseen = len(mentor_quiz.unseen_question_ids(questions, seen))
+        review_count = len(mentor_db.get_review_question_ids(conn, chat_id))
+        api.send_message(
+            chat_id,
+            mentor_progress.format_session_summary(
+                daily_count=daily_count,
+                daily_goal=daily_goal,
+                streak=streak,
+                review_count=review_count,
+                bank_unseen=unseen,
+            ),
+        )
+        return
+
+    if cmd == "/compare":
+        comp_stats = mentor_db.get_competency_stats(conn, chat_id)
+        weak = mentor_comp.suggest_practice_competency(competencies, comp_stats)
+        strong = mentor_comp.suggest_strongest_competency(competencies, comp_stats)
+        weak_acc: float | None = None
+        if weak is not None:
+            ok, tot = comp_stats.get(weak.id, (0, 0))
+            weak_acc = (ok / tot * 100.0) if tot else None
+        api.send_message(
+            chat_id,
+            mentor_progress.format_compare_summary(
+                weak_title=weak.title if weak else None,
+                weak_id=weak.id if weak else None,
+                weak_acc=weak_acc,
+                strong_title=strong[0].title if strong else None,
+                strong_id=strong[0].id if strong else None,
+                strong_acc=strong[1] if strong else None,
+            ),
+        )
+        return
+
+    if cmd in {"/roadmap", "/path"}:
         mastered_ids = mentor_db.get_mastered_question_ids(conn, chat_id)
         bank_mastery = mentor_quiz.competency_mastery_counts(questions, mastered_ids)
         comp_stats = mentor_db.get_competency_stats(conn, chat_id)
@@ -671,7 +715,7 @@ def handle_text(
         )
         return
 
-    if cmd == "/tip":
+    if cmd in {"/tip", "/coach"}:
         seen = mentor_db.get_seen_question_ids(conn, chat_id)
         unseen = len(mentor_quiz.unseen_question_ids(questions, seen))
         review_count = len(mentor_db.get_review_question_ids(conn, chat_id))
@@ -833,7 +877,7 @@ def handle_text(
         )
         return
 
-    if cmd in {"/practice", "/weak", "/learn"}:
+    if cmd in {"/practice", "/weak", "/learn", "/drill"}:
         comp_stats = mentor_db.get_competency_stats(conn, chat_id)
         tip = mentor_comp.suggest_practice_competency(competencies, comp_stats)
         if tip is None:

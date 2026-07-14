@@ -213,6 +213,60 @@ def format_tip_summary(
     return "Совет: возьми сложный вопрос.\n/challenge или /hard"
 
 
+def format_session_summary(
+    *,
+    daily_count: int,
+    daily_goal: int | None,
+    streak: int,
+    review_count: int,
+    bank_unseen: int,
+) -> str:
+    lines = ["Сессия сейчас:"]
+    if daily_goal:
+        lines.append(format_daily_goal_line(daily_count, daily_goal))
+    else:
+        lines.append(f"Ответов сегодня: {daily_count}")
+    lines.append(f"Текущая серия: {streak}")
+    lines.append(f"На повтор: {review_count} · новых: {bank_unseen}")
+    lines.append("")
+    if daily_goal and daily_count < daily_goal:
+        lines.append("/quiz — закрыть цель")
+    elif review_count:
+        lines.append("/review — разобрать ошибки")
+    elif bank_unseen:
+        lines.append("/new — новый вопрос")
+    else:
+        lines.append("/challenge — сложный вопрос")
+    return "\n".join(lines)
+
+
+def format_compare_summary(
+    *,
+    weak_title: str | None,
+    weak_id: str | None,
+    weak_acc: float | None,
+    strong_title: str | None,
+    strong_id: str | None,
+    strong_acc: float | None,
+) -> str:
+    if weak_id is None and strong_id is None:
+        return "Пока мало данных для сравнения. Напиши /quiz!"
+    lines = ["Сравнение тем:", ""]
+    if weak_id and weak_title is not None:
+        if weak_acc is None:
+            lines.append(f"Слабая/новая: {weak_title} ({weak_id}) — ещё не решал")
+        else:
+            lines.append(f"Слабая: {weak_title} ({weak_id}) — {weak_acc:.0f}%")
+    if strong_id and strong_title is not None and strong_acc is not None:
+        lines.append(f"Сильная: {strong_title} ({strong_id}) — {strong_acc:.0f}%")
+    lines.append("")
+    if weak_id:
+        lines.append(f"/focus · /topic {weak_id}")
+    else:
+        lines.append("/map — карта компетенций")
+    return "\n".join(lines)
+
+
 def collect_achievement_labels(
     *,
     total: int,
@@ -236,6 +290,8 @@ def collect_achievement_labels(
         labels.append("200 ответов")
     if correct >= 5:
         labels.append("5 верных ответов")
+    if correct >= 10:
+        labels.append("10 верных ответов")
     if correct >= 20:
         labels.append("20 верных ответов")
     if correct >= 50:

@@ -71,6 +71,28 @@ def suggest_practice_competency(
     return pick
 
 
+def suggest_strongest_competency(
+    competencies: list[Competency],
+    stats: dict[str, tuple[int, int]],
+    *,
+    min_attempts: int = 2,
+) -> tuple[Competency, float] | None:
+    """Pick the strongest started topic by accuracy (needs enough attempts)."""
+    best_acc = -1.0
+    pick: Competency | None = None
+    for c in competencies:
+        correct, total = stats.get(c.id, (0, 0))
+        if total < min_attempts:
+            continue
+        acc = correct / total
+        if acc > best_acc:
+            best_acc = acc
+            pick = c
+    if pick is None:
+        return None
+    return pick, best_acc * 100.0
+
+
 def format_weaktopic_tip(tip: Competency | None) -> str:
     if tip is None:
         return "Все темы уже тренировались — /quiz или /review"

@@ -3,6 +3,7 @@ from mentor.competencies import (
     format_mastered_summary,
     format_roadmap_summary,
     format_weaktopic_tip,
+    suggest_strongest_competency,
 )
 
 
@@ -41,3 +42,18 @@ def test_format_roadmap_summary() -> None:
     assert "готово" in text
     assert "не начато" in text
     assert "/focus" in text
+
+
+def test_suggest_strongest_competency() -> None:
+    comps = [
+        Competency(id="a", title="A", description=""),
+        Competency(id="b", title="B", description=""),
+    ]
+    result = suggest_strongest_competency(
+        comps,
+        {"a": (1, 4), "b": (4, 4)},
+    )
+    assert result is not None
+    pick, acc = result
+    assert pick.id == "b"
+    assert acc == 100.0

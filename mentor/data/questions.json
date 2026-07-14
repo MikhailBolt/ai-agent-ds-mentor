@@ -832,5 +832,39 @@
       "count unique values frequency",
       "сколько раз встречается каждое значение"
     ]
+  },
+  {
+    "id": "ml-041",
+    "competency_id": "ml-metrics",
+    "difficulty": 1,
+    "prompt": "Что такое false positive в бинарной классификации?",
+    "answer": "ошибка когда модель предсказала положительный класс а на самом деле был отрицательный",
+    "aliases": [
+      "ложная тревога fp",
+      "type i error false alarm"
+    ]
+  },
+  {
+    "id": "ml-042",
+    "competency_id": "ml-validation",
+    "difficulty": 2,
+    "prompt": "Зачем делают time-based split для временных рядов?",
+    "answer": "чтобы валидация имитировала будущее и не подглядывала в прошлые данные из более поздних периодов",
+    "aliases": [
+      "temporal train test split",
+      "не перемешивать по времени"
+    ]
+  },
+  {
+    "id": "st-015",
+    "competency_id": "stats-basics",
+    "difficulty": 2,
+    "prompt": "Что означает статистически значимый результат?",
+    "answer": "данные достаточно необычны при верной H0 обычно p-value меньше выбранного уровня alpha",
+    "aliases": [
+      "reject null hypothesis at alpha",
+      "p value ниже порога значимости"
+    ],
+    "hint": "Значимость ≠ практическая важность эффекта."
   }
 ]
