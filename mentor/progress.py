@@ -267,6 +267,19 @@ def format_compare_summary(
     return "\n".join(lines)
 
 
+def format_history_summary(rows: list[tuple[str, int, int]]) -> str:
+    """rows: (question_id, attempts, correct_count)."""
+    if not rows:
+        return "История пуста — напиши /quiz!"
+    lines = ["Последние вопросы:", ""]
+    for qid, attempts, correct in rows:
+        mark = "✓" if correct >= 1 else "·"
+        lines.append(f"{mark} {qid} — {correct}/{attempts} верных попыток")
+    lines.append("")
+    lines.append("/question <id> · /last · /review")
+    return "\n".join(lines)
+
+
 def collect_achievement_labels(
     *,
     total: int,
@@ -280,6 +293,7 @@ def collect_achievement_labels(
     competency_titles: dict[str, str] | None = None,
     comp_stats: dict[str, tuple[int, int]] | None = None,
     all_competency_ids: set[str] | None = None,
+    bank_seen: int = 0,
 ) -> list[str]:
     labels: list[str] = []
     if total >= 1:
@@ -312,6 +326,8 @@ def collect_achievement_labels(
         labels.append("Точность 90%+")
     if bank_total > 0 and bank_mastered >= bank_total:
         labels.append("Весь банк освоен")
+    elif bank_total > 0 and bank_seen * 10 >= bank_total * 9:
+        labels.append("90% банка встречено")
     elif bank_total > 0 and bank_mastered * 4 >= bank_total * 3:
         labels.append("75% банка")
     elif bank_total > 0 and bank_mastered * 2 >= bank_total:

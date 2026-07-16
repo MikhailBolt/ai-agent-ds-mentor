@@ -8,8 +8,8 @@ Telegram bot that runs a **Data Science quiz** from a JSON question bank, tracks
 
 ## Features
 
-- Commands: `/quiz`, `/mix`, `/tip`, `/coach`, `/focus`, `/plan`, `/session`, `/compare`, `/roadmap`, `/path`, `/record`, `/best`, `/random`, `/go`, `/new`, `/fresh`, `/unseen`, `/topic`, `/search`, `/find`, `/bank`, `/streak`, `/last`, `/repeat`, `/again`, `/today`, `/daily`, `/goal`, `/due`, `/queue`, `/accuracy`, `/level`, `/seen`, `/remain`, `/count`, `/summary`, `/mastered`, `/weaktopic`, `/question`, `/id`, `/open`, `/next`, `/practice`, `/learn`, `/drill`, `/easy`, `/medium`, `/hard`, `/challenge`, `/review`, `/wrong`, `/fix`, `/retry`, `/mistakes`, `/export`, `/current`, `/show`, `/map`, `/topics`, `/hint`, `/explain`, `/achievements`, `/badges`, `/skip`, `/pass`, `/giveup`, `/stats`, `/me`, `/score`, `/progress`, `/status`, `/info`, `/about`, `/reset`, `/help`
-- `/session` pulse; `/compare` weak vs strong topic; `/path`, `/coach`, `/drill` are aliases
+- Commands: `/quiz`, `/mix`, `/tip`, `/coach`, `/focus`, `/plan`, `/guide`, `/session`, `/pulse`, `/history`, `/compare`, `/roadmap`, `/path`, `/record`, `/best`, `/random`, `/go`, `/new`, `/fresh`, `/unseen`, `/topic`, `/search`, `/find`, `/bank`, `/streak`, `/last`, `/repeat`, `/again`, `/today`, `/daily`, `/goal`, `/due`, `/queue`, `/accuracy`, `/level`, `/rank`, `/seen`, `/remain`, `/count`, `/summary`, `/mastered`, `/weaktopic`, `/question`, `/id`, `/open`, `/next`, `/practice`, `/learn`, `/drill`, `/easy`, `/medium`, `/hard`, `/challenge`, `/review`, `/wrong`, `/fix`, `/retry`, `/mistakes`, `/export`, `/current`, `/show`, `/map`, `/topics`, `/hint`, `/explain`, `/achievements`, `/badges`, `/skip`, `/pass`, `/giveup`, `/stats`, `/me`, `/score`, `/progress`, `/status`, `/info`, `/about`, `/reset`, `/help`
+- `/history` recent questions; `/pulse`, `/guide`, `/rank` are aliases
 - `/search` in question bank (including by id); `/bank` overview; `/topics` with unseen counts; `mentor check --list-questions`
 - Telegram command menu registered on startup (`setMyCommands`)
 - `/stats` shows per-topic progress and what to practice next

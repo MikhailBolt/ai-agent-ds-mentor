@@ -66,6 +66,7 @@ BOT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("tip", "Совет на сейчас"),
     ("roadmap", "Путь обучения"),
     ("session", "Срез сессии"),
+    ("history", "Последние вопросы"),
     ("compare", "Слабая vs сильная тема"),
     ("record", "Личные рекорды"),
     ("seen", "Встреченные вопросы"),
@@ -188,10 +189,11 @@ def _help_text() -> str:
         "/focus — сразу фокус на слабой теме\n"
         "/tip или /coach — один совет, что делать дальше\n"
         "/count или /summary — краткая сводка прогресса\n"
-        "/level — уровень по ответам и банку\n"
+        "/level или /rank — уровень по ответам и банку\n"
         "/record или /best — личные рекорды\n"
-        "/plan — что тренировать дальше\n"
-        "/session — срез текущей сессии\n"
+        "/plan или /guide — что тренировать дальше\n"
+        "/session или /pulse — срез текущей сессии\n"
+        "/history — последние отвеченные вопросы\n"
         "/compare — слабая vs сильная тема\n"
         "/roadmap или /path — путь обучения по темам\n"
         "/seen — сколько вопросов банка встречалось\n"
@@ -471,6 +473,7 @@ def handle_text(
         st = mentor_db.get_stats(conn, chat_id)
         best = mentor_db.get_best_streak(conn, chat_id)
         mastered_ids = mentor_db.get_mastered_question_ids(conn, chat_id)
+        seen = mentor_db.get_seen_question_ids(conn, chat_id)
         bank_mastery = mentor_quiz.competency_mastery_counts(questions, mastered_ids)
         comp_titles = {c.id: c.title for c in competencies}
         daily_goal = parse_daily_goal()
@@ -481,6 +484,7 @@ def handle_text(
             best_streak=best,
             bank_total=len(questions),
             bank_mastered=len(mastered_ids),
+            bank_seen=len(seen),
             daily_count=daily_count,
             daily_goal=daily_goal,
             bank_mastery=bank_mastery,
@@ -621,7 +625,7 @@ def handle_text(
         )
         return
 
-    if cmd == "/level":
+    if cmd in {"/level", "/rank"}:
         st = mentor_db.get_stats(conn, chat_id)
         mastered = len(mentor_db.get_mastered_question_ids(conn, chat_id))
         api.send_message(
@@ -661,7 +665,13 @@ def handle_text(
         )
         return
 
-    if cmd == "/session":
+    if cmd == "/history":
+        rows = mentor_db.get_recent_history_rows(conn, chat_id)
+        summary = [(r.question_id, r.attempts, r.correct_count) for r in rows]
+        api.send_message(chat_id, mentor_progress.format_history_summary(summary))
+        return
+
+    if cmd in {"/session", "/pulse"}:
         daily_goal = parse_daily_goal()
         daily_count = mentor_db.get_daily_answer_count(conn, chat_id)
         streak = mentor_db.get_streak(conn, chat_id)
@@ -738,7 +748,7 @@ def handle_text(
         )
         return
 
-    if cmd == "/plan":
+    if cmd in {"/plan", "/guide"}:
         seen = mentor_db.get_seen_question_ids(conn, chat_id)
         unseen = len(mentor_quiz.unseen_question_ids(questions, seen))
         review_count = len(mentor_db.get_review_question_ids(conn, chat_id))
@@ -813,6 +823,7 @@ def handle_text(
             best_streak=best,
             bank_total=len(questions),
             bank_mastered=len(mastered),
+            bank_seen=len(seen),
             daily_count=daily_count,
             daily_goal=daily_goal,
             comp_stats=comp_stats,
@@ -911,6 +922,7 @@ def handle_text(
             best_streak=best,
             bank_total=len(questions),
             bank_mastered=len(mastered_ids),
+            bank_seen=len(seen),
             daily_count=daily_count,
             daily_goal=daily_goal,
             bank_mastery=bank_mastery,

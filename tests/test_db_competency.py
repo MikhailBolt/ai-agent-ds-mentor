@@ -84,6 +84,15 @@ def test_last_question_id(conn: sqlite3.Connection) -> None:
     assert mentor_db.get_last_question_id(conn, 1) is None
 
 
+def test_get_recent_history_rows(conn: sqlite3.Connection) -> None:
+    mentor_db.record_question_attempt(conn, 1, "q1", is_correct=True)
+    mentor_db.record_question_attempt(conn, 1, "q2", is_correct=False)
+    rows = mentor_db.get_recent_history_rows(conn, 1)
+    assert len(rows) == 2
+    ids = {r.question_id for r in rows}
+    assert ids == {"q1", "q2"}
+
+
 def test_mistake_rows(conn: sqlite3.Connection) -> None:
     mentor_db.record_question_attempt(conn, 1, "q1", is_correct=False)
     mentor_db.record_question_attempt(conn, 1, "q1", is_correct=False)

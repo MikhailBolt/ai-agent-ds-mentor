@@ -74,9 +74,16 @@ def _migrate_users(conn: sqlite3.Connection) -> None:
         conn.execute("ALTER TABLE users ADD COLUMN last_question_id TEXT")
 
 
+def _migrate_question_history(conn: sqlite3.Connection) -> None:
+    cols = {str(row[1]) for row in conn.execute("PRAGMA table_info(question_history)").fetchall()}
+    if "last_attempt_at" not in cols:
+        conn.execute("ALTER TABLE question_history ADD COLUMN last_attempt_at TEXT")
+
+
 def ensure_schema(conn: sqlite3.Connection) -> None:
     conn.executescript(SCHEMA_SQL)
     _migrate_users(conn)
+    _migrate_question_history(conn)
     conn.commit()
 
 
@@ -286,6 +293,13 @@ def get_stats(conn: sqlite3.Connection, chat_id: int) -> Stats:
     return Stats(correct=int(row["quiz_correct"]), total=int(row["quiz_total"]))
 
 
+@dataclass(frozen=True)
+class HistoryRow:
+    question_id: str
+    attempts: int
+    correct_count: int
+
+
 def record_question_attempt(
     conn: sqlite3.Connection,
     chat_id: int,
@@ -295,15 +309,44 @@ def record_question_attempt(
 ) -> None:
     conn.execute(
         """
-        INSERT INTO question_history (chat_id, question_id, attempts, correct_count)
-        VALUES (?, ?, 1, ?)
+        INSERT INTO question_history (
+            chat_id, question_id, attempts, correct_count, last_attempt_at
+        )
+        VALUES (?, ?, 1, ?, datetime('now'))
         ON CONFLICT(chat_id, question_id) DO UPDATE SET
           attempts = attempts + 1,
-          correct_count = correct_count + excluded.correct_count
+          correct_count = correct_count + excluded.correct_count,
+          last_attempt_at = datetime('now')
         """,
         (chat_id, question_id, 1 if is_correct else 0),
     )
     conn.commit()
+
+
+def get_recent_history_rows(
+    conn: sqlite3.Connection,
+    chat_id: int,
+    *,
+    limit: int = 8,
+) -> list[HistoryRow]:
+    rows = conn.execute(
+        """
+        SELECT question_id, attempts, correct_count
+        FROM question_history
+        WHERE chat_id=?
+        ORDER BY COALESCE(last_attempt_at, '') DESC, attempts DESC
+        LIMIT ?
+        """,
+        (chat_id, limit),
+    ).fetchall()
+    return [
+        HistoryRow(
+            question_id=str(r["question_id"]),
+            attempts=int(r["attempts"]),
+            correct_count=int(r["correct_count"]),
+        )
+        for r in rows
+    ]
 
 
 @dataclass(frozen=True)

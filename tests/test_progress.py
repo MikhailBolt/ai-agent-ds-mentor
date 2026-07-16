@@ -85,6 +85,26 @@ def test_fifty_correct_achievement() -> None:
     assert "50 верных ответов" in labels
 
 
+def test_format_history_summary() -> None:
+    empty = prog.format_history_summary([])
+    assert "История пуста" in empty
+    text = prog.format_history_summary([("ml-001", 2, 1), ("ml-002", 1, 0)])
+    assert "ml-001" in text
+    assert "/question" in text
+
+
+def test_bank_seen_90_achievement() -> None:
+    labels = prog.collect_achievement_labels(
+        total=50,
+        correct=40,
+        best_streak=5,
+        bank_total=100,
+        bank_mastered=30,
+        bank_seen=90,
+    )
+    assert "90% банка встречено" in labels
+
+
 def test_format_session_summary() -> None:
     text = prog.format_session_summary(
         daily_count=2,

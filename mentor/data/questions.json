@@ -866,5 +866,38 @@
       "p value ниже порога значимости"
     ],
     "hint": "Значимость ≠ практическая важность эффекта."
+  },
+  {
+    "id": "ml-043",
+    "competency_id": "ml-foundations",
+    "difficulty": 2,
+    "prompt": "Что такое gradient boosting?",
+    "answer": "ансамбль последовательно добавляет слабые модели чтобы исправлять ошибки предыдущих",
+    "aliases": [
+      "sequential weak learners",
+      "градиентный бустинг деревьев"
+    ]
+  },
+  {
+    "id": "py-019",
+    "competency_id": "python-ds",
+    "difficulty": 2,
+    "prompt": "Зачем в pandas используют df.reset_index()?",
+    "answer": "сбросить индекс в обычный столбец и получить новый последовательный индекс",
+    "aliases": [
+      "move index to column",
+      "новый default index 0..n-1"
+    ]
+  },
+  {
+    "id": "ml-044",
+    "competency_id": "ml-metrics",
+    "difficulty": 1,
+    "prompt": "Что такое false negative в бинарной классификации?",
+    "answer": "ошибка когда модель предсказала отрицательный класс а на самом деле был положительный",
+    "aliases": [
+      "пропуск цели fn",
+      "type ii error miss"
+    ]
   }
 ]
