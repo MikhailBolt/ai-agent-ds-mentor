@@ -85,6 +85,47 @@ def test_fifty_correct_achievement() -> None:
     assert "50 верных ответов" in labels
 
 
+def test_format_gaps_summary() -> None:
+    comps = [
+        Competency(id="a", title="A", description=""),
+        Competency(id="b", title="B", description=""),
+    ]
+    text = prog.format_gaps_summary(
+        comps,
+        {"a": (0, 5), "b": (4, 5)},
+    )
+    assert "не начато" in text
+    assert "/topic a" in text
+
+
+def test_format_sprint_summary() -> None:
+    text = prog.format_sprint_summary(
+        review_count=3,
+        bank_unseen=10,
+        tip_title="Метрики",
+        tip_id="ml-metrics",
+    )
+    assert "повтор ошибок" in text
+    fresh = prog.format_sprint_summary(
+        review_count=0,
+        bank_unseen=4,
+        tip_title=None,
+        tip_id=None,
+    )
+    assert "новые вопросы" in fresh
+
+
+def test_streak_25_achievement() -> None:
+    labels = prog.collect_achievement_labels(
+        total=40,
+        correct=30,
+        best_streak=25,
+        bank_total=80,
+        bank_mastered=20,
+    )
+    assert "Серия 25+" in labels
+
+
 def test_format_brief_summary() -> None:
     text = prog.format_brief_summary(
         correct=8,

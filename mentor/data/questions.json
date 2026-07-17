@@ -933,5 +933,38 @@
       "sort dataframe by column",
       "упорядочить по колонке"
     ]
+  },
+  {
+    "id": "ml-046",
+    "competency_id": "ml-foundations",
+    "difficulty": 1,
+    "prompt": "Что такое underfitting (недообучение)?",
+    "answer": "модель слишком простая и плохо описывает даже обучающие данные",
+    "aliases": [
+      "high bias low capacity",
+      "плохо и на train и на test"
+    ]
+  },
+  {
+    "id": "ml-047",
+    "competency_id": "ml-metrics",
+    "difficulty": 2,
+    "prompt": "Когда macro-F1 предпочтительнее micro-F1?",
+    "answer": "когда важно одинаково учитывать все классы особенно редкие при дисбалансе",
+    "aliases": [
+      "macro averages per class equally",
+      "макро усреднение по классам"
+    ]
+  },
+  {
+    "id": "st-017",
+    "competency_id": "stats-basics",
+    "difficulty": 2,
+    "prompt": "Что такое выброс outlier?",
+    "answer": "наблюдение сильно отличающееся от остальных точек данных",
+    "aliases": [
+      "extreme value anomaly",
+      "аномальное значение в выборке"
+    ]
   }
 ]

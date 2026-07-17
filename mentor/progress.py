@@ -307,6 +307,51 @@ def format_brief_summary(
     return "\n".join(lines)
 
 
+def format_gaps_summary(
+    competencies: list[Competency],
+    bank_mastery: dict[str, tuple[int, int]],
+    *,
+    limit: int = 5,
+) -> str:
+    gaps: list[tuple[float, str, str, int, int]] = []
+    for c in competencies:
+        mastered, bank_n = bank_mastery.get(c.id, (0, 0))
+        if bank_n == 0:
+            continue
+        ratio = mastered / bank_n
+        gaps.append((ratio, c.title, c.id, mastered, bank_n))
+    gaps.sort(key=lambda x: (x[0], x[3], x[2]))
+    if not gaps:
+        return "Нет данных по пробелам. /quiz!"
+    lines = ["Пробелы по темам:", ""]
+    for ratio, title, cid, mastered, bank_n in gaps[:limit]:
+        if mastered == 0:
+            status = "не начато"
+        else:
+            status = f"{mastered}/{bank_n} ({ratio * 100:.0f}%)"
+        lines.append(f"• {title} ({cid}) — {status}")
+    lines.append("")
+    first = gaps[0]
+    lines.append(f"/topic {first[2]} · /focus · /roadmap")
+    return "\n".join(lines)
+
+
+def format_sprint_summary(
+    *,
+    review_count: int,
+    bank_unseen: int,
+    tip_title: str | None,
+    tip_id: str | None,
+) -> str:
+    if review_count:
+        return f"Спринт: повтор ошибок ({review_count}).\n/review или /fix"
+    if bank_unseen:
+        return f"Спринт: новые вопросы ({bank_unseen}).\n/new или /warmup"
+    if tip_id and tip_title:
+        return f"Спринт: тема «{tip_title}».\n/topic {tip_id} · /focus"
+    return "Спринт: сложный вопрос.\n/challenge или /hard"
+
+
 def collect_achievement_labels(
     *,
     total: int,
@@ -347,6 +392,8 @@ def collect_achievement_labels(
         labels.append("Серия 15+")
     if best_streak >= 20:
         labels.append("Серия 20+")
+    if best_streak >= 25:
+        labels.append("Серия 25+")
     if total >= 10 and correct / total >= 0.7:
         labels.append("Точность 70%+")
     if total >= 10 and correct / total >= 0.8:

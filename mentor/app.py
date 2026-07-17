@@ -69,6 +69,8 @@ BOT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("session", "Срез сессии"),
     ("history", "Последние вопросы"),
     ("brief", "Короткий дашборд"),
+    ("gaps", "Пробелы по темам"),
+    ("sprint", "Быстрый старт тренировки"),
     ("compare", "Слабая vs сильная тема"),
     ("record", "Личные рекорды"),
     ("seen", "Встреченные вопросы"),
@@ -191,7 +193,9 @@ def _help_text() -> str:
         "/focus — сразу фокус на слабой теме\n"
         "/tip или /coach — один совет, что делать дальше\n"
         "/count или /summary — краткая сводка прогресса\n"
-        "/brief или /dash — ультракороткий дашборд\n"
+        "/brief, /dash или /snap — ультракороткий дашборд\n"
+        "/gaps — пробелы по темам\n"
+        "/sprint — быстрый старт тренировки\n"
         "/level или /rank — уровень по ответам и банку\n"
         "/record или /best — личные рекорды\n"
         "/plan или /guide — что тренировать дальше\n"
@@ -200,6 +204,7 @@ def _help_text() -> str:
         "/warmup — лёгкий новый вопрос для разминки\n"
         "/compare — слабая vs сильная тема\n"
         "/roadmap или /path — путь обучения по темам\n"
+        "/map, /board или /competencies — карта компетенций и прогресс\n"
         "/seen — сколько вопросов банка встречалось\n"
         "/question <id>, /id или /open — конкретный вопрос\n"
         "/challenge или /hard — случайный сложный вопрос (★★★)\n"
@@ -211,7 +216,7 @@ def _help_text() -> str:
         "/accuracy — точность ответов\n"
         "/remain — сколько новых вопросов осталось\n"
         "/mastered — освоение банка по темам\n"
-        "/mistakes — список вопросов с ошибками\n"
+        "/mistakes или /miss — список вопросов с ошибками\n"
         "/export — текстовый отчёт о прогрессе\n"
         "/search или /find <слово> — поиск вопроса в банке\n"
         "/bank — обзор банка (темы и сложность)\n"
@@ -219,7 +224,6 @@ def _help_text() -> str:
         "/current или /show — информация о текущем вопросе\n"
         "/review, /wrong, /fix или /retry — повторить вопрос с ошибкой\n"
         "/explain — пояснение к текущему вопросу\n"
-        "/map — карта компетенций и прогресс\n"
         "/topics — список id тем\n"
         "/skip, /cancel или /pass — пропустить (без штрафа)\n"
         "/giveup — показать ответ и завершить вопрос\n"
@@ -499,7 +503,77 @@ def handle_text(
         api.send_message(chat_id, mentor_progress.format_achievements_text(labels))
         return
 
-    if cmd in {"/map", "/competencies"}:
+    if cmd == "/gaps":
+        mastered_ids = mentor_db.get_mastered_question_ids(conn, chat_id)
+        bank_mastery = mentor_quiz.competency_mastery_counts(questions, mastered_ids)
+        api.send_message(
+            chat_id,
+            mentor_progress.format_gaps_summary(competencies, bank_mastery),
+        )
+        return
+
+    if cmd == "/sprint":
+        seen = mentor_db.get_seen_question_ids(conn, chat_id)
+        unseen = mentor_quiz.unseen_question_ids(questions, seen)
+        review_ids = mentor_db.get_review_question_ids(conn, chat_id)
+        tip = mentor_comp.suggest_practice_competency(
+            competencies,
+            mentor_db.get_competency_stats(conn, chat_id),
+        )
+        api.send_message(
+            chat_id,
+            mentor_progress.format_sprint_summary(
+                review_count=len(review_ids),
+                bank_unseen=len(unseen),
+                tip_title=tip.title if tip else None,
+                tip_id=tip.id if tip else None,
+            ),
+        )
+        if review_ids:
+            deliver_quiz_question(
+                api,
+                conn,
+                chat_id,
+                questions,
+                competencies,
+                only_ids=set(review_ids),
+                intro="Спринт: повтор ошибки",
+            )
+            return
+        if unseen:
+            deliver_quiz_question(
+                api,
+                conn,
+                chat_id,
+                questions,
+                competencies,
+                only_ids=unseen,
+                intro="Спринт: новый вопрос",
+            )
+            return
+        if tip is not None:
+            deliver_quiz_question(
+                api,
+                conn,
+                chat_id,
+                questions,
+                competencies,
+                comp_filter=tip.id,
+                intro=f"Спринт: {tip.title}",
+            )
+            return
+        deliver_quiz_question(
+            api,
+            conn,
+            chat_id,
+            questions,
+            competencies,
+            difficulty_filter=3,
+            intro="Спринт: сложный вопрос",
+        )
+        return
+
+    if cmd in {"/map", "/competencies", "/board"}:
         comp_stats = mentor_db.get_competency_stats(conn, chat_id)
         mastered_ids = mentor_db.get_mastered_question_ids(conn, chat_id)
         bank_mastery = mentor_quiz.competency_mastery_counts(questions, mastered_ids)
@@ -669,7 +743,7 @@ def handle_text(
         )
         return
 
-    if cmd in {"/brief", "/dash"}:
+    if cmd in {"/brief", "/dash", "/snap"}:
         st = mentor_db.get_stats(conn, chat_id)
         streak = mentor_db.get_streak(conn, chat_id)
         seen = mentor_db.get_seen_question_ids(conn, chat_id)
@@ -1025,7 +1099,7 @@ def handle_text(
         api.send_message(chat_id, f"Подсказка: {q.hint}")
         return
 
-    if cmd == "/mistakes":
+    if cmd in {"/mistakes", "/miss"}:
         rows = mentor_db.get_mistake_rows(conn, chat_id, limit=20)
         summary_rows = [(r.question_id, r.wrong, r.attempts) for r in rows]
         api.send_message(
