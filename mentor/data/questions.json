@@ -899,5 +899,39 @@
       "пропуск цели fn",
       "type ii error miss"
     ]
+  },
+  {
+    "id": "ml-045",
+    "competency_id": "ml-validation",
+    "difficulty": 2,
+    "prompt": "Что такое train-test contamination?",
+    "answer": "когда информация из test попадает в обучение через препроцессинг или feature selection",
+    "aliases": [
+      "test set leakage into train",
+      "утечка через препроцессинг"
+    ],
+    "hint": "Fit scaler только на train, потом transform на test."
+  },
+  {
+    "id": "st-016",
+    "competency_id": "stats-basics",
+    "difficulty": 1,
+    "prompt": "Что показывает квантиль 0.25 выборки?",
+    "answer": "значение ниже которого лежит 25 процентов наблюдений",
+    "aliases": [
+      "first quartile q1",
+      "нижний квартиль"
+    ]
+  },
+  {
+    "id": "py-020",
+    "competency_id": "python-ds",
+    "difficulty": 1,
+    "prompt": "Что делает df.sort_values('col') в pandas?",
+    "answer": "сортирует строки таблицы по значениям указанного столбца",
+    "aliases": [
+      "sort dataframe by column",
+      "упорядочить по колонке"
+    ]
   }
 ]

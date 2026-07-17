@@ -56,6 +56,7 @@ BOT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("hard", "Сложный вопрос (алиас)"),
     ("medium", "Средний вопрос"),
     ("easy", "Лёгкий вопрос"),
+    ("warmup", "Лёгкий новый вопрос"),
     ("last", "Последний вопрос"),
     ("today", "Дневная цель"),
     ("due", "Очередь на повтор"),
@@ -67,6 +68,7 @@ BOT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("roadmap", "Путь обучения"),
     ("session", "Срез сессии"),
     ("history", "Последние вопросы"),
+    ("brief", "Короткий дашборд"),
     ("compare", "Слабая vs сильная тема"),
     ("record", "Личные рекорды"),
     ("seen", "Встреченные вопросы"),
@@ -189,11 +191,13 @@ def _help_text() -> str:
         "/focus — сразу фокус на слабой теме\n"
         "/tip или /coach — один совет, что делать дальше\n"
         "/count или /summary — краткая сводка прогресса\n"
+        "/brief или /dash — ультракороткий дашборд\n"
         "/level или /rank — уровень по ответам и банку\n"
         "/record или /best — личные рекорды\n"
         "/plan или /guide — что тренировать дальше\n"
         "/session или /pulse — срез текущей сессии\n"
-        "/history — последние отвеченные вопросы\n"
+        "/history или /log — последние отвеченные вопросы\n"
+        "/warmup — лёгкий новый вопрос для разминки\n"
         "/compare — слабая vs сильная тема\n"
         "/roadmap или /path — путь обучения по темам\n"
         "/seen — сколько вопросов банка встречалось\n"
@@ -202,7 +206,7 @@ def _help_text() -> str:
         "/medium — средний вопрос (★★☆)\n"
         "/easy — лёгкий вопрос (★☆☆)\n"
         "/last, /repeat или /again — повторить последний вопрос\n"
-        "/today, /daily или /goal — дневная цель\n"
+        "/today, /daily, /goal или /pace — дневная цель\n"
         "/due или /queue — вопросы на повтор\n"
         "/accuracy — точность ответов\n"
         "/remain — сколько новых вопросов осталось\n"
@@ -665,7 +669,29 @@ def handle_text(
         )
         return
 
-    if cmd == "/history":
+    if cmd in {"/brief", "/dash"}:
+        st = mentor_db.get_stats(conn, chat_id)
+        streak = mentor_db.get_streak(conn, chat_id)
+        seen = mentor_db.get_seen_question_ids(conn, chat_id)
+        unseen = len(mentor_quiz.unseen_question_ids(questions, seen))
+        review_count = len(mentor_db.get_review_question_ids(conn, chat_id))
+        daily_goal = parse_daily_goal()
+        daily_count = mentor_db.get_daily_answer_count(conn, chat_id)
+        api.send_message(
+            chat_id,
+            mentor_progress.format_brief_summary(
+                correct=st.correct,
+                total=st.total,
+                streak=streak,
+                bank_unseen=unseen,
+                review_count=review_count,
+                daily_count=daily_count,
+                daily_goal=daily_goal,
+            ),
+        )
+        return
+
+    if cmd in {"/history", "/log"}:
         rows = mentor_db.get_recent_history_rows(conn, chat_id)
         summary = [(r.question_id, r.attempts, r.correct_count) for r in rows]
         api.send_message(chat_id, mentor_progress.format_history_summary(summary))
@@ -769,7 +795,7 @@ def handle_text(
         )
         return
 
-    if cmd in {"/today", "/daily", "/goal"}:
+    if cmd in {"/today", "/daily", "/goal", "/pace"}:
         daily_goal = parse_daily_goal()
         daily_count = mentor_db.get_daily_answer_count(conn, chat_id)
         streak = mentor_db.get_streak(conn, chat_id)
@@ -780,6 +806,33 @@ def handle_text(
                 goal=daily_goal,
                 streak=streak,
             ),
+        )
+        return
+
+    if cmd == "/warmup":
+        seen = mentor_db.get_seen_question_ids(conn, chat_id)
+        unseen = mentor_quiz.unseen_question_ids(questions, seen)
+        easy_unseen = {q.id for q in questions if q.id in unseen and q.difficulty == 1}
+        if easy_unseen:
+            deliver_quiz_question(
+                api,
+                conn,
+                chat_id,
+                questions,
+                competencies,
+                difficulty_filter=1,
+                only_ids=easy_unseen,
+                intro="Разминка: лёгкий новый вопрос",
+            )
+            return
+        deliver_quiz_question(
+            api,
+            conn,
+            chat_id,
+            questions,
+            competencies,
+            difficulty_filter=1,
+            intro="Разминка: лёгкий вопрос",
         )
         return
 

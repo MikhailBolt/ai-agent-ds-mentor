@@ -85,6 +85,32 @@ def test_fifty_correct_achievement() -> None:
     assert "50 верных ответов" in labels
 
 
+def test_format_brief_summary() -> None:
+    text = prog.format_brief_summary(
+        correct=8,
+        total=10,
+        streak=3,
+        bank_unseen=5,
+        review_count=1,
+        daily_count=2,
+        daily_goal=5,
+    )
+    assert "80%" in text
+    assert "новых 5" in text
+    assert "/review" in text
+
+
+def test_thirty_correct_achievement() -> None:
+    labels = prog.collect_achievement_labels(
+        total=40,
+        correct=30,
+        best_streak=5,
+        bank_total=80,
+        bank_mastered=20,
+    )
+    assert "30 верных ответов" in labels
+
+
 def test_format_history_summary() -> None:
     empty = prog.format_history_summary([])
     assert "История пуста" in empty

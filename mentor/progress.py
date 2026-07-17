@@ -280,6 +280,33 @@ def format_history_summary(rows: list[tuple[str, int, int]]) -> str:
     return "\n".join(lines)
 
 
+def format_brief_summary(
+    *,
+    correct: int,
+    total: int,
+    streak: int,
+    bank_unseen: int,
+    review_count: int,
+    daily_count: int,
+    daily_goal: int | None,
+) -> str:
+    acc = (correct / total * 100.0) if total else 0.0
+    lines = [
+        f"{correct}/{total} ({acc:.0f}%) · серия {streak}",
+        f"новых {bank_unseen} · повтор {review_count}",
+    ]
+    if daily_goal:
+        lines.append(format_daily_goal_line(daily_count, daily_goal))
+    lines.append("")
+    if review_count:
+        lines.append("/review · /warmup · /quiz")
+    elif bank_unseen:
+        lines.append("/warmup · /new · /quiz")
+    else:
+        lines.append("/quiz · /challenge")
+    return "\n".join(lines)
+
+
 def collect_achievement_labels(
     *,
     total: int,
@@ -308,6 +335,8 @@ def collect_achievement_labels(
         labels.append("10 верных ответов")
     if correct >= 20:
         labels.append("20 верных ответов")
+    if correct >= 30:
+        labels.append("30 верных ответов")
     if correct >= 50:
         labels.append("50 верных ответов")
     if best_streak >= 5:
