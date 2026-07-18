@@ -71,6 +71,8 @@ BOT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("brief", "Короткий дашборд"),
     ("gaps", "Пробелы по темам"),
     ("sprint", "Быстрый старт тренировки"),
+    ("done", "Итог дня"),
+    ("pick", "Случайная тема"),
     ("compare", "Слабая vs сильная тема"),
     ("record", "Личные рекорды"),
     ("seen", "Встреченные вопросы"),
@@ -194,8 +196,10 @@ def _help_text() -> str:
         "/tip или /coach — один совет, что делать дальше\n"
         "/count или /summary — краткая сводка прогресса\n"
         "/brief, /dash или /snap — ультракороткий дашборд\n"
-        "/gaps — пробелы по темам\n"
-        "/sprint — быстрый старт тренировки\n"
+        "/gaps или /holes — пробелы по темам\n"
+        "/sprint или /boost — быстрый старт тренировки\n"
+        "/done — итог дня\n"
+        "/pick — случайный вопрос из случайной темы\n"
         "/level или /rank — уровень по ответам и банку\n"
         "/record или /best — личные рекорды\n"
         "/plan или /guide — что тренировать дальше\n"
@@ -213,7 +217,7 @@ def _help_text() -> str:
         "/last, /repeat или /again — повторить последний вопрос\n"
         "/today, /daily, /goal или /pace — дневная цель\n"
         "/due или /queue — вопросы на повтор\n"
-        "/accuracy — точность ответов\n"
+        "/accuracy или /hit — точность ответов\n"
         "/remain — сколько новых вопросов осталось\n"
         "/mastered — освоение банка по темам\n"
         "/mistakes или /miss — список вопросов с ошибками\n"
@@ -503,7 +507,7 @@ def handle_text(
         api.send_message(chat_id, mentor_progress.format_achievements_text(labels))
         return
 
-    if cmd == "/gaps":
+    if cmd in {"/gaps", "/holes"}:
         mastered_ids = mentor_db.get_mastered_question_ids(conn, chat_id)
         bank_mastery = mentor_quiz.competency_mastery_counts(questions, mastered_ids)
         api.send_message(
@@ -512,7 +516,7 @@ def handle_text(
         )
         return
 
-    if cmd == "/sprint":
+    if cmd in {"/sprint", "/boost"}:
         seen = mentor_db.get_seen_question_ids(conn, chat_id)
         unseen = mentor_quiz.unseen_question_ids(questions, seen)
         review_ids = mentor_db.get_review_question_ids(conn, chat_id)
@@ -687,7 +691,7 @@ def handle_text(
         )
         return
 
-    if cmd == "/accuracy":
+    if cmd in {"/accuracy", "/hit"}:
         st = mentor_db.get_stats(conn, chat_id)
         api.send_message(
             chat_id,
@@ -866,6 +870,41 @@ def handle_text(
                 tip_title=tip.title if tip else None,
                 tip_id=tip.id if tip else None,
             ),
+        )
+        return
+
+    if cmd == "/done":
+        daily_goal = parse_daily_goal()
+        daily_count = mentor_db.get_daily_answer_count(conn, chat_id)
+        streak = mentor_db.get_streak(conn, chat_id)
+        seen = mentor_db.get_seen_question_ids(conn, chat_id)
+        unseen = len(mentor_quiz.unseen_question_ids(questions, seen))
+        review_count = len(mentor_db.get_review_question_ids(conn, chat_id))
+        api.send_message(
+            chat_id,
+            mentor_progress.format_done_summary(
+                daily_count=daily_count,
+                daily_goal=daily_goal,
+                streak=streak,
+                review_count=review_count,
+                bank_unseen=unseen,
+            ),
+        )
+        return
+
+    if cmd == "/pick":
+        if not competencies:
+            api.send_message(chat_id, "Нет тем для выбора.")
+            return
+        pick = random.choice(competencies)
+        deliver_quiz_question(
+            api,
+            conn,
+            chat_id,
+            questions,
+            competencies,
+            comp_filter=pick.id,
+            intro=f"Случайная тема: {pick.title}",
         )
         return
 

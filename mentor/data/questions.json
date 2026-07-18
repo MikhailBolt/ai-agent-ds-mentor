@@ -966,5 +966,38 @@
       "extreme value anomaly",
       "аномальное значение в выборке"
     ]
+  },
+  {
+    "id": "ml-048",
+    "competency_id": "ml-validation",
+    "difficulty": 1,
+    "prompt": "Зачем нужен holdout set?",
+    "answer": "отложенная выборка для честной финальной оценки модели без подстройки",
+    "aliases": [
+      "held out test data",
+      "отложенный тестовый набор"
+    ]
+  },
+  {
+    "id": "py-021",
+    "competency_id": "python-ds",
+    "difficulty": 2,
+    "prompt": "Что делает df.duplicated() в pandas?",
+    "answer": "возвращает маску True для строк которые повторяют ранее встреченные",
+    "aliases": [
+      "mark duplicate rows",
+      "найти дубликаты строк"
+    ]
+  },
+  {
+    "id": "ml-049",
+    "competency_id": "ml-foundations",
+    "difficulty": 2,
+    "prompt": "Чем classification отличается от regression?",
+    "answer": "classification предсказывает класс или метку regression предсказывает непрерывное число",
+    "aliases": [
+      "discrete label vs continuous target",
+      "класс vs числовая величина"
+    ]
   }
 ]

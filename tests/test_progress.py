@@ -85,6 +85,37 @@ def test_fifty_correct_achievement() -> None:
     assert "50 верных ответов" in labels
 
 
+def test_format_done_summary() -> None:
+    text = prog.format_done_summary(
+        daily_count=2,
+        daily_goal=5,
+        streak=3,
+        review_count=1,
+        bank_unseen=4,
+    )
+    assert "Итог дня" in text
+    assert "До цели: 3" in text
+    done = prog.format_done_summary(
+        daily_count=5,
+        daily_goal=5,
+        streak=4,
+        review_count=0,
+        bank_unseen=2,
+    )
+    assert "цель закрыта" in done
+
+
+def test_forty_correct_achievement() -> None:
+    labels = prog.collect_achievement_labels(
+        total=50,
+        correct=40,
+        best_streak=5,
+        bank_total=80,
+        bank_mastered=20,
+    )
+    assert "40 верных ответов" in labels
+
+
 def test_format_gaps_summary() -> None:
     comps = [
         Competency(id="a", title="A", description=""),

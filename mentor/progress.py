@@ -352,6 +352,36 @@ def format_sprint_summary(
     return "Спринт: сложный вопрос.\n/challenge или /hard"
 
 
+def format_done_summary(
+    *,
+    daily_count: int,
+    daily_goal: int | None,
+    streak: int,
+    review_count: int,
+    bank_unseen: int,
+) -> str:
+    lines = ["Итог дня:"]
+    if daily_goal:
+        lines.append(format_daily_goal_line(daily_count, daily_goal))
+        if daily_count >= daily_goal:
+            lines.append("Отличная работа — цель закрыта!")
+        else:
+            lines.append(f"До цели: {daily_goal - daily_count}")
+    else:
+        lines.append(f"Ответов сегодня: {daily_count}")
+    lines.append(f"Серия: {streak}")
+    lines.append("")
+    if daily_goal and daily_count < daily_goal:
+        lines.append("/quiz — добить цель")
+    elif review_count:
+        lines.append(f"/review — ещё {review_count} на повтор")
+    elif bank_unseen:
+        lines.append(f"/new — ещё {bank_unseen} новых")
+    else:
+        lines.append("/challenge · /stats")
+    return "\n".join(lines)
+
+
 def collect_achievement_labels(
     *,
     total: int,
@@ -382,6 +412,8 @@ def collect_achievement_labels(
         labels.append("20 верных ответов")
     if correct >= 30:
         labels.append("30 верных ответов")
+    if correct >= 40:
+        labels.append("40 верных ответов")
     if correct >= 50:
         labels.append("50 верных ответов")
     if best_streak >= 5:
