@@ -382,6 +382,24 @@ def format_done_summary(
     return "\n".join(lines)
 
 
+def format_balance_summary(
+    *,
+    bank_by_diff: dict[int, int],
+    seen_by_diff: dict[int, int],
+) -> str:
+    stars = {1: "★☆☆", 2: "★★☆", 3: "★★★"}
+    lines = ["Баланс по сложности:", ""]
+    for level in (1, 2, 3):
+        bank_n = bank_by_diff.get(level, 0)
+        seen_n = seen_by_diff.get(level, 0)
+        if bank_n == 0:
+            continue
+        lines.append(f"• {stars[level]} — встречено {seen_n}/{bank_n}")
+    lines.append("")
+    lines.append("/easy · /medium · /hard · /warmup")
+    return "\n".join(lines)
+
+
 def collect_achievement_labels(
     *,
     total: int,
@@ -434,14 +452,16 @@ def collect_achievement_labels(
         labels.append("Точность 90%+")
     if bank_total > 0 and bank_mastered >= bank_total:
         labels.append("Весь банк освоен")
-    elif bank_total > 0 and bank_seen * 10 >= bank_total * 9:
-        labels.append("90% банка встречено")
     elif bank_total > 0 and bank_mastered * 4 >= bank_total * 3:
         labels.append("75% банка")
     elif bank_total > 0 and bank_mastered * 2 >= bank_total:
         labels.append("Половина банка")
     elif bank_total > 0 and bank_mastered * 4 >= bank_total:
         labels.append("25% банка")
+    if bank_total > 0 and bank_seen * 10 >= bank_total * 9:
+        labels.append("90% банка встречено")
+    elif bank_total > 0 and bank_seen * 2 >= bank_total:
+        labels.append("Половина банка встречена")
     if daily_goal and daily_count >= daily_goal:
         labels.append("Дневная цель")
     if all_competency_ids and comp_stats:

@@ -73,6 +73,8 @@ BOT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("sprint", "Быстрый старт тренировки"),
     ("done", "Итог дня"),
     ("pick", "Случайная тема"),
+    ("balance", "Баланс по сложности"),
+    ("redo", "Повтор освоенного"),
     ("compare", "Слабая vs сильная тема"),
     ("record", "Личные рекорды"),
     ("seen", "Встреченные вопросы"),
@@ -198,8 +200,10 @@ def _help_text() -> str:
         "/brief, /dash или /snap — ультракороткий дашборд\n"
         "/gaps или /holes — пробелы по темам\n"
         "/sprint или /boost — быстрый старт тренировки\n"
-        "/done — итог дня\n"
-        "/pick — случайный вопрос из случайной темы\n"
+        "/done или /wrap — итог дня\n"
+        "/pick или /spin — случайный вопрос из случайной темы\n"
+        "/balance — баланс банка по сложности\n"
+        "/redo — повтор уже освоенного вопроса\n"
         "/level или /rank — уровень по ответам и банку\n"
         "/record или /best — личные рекорды\n"
         "/plan или /guide — что тренировать дальше\n"
@@ -218,7 +222,7 @@ def _help_text() -> str:
         "/today, /daily, /goal или /pace — дневная цель\n"
         "/due или /queue — вопросы на повтор\n"
         "/accuracy или /hit — точность ответов\n"
-        "/remain — сколько новых вопросов осталось\n"
+        "/remain, /left или /catch — сколько новых вопросов осталось\n"
         "/mastered — освоение банка по темам\n"
         "/mistakes или /miss — список вопросов с ошибками\n"
         "/export — текстовый отчёт о прогрессе\n"
@@ -873,7 +877,7 @@ def handle_text(
         )
         return
 
-    if cmd == "/done":
+    if cmd in {"/done", "/wrap"}:
         daily_goal = parse_daily_goal()
         daily_count = mentor_db.get_daily_answer_count(conn, chat_id)
         streak = mentor_db.get_streak(conn, chat_id)
@@ -892,7 +896,7 @@ def handle_text(
         )
         return
 
-    if cmd == "/pick":
+    if cmd in {"/pick", "/spin"}:
         if not competencies:
             api.send_message(chat_id, "Нет тем для выбора.")
             return
@@ -905,6 +909,41 @@ def handle_text(
             competencies,
             comp_filter=pick.id,
             intro=f"Случайная тема: {pick.title}",
+        )
+        return
+
+    if cmd == "/balance":
+        seen = mentor_db.get_seen_question_ids(conn, chat_id)
+        bank_by_diff = mentor_quiz.question_counts_by_difficulty(questions)
+        seen_by_diff: dict[int, int] = {}
+        for q in questions:
+            if q.id in seen:
+                seen_by_diff[q.difficulty] = seen_by_diff.get(q.difficulty, 0) + 1
+        api.send_message(
+            chat_id,
+            mentor_progress.format_balance_summary(
+                bank_by_diff=bank_by_diff,
+                seen_by_diff=seen_by_diff,
+            ),
+        )
+        return
+
+    if cmd == "/redo":
+        mastered = mentor_db.get_mastered_question_ids(conn, chat_id)
+        if not mastered:
+            api.send_message(
+                chat_id,
+                "Пока нет освоенных вопросов. Напиши /quiz!",
+            )
+            return
+        deliver_quiz_question(
+            api,
+            conn,
+            chat_id,
+            questions,
+            competencies,
+            only_ids=mastered,
+            intro="Закрепление: уже освоенный вопрос",
         )
         return
 
@@ -1175,7 +1214,7 @@ def handle_text(
         )
         return
 
-    if cmd in {"/remain", "/left"}:
+    if cmd in {"/remain", "/left", "/catch"}:
         seen = mentor_db.get_seen_question_ids(conn, chat_id)
         unseen = len(mentor_quiz.unseen_question_ids(questions, seen))
         mastered = len(mentor_db.get_mastered_question_ids(conn, chat_id))

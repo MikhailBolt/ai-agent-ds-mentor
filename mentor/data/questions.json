@@ -999,5 +999,38 @@
       "discrete label vs continuous target",
       "класс vs числовая величина"
     ]
+  },
+  {
+    "id": "ml-050",
+    "competency_id": "ml-metrics",
+    "difficulty": 2,
+    "prompt": "Что такое baseline model?",
+    "answer": "простая опорная модель с которой сравнивают качество более сложных решений",
+    "aliases": [
+      "reference naive model",
+      "базовая модель для сравнения"
+    ]
+  },
+  {
+    "id": "st-018",
+    "competency_id": "stats-basics",
+    "difficulty": 1,
+    "prompt": "Что такое мода выборки?",
+    "answer": "наиболее часто встречающееся значение в данных",
+    "aliases": [
+      "most frequent value",
+      "самое частое значение"
+    ]
+  },
+  {
+    "id": "py-022",
+    "competency_id": "python-ds",
+    "difficulty": 2,
+    "prompt": "Что делает df.fillna(0) в pandas?",
+    "answer": "заменяет пропущенные значения nan на указанное число ноль",
+    "aliases": [
+      "fill missing with zero",
+      "заполнить пропуски нулём"
+    ]
   }
 ]

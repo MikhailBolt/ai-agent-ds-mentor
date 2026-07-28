@@ -85,6 +85,28 @@ def test_fifty_correct_achievement() -> None:
     assert "50 верных ответов" in labels
 
 
+def test_format_balance_summary() -> None:
+    text = prog.format_balance_summary(
+        bank_by_diff={1: 10, 2: 20, 3: 5},
+        seen_by_diff={1: 4, 2: 10, 3: 1},
+    )
+    assert "встречено 4/10" in text
+    assert "/easy" in text
+
+
+def test_half_bank_seen_achievement() -> None:
+    labels = prog.collect_achievement_labels(
+        total=30,
+        correct=20,
+        best_streak=3,
+        bank_total=100,
+        bank_mastered=10,
+        bank_seen=50,
+    )
+    assert "Половина банка встречена" in labels
+    assert "Половина банка" not in labels
+
+
 def test_format_done_summary() -> None:
     text = prog.format_done_summary(
         daily_count=2,
