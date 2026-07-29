@@ -420,6 +420,31 @@ def format_nextup_summary(
     return "Следующий шаг: /challenge или /hard"
 
 
+def format_strengths_summary(
+    competencies: list[Competency],
+    comp_stats: dict[str, tuple[int, int]],
+    *,
+    min_attempts: int = 2,
+    limit: int = 5,
+) -> str:
+    ranked: list[tuple[float, str, str, int, int]] = []
+    for c in competencies:
+        correct, total = comp_stats.get(c.id, (0, 0))
+        if total < min_attempts:
+            continue
+        acc = correct / total * 100.0
+        ranked.append((acc, c.title, c.id, correct, total))
+    ranked.sort(key=lambda x: (-x[0], -x[4], x[2]))
+    if not ranked:
+        return "Пока мало данных — решай /quiz по разным темам!"
+    lines = ["Сильные темы:", ""]
+    for acc, title, cid, correct, total in ranked[:limit]:
+        lines.append(f"• {title} ({cid}) — {acc:.0f}% ({correct}/{total})")
+    lines.append("")
+    lines.append("/compare · /challenge · /deep")
+    return "\n".join(lines)
+
+
 def collect_achievement_labels(
     *,
     total: int,
@@ -456,6 +481,8 @@ def collect_achievement_labels(
         labels.append("50 верных ответов")
     if correct >= 60:
         labels.append("60 верных ответов")
+    if correct >= 70:
+        labels.append("70 верных ответов")
     if best_streak >= 5:
         labels.append("Серия 5+")
     if best_streak >= 10:
@@ -466,6 +493,8 @@ def collect_achievement_labels(
         labels.append("Серия 20+")
     if best_streak >= 25:
         labels.append("Серия 25+")
+    if best_streak >= 30:
+        labels.append("Серия 30+")
     if total >= 10 and correct / total >= 0.7:
         labels.append("Точность 70%+")
     if total >= 10 and correct / total >= 0.8:

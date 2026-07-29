@@ -77,6 +77,8 @@ BOT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("redo", "Повтор освоенного"),
     ("nextup", "Следующий шаг"),
     ("grind", "Средний новый вопрос"),
+    ("deep", "Сложный новый вопрос"),
+    ("strengths", "Сильные темы"),
     ("compare", "Слабая vs сильная тема"),
     ("record", "Личные рекорды"),
     ("seen", "Встреченные вопросы"),
@@ -202,12 +204,14 @@ def _help_text() -> str:
         "/brief, /dash или /snap — ультракороткий дашборд\n"
         "/gaps или /holes — пробелы по темам\n"
         "/sprint, /boost или /flow — быстрый старт тренировки\n"
-        "/nextup — одна строка, что делать дальше\n"
+        "/nextup или /nudge — одна строка, что делать дальше\n"
         "/done или /wrap — итог дня\n"
         "/pick или /spin — случайный вопрос из случайной темы\n"
         "/balance — баланс банка по сложности\n"
         "/redo или /recall — повтор уже освоенного вопроса\n"
-        "/grind — средний новый вопрос\n"
+        "/grind или /mid — средний новый вопрос\n"
+        "/deep — сложный новый вопрос\n"
+        "/strengths — топ сильных тем\n"
         "/level или /rank — уровень по ответам и банку\n"
         "/record или /best — личные рекорды\n"
         "/plan или /guide — что тренировать дальше\n"
@@ -932,7 +936,7 @@ def handle_text(
         )
         return
 
-    if cmd == "/nextup":
+    if cmd in {"/nextup", "/nudge"}:
         seen = mentor_db.get_seen_question_ids(conn, chat_id)
         unseen = len(mentor_quiz.unseen_question_ids(questions, seen))
         review_count = len(mentor_db.get_review_question_ids(conn, chat_id))
@@ -973,7 +977,7 @@ def handle_text(
         )
         return
 
-    if cmd == "/grind":
+    if cmd in {"/grind", "/mid"}:
         seen = mentor_db.get_seen_question_ids(conn, chat_id)
         unseen = mentor_quiz.unseen_question_ids(questions, seen)
         medium_unseen = {q.id for q in questions if q.id in unseen and q.difficulty == 2}
@@ -997,6 +1001,41 @@ def handle_text(
             competencies,
             difficulty_filter=2,
             intro="Практика: средний вопрос",
+        )
+        return
+
+    if cmd == "/deep":
+        seen = mentor_db.get_seen_question_ids(conn, chat_id)
+        unseen = mentor_quiz.unseen_question_ids(questions, seen)
+        hard_unseen = {q.id for q in questions if q.id in unseen and q.difficulty == 3}
+        if hard_unseen:
+            deliver_quiz_question(
+                api,
+                conn,
+                chat_id,
+                questions,
+                competencies,
+                difficulty_filter=3,
+                only_ids=hard_unseen,
+                intro="Углубление: сложный новый вопрос",
+            )
+            return
+        deliver_quiz_question(
+            api,
+            conn,
+            chat_id,
+            questions,
+            competencies,
+            difficulty_filter=3,
+            intro="Углубление: сложный вопрос",
+        )
+        return
+
+    if cmd == "/strengths":
+        comp_stats = mentor_db.get_competency_stats(conn, chat_id)
+        api.send_message(
+            chat_id,
+            mentor_progress.format_strengths_summary(competencies, comp_stats),
         )
         return
 

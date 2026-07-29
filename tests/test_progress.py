@@ -114,6 +114,31 @@ def test_sixty_correct_achievement() -> None:
     assert "60 верных ответов" in labels
 
 
+def test_seventy_correct_and_streak_30_achievements() -> None:
+    labels = prog.collect_achievement_labels(
+        total=80,
+        correct=70,
+        best_streak=30,
+        bank_total=96,
+        bank_mastered=40,
+    )
+    assert "70 верных ответов" in labels
+    assert "Серия 30+" in labels
+
+
+def test_format_strengths_summary() -> None:
+    from mentor.competencies import Competency
+
+    comps = [
+        Competency(id="a", title="Alpha", description=""),
+        Competency(id="b", title="Beta", description=""),
+    ]
+    stats = {"a": (4, 5), "b": (1, 5)}
+    text = prog.format_strengths_summary(comps, stats)
+    assert "Alpha" in text
+    assert "80%" in text
+
+
 def test_format_balance_summary() -> None:
     text = prog.format_balance_summary(
         bank_by_diff={1: 10, 2: 20, 3: 5},

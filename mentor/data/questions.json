@@ -1065,5 +1065,38 @@
       "column names index",
       "имена колонок"
     ]
+  },
+  {
+    "id": "ml-052",
+    "competency_id": "ml-foundations",
+    "difficulty": 3,
+    "prompt": "Что такое gradient boosting?",
+    "answer": "ансамбль последовательно добавляет слабые модели каждая исправляет ошибки предыдущих",
+    "aliases": [
+      "sequential weak learners",
+      "градиентный бустинг"
+    ]
+  },
+  {
+    "id": "ml-053",
+    "competency_id": "ml-validation",
+    "difficulty": 2,
+    "prompt": "Зачем нужен early stopping при обучении модели?",
+    "answer": "остановить обучение когда качество на валидации перестаёт расти чтобы не переобучиться",
+    "aliases": [
+      "stop when val loss plateaus",
+      "ранняя остановка"
+    ]
+  },
+  {
+    "id": "ml-054",
+    "competency_id": "ml-metrics",
+    "difficulty": 3,
+    "prompt": "Что показывает площадь под ROC-кривой AUC?",
+    "answer": "вероятность что модель поставит случайный положительный пример выше случайного отрицательного",
+    "aliases": [
+      "ranking quality auc",
+      "качество ранжирования классов"
+    ]
   }
 ]
