@@ -1032,5 +1032,38 @@
       "fill missing with zero",
       "заполнить пропуски нулём"
     ]
+  },
+  {
+    "id": "ml-051",
+    "competency_id": "ml-validation",
+    "difficulty": 2,
+    "prompt": "Что такое stratified k-fold cross-validation?",
+    "answer": "кросс валидация где в каждом фолде сохраняются пропорции классов как в исходных данных",
+    "aliases": [
+      "stratified folds class balance",
+      "стратифицированные фолды"
+    ]
+  },
+  {
+    "id": "st-019",
+    "competency_id": "stats-basics",
+    "difficulty": 2,
+    "prompt": "Чем корреляция Пирсона отличается от корреляции Спирмена?",
+    "answer": "pearson измеряет линейную связь spearman ранговую монотонную связь устойчивее к выбросам",
+    "aliases": [
+      "linear vs rank correlation",
+      "линейная vs ранговая"
+    ]
+  },
+  {
+    "id": "py-023",
+    "competency_id": "python-ds",
+    "difficulty": 1,
+    "prompt": "Что делает df.columns в pandas?",
+    "answer": "возвращает список имён столбцов датафрейма",
+    "aliases": [
+      "column names index",
+      "имена колонок"
+    ]
   }
 ]

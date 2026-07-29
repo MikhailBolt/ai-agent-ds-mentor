@@ -75,6 +75,8 @@ BOT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("pick", "Случайная тема"),
     ("balance", "Баланс по сложности"),
     ("redo", "Повтор освоенного"),
+    ("nextup", "Следующий шаг"),
+    ("grind", "Средний новый вопрос"),
     ("compare", "Слабая vs сильная тема"),
     ("record", "Личные рекорды"),
     ("seen", "Встреченные вопросы"),
@@ -199,11 +201,13 @@ def _help_text() -> str:
         "/count или /summary — краткая сводка прогресса\n"
         "/brief, /dash или /snap — ультракороткий дашборд\n"
         "/gaps или /holes — пробелы по темам\n"
-        "/sprint или /boost — быстрый старт тренировки\n"
+        "/sprint, /boost или /flow — быстрый старт тренировки\n"
+        "/nextup — одна строка, что делать дальше\n"
         "/done или /wrap — итог дня\n"
         "/pick или /spin — случайный вопрос из случайной темы\n"
         "/balance — баланс банка по сложности\n"
-        "/redo — повтор уже освоенного вопроса\n"
+        "/redo или /recall — повтор уже освоенного вопроса\n"
+        "/grind — средний новый вопрос\n"
         "/level или /rank — уровень по ответам и банку\n"
         "/record или /best — личные рекорды\n"
         "/plan или /guide — что тренировать дальше\n"
@@ -227,7 +231,7 @@ def _help_text() -> str:
         "/mistakes или /miss — список вопросов с ошибками\n"
         "/export — текстовый отчёт о прогрессе\n"
         "/search или /find <слово> — поиск вопроса в банке\n"
-        "/bank — обзор банка (темы и сложность)\n"
+        "/bank или /deck — обзор банка (темы и сложность)\n"
         "/streak — текущая и лучшая серия\n"
         "/current или /show — информация о текущем вопросе\n"
         "/review, /wrong, /fix или /retry — повторить вопрос с ошибкой\n"
@@ -520,7 +524,7 @@ def handle_text(
         )
         return
 
-    if cmd in {"/sprint", "/boost"}:
+    if cmd in {"/sprint", "/boost", "/flow"}:
         seen = mentor_db.get_seen_question_ids(conn, chat_id)
         unseen = mentor_quiz.unseen_question_ids(questions, seen)
         review_ids = mentor_db.get_review_question_ids(conn, chat_id)
@@ -613,7 +617,7 @@ def handle_text(
         )
         return
 
-    if cmd == "/bank":
+    if cmd in {"/bank", "/deck"}:
         diff_counts = mentor_quiz.question_counts_by_difficulty(questions)
         api.send_message(
             chat_id,
@@ -928,7 +932,29 @@ def handle_text(
         )
         return
 
-    if cmd == "/redo":
+    if cmd == "/nextup":
+        seen = mentor_db.get_seen_question_ids(conn, chat_id)
+        unseen = len(mentor_quiz.unseen_question_ids(questions, seen))
+        review_count = len(mentor_db.get_review_question_ids(conn, chat_id))
+        daily_goal = parse_daily_goal()
+        daily_count = mentor_db.get_daily_answer_count(conn, chat_id)
+        tip = mentor_comp.suggest_practice_competency(
+            competencies,
+            mentor_db.get_competency_stats(conn, chat_id),
+        )
+        api.send_message(
+            chat_id,
+            mentor_progress.format_nextup_summary(
+                bank_unseen=unseen,
+                review_count=review_count,
+                daily_count=daily_count,
+                daily_goal=daily_goal,
+                tip_id=tip.id if tip else None,
+            ),
+        )
+        return
+
+    if cmd in {"/redo", "/recall"}:
         mastered = mentor_db.get_mastered_question_ids(conn, chat_id)
         if not mastered:
             api.send_message(
@@ -944,6 +970,33 @@ def handle_text(
             competencies,
             only_ids=mastered,
             intro="Закрепление: уже освоенный вопрос",
+        )
+        return
+
+    if cmd == "/grind":
+        seen = mentor_db.get_seen_question_ids(conn, chat_id)
+        unseen = mentor_quiz.unseen_question_ids(questions, seen)
+        medium_unseen = {q.id for q in questions if q.id in unseen and q.difficulty == 2}
+        if medium_unseen:
+            deliver_quiz_question(
+                api,
+                conn,
+                chat_id,
+                questions,
+                competencies,
+                difficulty_filter=2,
+                only_ids=medium_unseen,
+                intro="Практика: средний новый вопрос",
+            )
+            return
+        deliver_quiz_question(
+            api,
+            conn,
+            chat_id,
+            questions,
+            competencies,
+            difficulty_filter=2,
+            intro="Практика: средний вопрос",
         )
         return
 

@@ -400,6 +400,26 @@ def format_balance_summary(
     return "\n".join(lines)
 
 
+def format_nextup_summary(
+    *,
+    bank_unseen: int,
+    review_count: int,
+    daily_count: int,
+    daily_goal: int | None,
+    tip_id: str | None = None,
+) -> str:
+    if daily_goal and daily_count < daily_goal:
+        left = daily_goal - daily_count
+        return f"Следующий шаг: закрыть цель ({left}) — /quiz или /pace"
+    if review_count:
+        return f"Следующий шаг: /review ({review_count} ошибок)"
+    if bank_unseen:
+        return f"Следующий шаг: /new или /grind ({bank_unseen} новых)"
+    if tip_id:
+        return f"Следующий шаг: /topic {tip_id} · /focus"
+    return "Следующий шаг: /challenge или /hard"
+
+
 def collect_achievement_labels(
     *,
     total: int,
@@ -434,6 +454,8 @@ def collect_achievement_labels(
         labels.append("40 верных ответов")
     if correct >= 50:
         labels.append("50 верных ответов")
+    if correct >= 60:
+        labels.append("60 верных ответов")
     if best_streak >= 5:
         labels.append("Серия 5+")
     if best_streak >= 10:

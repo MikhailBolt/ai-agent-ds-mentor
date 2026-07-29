@@ -85,6 +85,35 @@ def test_fifty_correct_achievement() -> None:
     assert "50 верных ответов" in labels
 
 
+def test_format_nextup_summary() -> None:
+    daily = prog.format_nextup_summary(
+        bank_unseen=10,
+        review_count=2,
+        daily_count=1,
+        daily_goal=5,
+        tip_id="ml-metrics",
+    )
+    assert "цель" in daily
+    review = prog.format_nextup_summary(
+        bank_unseen=10,
+        review_count=2,
+        daily_count=5,
+        daily_goal=5,
+    )
+    assert "/review" in review
+
+
+def test_sixty_correct_achievement() -> None:
+    labels = prog.collect_achievement_labels(
+        total=70,
+        correct=60,
+        best_streak=5,
+        bank_total=90,
+        bank_mastered=30,
+    )
+    assert "60 верных ответов" in labels
+
+
 def test_format_balance_summary() -> None:
     text = prog.format_balance_summary(
         bank_by_diff={1: 10, 2: 20, 3: 5},
