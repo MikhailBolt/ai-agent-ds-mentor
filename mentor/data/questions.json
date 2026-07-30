@@ -1098,5 +1098,38 @@
       "ranking quality auc",
       "качество ранжирования классов"
     ]
+  },
+  {
+    "id": "st-020",
+    "competency_id": "stats-basics",
+    "difficulty": 2,
+    "prompt": "Что такое доверительный интервал?",
+    "answer": "диапазон значений в котором с заданной вероятностью лежит истинный параметр популяции",
+    "aliases": [
+      "confidence interval range",
+      "интервал доверия"
+    ]
+  },
+  {
+    "id": "py-024",
+    "competency_id": "python-ds",
+    "difficulty": 2,
+    "prompt": "Что делает df.groupby('col') в pandas?",
+    "answer": "группирует строки по значениям столбца для агрегации или трансформации",
+    "aliases": [
+      "split apply combine",
+      "группировка по колонке"
+    ]
+  },
+  {
+    "id": "ml-055",
+    "competency_id": "ml-foundations",
+    "difficulty": 2,
+    "prompt": "Что такое regularization в ML?",
+    "answer": "штраф за сложность модели чтобы снизить переобучение например l1 l2",
+    "aliases": [
+      "l1 l2 penalty",
+      "регуляризация"
+    ]
   }
 ]

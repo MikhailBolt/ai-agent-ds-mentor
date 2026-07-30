@@ -139,6 +139,34 @@ def test_format_strengths_summary() -> None:
     assert "80%" in text
 
 
+def test_format_ratio_and_weaklist_summary() -> None:
+    from mentor.competencies import Competency
+
+    comps = [
+        Competency(id="a", title="Alpha", description=""),
+        Competency(id="b", title="Beta", description=""),
+    ]
+    stats = {"a": (2, 4), "b": (0, 0)}
+    ratio = prog.format_ratio_summary(comps, stats)
+    assert "50%" in ratio
+    assert "— —" in ratio
+    weak = prog.format_weaklist_summary(comps, stats)
+    assert "не начато" in weak
+    assert "20%" in weak or "50%" in weak
+
+
+def test_three_hundred_and_eighty_achievements() -> None:
+    labels = prog.collect_achievement_labels(
+        total=300,
+        correct=80,
+        best_streak=10,
+        bank_total=99,
+        bank_mastered=50,
+    )
+    assert "300 ответов" in labels
+    assert "80 верных ответов" in labels
+
+
 def test_format_balance_summary() -> None:
     text = prog.format_balance_summary(
         bank_by_diff={1: 10, 2: 20, 3: 5},

@@ -445,6 +445,57 @@ def format_strengths_summary(
     return "\n".join(lines)
 
 
+def format_ratio_summary(
+    competencies: list[Competency],
+    comp_stats: dict[str, tuple[int, int]],
+) -> str:
+    lines = ["Точность по темам:", ""]
+    for c in competencies:
+        correct, total = comp_stats.get(c.id, (0, 0))
+        if total == 0:
+            lines.append(f"• {c.title} ({c.id}) — —")
+        else:
+            acc = correct / total * 100.0
+            lines.append(f"• {c.title} ({c.id}) — {acc:.0f}% ({correct}/{total})")
+    lines.append("")
+    lines.append("/focus · /weaklist · /strengths")
+    return "\n".join(lines)
+
+
+def format_weaklist_summary(
+    competencies: list[Competency],
+    comp_stats: dict[str, tuple[int, int]],
+    *,
+    limit: int = 5,
+) -> str:
+    unseen: list[tuple[str, str]] = []
+    started: list[tuple[float, str, str, int, int]] = []
+    for c in competencies:
+        correct, total = comp_stats.get(c.id, (0, 0))
+        if total == 0:
+            unseen.append((c.title, c.id))
+        else:
+            acc = correct / total * 100.0
+            started.append((acc, c.title, c.id, correct, total))
+    started.sort(key=lambda x: (x[0], x[4], x[2]))
+    if not unseen and not started:
+        return "Нет данных — напиши /quiz!"
+    lines = ["Слабые темы:", ""]
+    for title, cid in unseen[:limit]:
+        lines.append(f"• {title} ({cid}) — не начато")
+    remaining = max(0, limit - len(unseen[:limit]))
+    for acc, title, cid, correct, total in started[:remaining]:
+        lines.append(f"• {title} ({cid}) — {acc:.0f}% ({correct}/{total})")
+    lines.append("")
+    if unseen:
+        lines.append(f"/topic {unseen[0][1]} · /focus")
+    elif started:
+        lines.append(f"/topic {started[0][2]} · /practice")
+    else:
+        lines.append("/gaps · /roadmap")
+    return "\n".join(lines)
+
+
 def collect_achievement_labels(
     *,
     total: int,
@@ -467,6 +518,8 @@ def collect_achievement_labels(
         labels.append("100 ответов")
     if total >= 200:
         labels.append("200 ответов")
+    if total >= 300:
+        labels.append("300 ответов")
     if correct >= 5:
         labels.append("5 верных ответов")
     if correct >= 10:
@@ -483,6 +536,8 @@ def collect_achievement_labels(
         labels.append("60 верных ответов")
     if correct >= 70:
         labels.append("70 верных ответов")
+    if correct >= 80:
+        labels.append("80 верных ответов")
     if best_streak >= 5:
         labels.append("Серия 5+")
     if best_streak >= 10:

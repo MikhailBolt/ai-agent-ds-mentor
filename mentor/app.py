@@ -79,6 +79,8 @@ BOT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("grind", "Средний новый вопрос"),
     ("deep", "Сложный новый вопрос"),
     ("strengths", "Сильные темы"),
+    ("ratio", "Точность по темам"),
+    ("weaklist", "Слабые темы"),
     ("compare", "Слабая vs сильная тема"),
     ("record", "Личные рекорды"),
     ("seen", "Встреченные вопросы"),
@@ -203,15 +205,17 @@ def _help_text() -> str:
         "/count или /summary — краткая сводка прогресса\n"
         "/brief, /dash или /snap — ультракороткий дашборд\n"
         "/gaps или /holes — пробелы по темам\n"
-        "/sprint, /boost или /flow — быстрый старт тренировки\n"
+        "/sprint, /boost, /flow или /rush — быстрый старт тренировки\n"
         "/nextup или /nudge — одна строка, что делать дальше\n"
         "/done или /wrap — итог дня\n"
         "/pick или /spin — случайный вопрос из случайной темы\n"
         "/balance — баланс банка по сложности\n"
         "/redo или /recall — повтор уже освоенного вопроса\n"
         "/grind или /mid — средний новый вопрос\n"
-        "/deep — сложный новый вопрос\n"
-        "/strengths — топ сильных тем\n"
+        "/deep или /dive — сложный новый вопрос\n"
+        "/strengths или /strong — топ сильных тем\n"
+        "/ratio — точность по каждой теме\n"
+        "/weaklist — слабые и не начатые темы\n"
         "/level или /rank — уровень по ответам и банку\n"
         "/record или /best — личные рекорды\n"
         "/plan или /guide — что тренировать дальше\n"
@@ -528,7 +532,7 @@ def handle_text(
         )
         return
 
-    if cmd in {"/sprint", "/boost", "/flow"}:
+    if cmd in {"/sprint", "/boost", "/flow", "/rush"}:
         seen = mentor_db.get_seen_question_ids(conn, chat_id)
         unseen = mentor_quiz.unseen_question_ids(questions, seen)
         review_ids = mentor_db.get_review_question_ids(conn, chat_id)
@@ -1004,7 +1008,7 @@ def handle_text(
         )
         return
 
-    if cmd == "/deep":
+    if cmd in {"/deep", "/dive"}:
         seen = mentor_db.get_seen_question_ids(conn, chat_id)
         unseen = mentor_quiz.unseen_question_ids(questions, seen)
         hard_unseen = {q.id for q in questions if q.id in unseen and q.difficulty == 3}
@@ -1031,11 +1035,27 @@ def handle_text(
         )
         return
 
-    if cmd == "/strengths":
+    if cmd in {"/strengths", "/strong"}:
         comp_stats = mentor_db.get_competency_stats(conn, chat_id)
         api.send_message(
             chat_id,
             mentor_progress.format_strengths_summary(competencies, comp_stats),
+        )
+        return
+
+    if cmd == "/ratio":
+        comp_stats = mentor_db.get_competency_stats(conn, chat_id)
+        api.send_message(
+            chat_id,
+            mentor_progress.format_ratio_summary(competencies, comp_stats),
+        )
+        return
+
+    if cmd == "/weaklist":
+        comp_stats = mentor_db.get_competency_stats(conn, chat_id)
+        api.send_message(
+            chat_id,
+            mentor_progress.format_weaklist_summary(competencies, comp_stats),
         )
         return
 
