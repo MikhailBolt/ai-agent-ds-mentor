@@ -1131,5 +1131,38 @@
       "l1 l2 penalty",
       "регуляризация"
     ]
+  },
+  {
+    "id": "py-025",
+    "competency_id": "python-ds",
+    "difficulty": 2,
+    "prompt": "Что делает pd.merge(df1, df2, on='key') в pandas?",
+    "answer": "объединяет два датафрейма по общему столбцу key как sql join",
+    "aliases": [
+      "join dataframes on column",
+      "слияние по ключу"
+    ]
+  },
+  {
+    "id": "ml-056",
+    "competency_id": "ml-validation",
+    "difficulty": 3,
+    "prompt": "Зачем нужен holdout test set отдельно от validation?",
+    "answer": "финальная независимая оценка модели которую не трогали при подборе гиперпараметров",
+    "aliases": [
+      "final unbiased evaluation",
+      "отложенный тест"
+    ]
+  },
+  {
+    "id": "ml-057",
+    "competency_id": "ml-metrics",
+    "difficulty": 2,
+    "prompt": "Что такое log loss в классификации?",
+    "answer": "средняя отрицательная логарифмическая правдоподобность штрафует уверенные ошибки сильнее",
+    "aliases": [
+      "cross entropy loss",
+      "логарифмическая функция потерь"
+    ]
   }
 ]

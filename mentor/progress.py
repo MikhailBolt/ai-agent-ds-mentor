@@ -496,6 +496,34 @@ def format_weaklist_summary(
     return "\n".join(lines)
 
 
+def format_momentum_summary(
+    *,
+    streak: int,
+    daily_count: int,
+    daily_goal: int | None,
+    recent_rows: list[tuple[str, int, int]],
+) -> str:
+    lines = ["Импульс:", ""]
+    if daily_goal:
+        lines.append(format_daily_goal_line(daily_count, daily_goal))
+    else:
+        lines.append(f"Ответов сегодня: {daily_count}")
+    lines.append(f"Серия: {streak}")
+    if recent_rows:
+        sample = recent_rows[:5]
+        hits = sum(1 for _, _, ok in sample if ok >= 1)
+        marks = "".join("✓" if ok >= 1 else "·" for _, _, ok in sample)
+        lines.append(f"Последние {len(sample)}: {marks} ({hits} с верным)")
+    lines.append("")
+    if streak >= 5:
+        lines.append("Хороший ритм — /challenge · /deep")
+    elif daily_goal and daily_count < daily_goal:
+        lines.append("/quiz — продолжить цель")
+    else:
+        lines.append("/nextup · /sprint")
+    return "\n".join(lines)
+
+
 def collect_achievement_labels(
     *,
     total: int,
@@ -520,6 +548,8 @@ def collect_achievement_labels(
         labels.append("200 ответов")
     if total >= 300:
         labels.append("300 ответов")
+    if total >= 400:
+        labels.append("400 ответов")
     if correct >= 5:
         labels.append("5 верных ответов")
     if correct >= 10:
@@ -538,6 +568,8 @@ def collect_achievement_labels(
         labels.append("70 верных ответов")
     if correct >= 80:
         labels.append("80 верных ответов")
+    if correct >= 90:
+        labels.append("90 верных ответов")
     if best_streak >= 5:
         labels.append("Серия 5+")
     if best_streak >= 10:
@@ -550,6 +582,8 @@ def collect_achievement_labels(
         labels.append("Серия 25+")
     if best_streak >= 30:
         labels.append("Серия 30+")
+    if best_streak >= 35:
+        labels.append("Серия 35+")
     if total >= 10 and correct / total >= 0.7:
         labels.append("Точность 70%+")
     if total >= 10 and correct / total >= 0.8:

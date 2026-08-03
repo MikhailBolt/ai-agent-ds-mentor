@@ -81,6 +81,8 @@ BOT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("strengths", "Сильные темы"),
     ("ratio", "Точность по темам"),
     ("weaklist", "Слабые темы"),
+    ("momentum", "Импульс и ритм"),
+    ("spot", "Spot-check вопрос"),
     ("compare", "Слабая vs сильная тема"),
     ("record", "Личные рекорды"),
     ("seen", "Встреченные вопросы"),
@@ -214,8 +216,10 @@ def _help_text() -> str:
         "/grind или /mid — средний новый вопрос\n"
         "/deep или /dive — сложный новый вопрос\n"
         "/strengths или /strong — топ сильных тем\n"
-        "/ratio — точность по каждой теме\n"
-        "/weaklist — слабые и не начатые темы\n"
+        "/ratio или /pct — точность по каждой теме\n"
+        "/weaklist или /weakspots — слабые и не начатые темы\n"
+        "/momentum или /heat — импульс: серия и последние ответы\n"
+        "/spot — spot-check: ошибка или слабая тема\n"
         "/level или /rank — уровень по ответам и банку\n"
         "/record или /best — личные рекорды\n"
         "/plan или /guide — что тренировать дальше\n"
@@ -1043,7 +1047,7 @@ def handle_text(
         )
         return
 
-    if cmd == "/ratio":
+    if cmd in {"/ratio", "/pct"}:
         comp_stats = mentor_db.get_competency_stats(conn, chat_id)
         api.send_message(
             chat_id,
@@ -1051,11 +1055,64 @@ def handle_text(
         )
         return
 
-    if cmd == "/weaklist":
+    if cmd in {"/weaklist", "/weakspots"}:
         comp_stats = mentor_db.get_competency_stats(conn, chat_id)
         api.send_message(
             chat_id,
             mentor_progress.format_weaklist_summary(competencies, comp_stats),
+        )
+        return
+
+    if cmd in {"/momentum", "/heat"}:
+        daily_goal = parse_daily_goal()
+        daily_count = mentor_db.get_daily_answer_count(conn, chat_id)
+        streak = mentor_db.get_streak(conn, chat_id)
+        rows = mentor_db.get_recent_history_rows(conn, chat_id, limit=5)
+        recent = [(r.question_id, r.attempts, r.correct_count) for r in rows]
+        api.send_message(
+            chat_id,
+            mentor_progress.format_momentum_summary(
+                streak=streak,
+                daily_count=daily_count,
+                daily_goal=daily_goal,
+                recent_rows=recent,
+            ),
+        )
+        return
+
+    if cmd == "/spot":
+        review_ids = mentor_db.get_review_question_ids(conn, chat_id)
+        if review_ids:
+            deliver_quiz_question(
+                api,
+                conn,
+                chat_id,
+                questions,
+                competencies,
+                only_ids=review_ids,
+                intro="Spot-check: повтор ошибки",
+            )
+            return
+        comp_stats = mentor_db.get_competency_stats(conn, chat_id)
+        tip = mentor_comp.suggest_practice_competency(competencies, comp_stats)
+        if tip is None:
+            deliver_quiz_question(
+                api,
+                conn,
+                chat_id,
+                questions,
+                competencies,
+                intro="Spot-check",
+            )
+            return
+        deliver_quiz_question(
+            api,
+            conn,
+            chat_id,
+            questions,
+            competencies,
+            comp_filter=tip.id,
+            intro=f"Spot-check: {tip.title}",
         )
         return
 

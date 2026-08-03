@@ -167,6 +167,31 @@ def test_three_hundred_and_eighty_achievements() -> None:
     assert "80 верных ответов" in labels
 
 
+def test_four_hundred_ninety_and_streak_35_achievements() -> None:
+    labels = prog.collect_achievement_labels(
+        total=400,
+        correct=90,
+        best_streak=35,
+        bank_total=102,
+        bank_mastered=60,
+    )
+    assert "400 ответов" in labels
+    assert "90 верных ответов" in labels
+    assert "Серия 35+" in labels
+
+
+def test_format_momentum_summary() -> None:
+    text = prog.format_momentum_summary(
+        streak=6,
+        daily_count=3,
+        daily_goal=5,
+        recent_rows=[("q1", 1, 1), ("q2", 2, 0), ("q3", 1, 1)],
+    )
+    assert "Серия: 6" in text
+    assert "✓" in text
+    assert "/challenge" in text
+
+
 def test_format_balance_summary() -> None:
     text = prog.format_balance_summary(
         bank_by_diff={1: 10, 2: 20, 3: 5},
