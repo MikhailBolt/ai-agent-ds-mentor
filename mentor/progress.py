@@ -524,6 +524,27 @@ def format_momentum_summary(
     return "\n".join(lines)
 
 
+def format_coverage_summary(
+    competencies: list[Competency],
+    bank_seen: dict[str, tuple[int, int]],
+    bank_mastery: dict[str, tuple[int, int]],
+) -> str:
+    lines = ["Покрытие банка:", ""]
+    for c in competencies:
+        seen_n, bank_n = bank_seen.get(c.id, (0, 0))
+        mastered_n, _ = bank_mastery.get(c.id, (0, 0))
+        if bank_n == 0:
+            continue
+        lines.append(
+            f"• {c.title} ({c.id}) — встречено {seen_n}/{bank_n}, освоено {mastered_n}/{bank_n}"
+        )
+    if len(lines) == 2:
+        return "Нет данных по банку. /quiz!"
+    lines.append("")
+    lines.append("/gaps · /probe · /remain")
+    return "\n".join(lines)
+
+
 def collect_achievement_labels(
     *,
     total: int,
@@ -550,6 +571,8 @@ def collect_achievement_labels(
         labels.append("300 ответов")
     if total >= 400:
         labels.append("400 ответов")
+    if total >= 500:
+        labels.append("500 ответов")
     if correct >= 5:
         labels.append("5 верных ответов")
     if correct >= 10:
@@ -570,6 +593,8 @@ def collect_achievement_labels(
         labels.append("80 верных ответов")
     if correct >= 90:
         labels.append("90 верных ответов")
+    if correct >= 100:
+        labels.append("100 верных ответов")
     if best_streak >= 5:
         labels.append("Серия 5+")
     if best_streak >= 10:

@@ -1164,5 +1164,38 @@
       "cross entropy loss",
       "логарифмическая функция потерь"
     ]
+  },
+  {
+    "id": "st-021",
+    "competency_id": "stats-basics",
+    "difficulty": 2,
+    "prompt": "Чем отличается стандартное отклонение от дисперсии?",
+    "answer": "дисперсия это средний квадрат отклонений стандартное отклонение это корень из дисперсии в тех же единицах что данные",
+    "aliases": [
+      "std is sqrt of variance",
+      "корень из дисперсии"
+    ]
+  },
+  {
+    "id": "py-026",
+    "competency_id": "python-ds",
+    "difficulty": 1,
+    "prompt": "Что делает df.head(n) в pandas?",
+    "answer": "возвращает первые n строк датафрейма по умолчанию 5",
+    "aliases": [
+      "first n rows",
+      "первые строки"
+    ]
+  },
+  {
+    "id": "ml-058",
+    "competency_id": "ml-foundations",
+    "difficulty": 3,
+    "prompt": "Что такое feature leakage (data leakage)?",
+    "answer": "когда в обучение попадает информация недоступная на момент предсказания и метрики становятся обманчиво высокими",
+    "aliases": [
+      "target leakage future info",
+      "утечка признаков"
+    ]
   }
 ]

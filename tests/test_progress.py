@@ -192,6 +192,35 @@ def test_format_momentum_summary() -> None:
     assert "/challenge" in text
 
 
+def test_format_coverage_summary() -> None:
+    from mentor.competencies import Competency
+
+    comps = [
+        Competency(id="a", title="Alpha", description=""),
+        Competency(id="b", title="Beta", description=""),
+    ]
+    text = prog.format_coverage_summary(
+        comps,
+        {"a": (2, 5), "b": (0, 4)},
+        {"a": (1, 5), "b": (0, 4)},
+    )
+    assert "встречено 2/5" in text
+    assert "освоено 1/5" in text
+    assert "/probe" in text
+
+
+def test_five_hundred_and_hundred_correct_achievements() -> None:
+    labels = prog.collect_achievement_labels(
+        total=500,
+        correct=100,
+        best_streak=10,
+        bank_total=105,
+        bank_mastered=70,
+    )
+    assert "500 ответов" in labels
+    assert "100 верных ответов" in labels
+
+
 def test_format_balance_summary() -> None:
     text = prog.format_balance_summary(
         bank_by_diff={1: 10, 2: 20, 3: 5},

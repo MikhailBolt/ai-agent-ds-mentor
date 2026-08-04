@@ -83,6 +83,8 @@ BOT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("weaklist", "Слабые темы"),
     ("momentum", "Импульс и ритм"),
     ("spot", "Spot-check вопрос"),
+    ("coverage", "Покрытие банка"),
+    ("probe", "Новый из слабой темы"),
     ("compare", "Слабая vs сильная тема"),
     ("record", "Личные рекорды"),
     ("seen", "Встреченные вопросы"),
@@ -218,8 +220,10 @@ def _help_text() -> str:
         "/strengths или /strong — топ сильных тем\n"
         "/ratio или /pct — точность по каждой теме\n"
         "/weaklist или /weakspots — слабые и не начатые темы\n"
-        "/momentum или /heat — импульс: серия и последние ответы\n"
-        "/spot — spot-check: ошибка или слабая тема\n"
+        "/momentum, /heat или /tempo — импульс: серия и последние ответы\n"
+        "/spot или /check — spot-check: ошибка или слабая тема\n"
+        "/coverage или /cover — покрытие банка по темам\n"
+        "/probe — новый вопрос из слабой темы\n"
         "/level или /rank — уровень по ответам и банку\n"
         "/record или /best — личные рекорды\n"
         "/plan или /guide — что тренировать дальше\n"
@@ -1063,7 +1067,7 @@ def handle_text(
         )
         return
 
-    if cmd in {"/momentum", "/heat"}:
+    if cmd in {"/momentum", "/heat", "/tempo"}:
         daily_goal = parse_daily_goal()
         daily_count = mentor_db.get_daily_answer_count(conn, chat_id)
         streak = mentor_db.get_streak(conn, chat_id)
@@ -1080,7 +1084,7 @@ def handle_text(
         )
         return
 
-    if cmd == "/spot":
+    if cmd in {"/spot", "/check"}:
         review_ids = mentor_db.get_review_question_ids(conn, chat_id)
         if review_ids:
             deliver_quiz_question(
@@ -1113,6 +1117,71 @@ def handle_text(
             competencies,
             comp_filter=tip.id,
             intro=f"Spot-check: {tip.title}",
+        )
+        return
+
+    if cmd in {"/coverage", "/cover"}:
+        seen = mentor_db.get_seen_question_ids(conn, chat_id)
+        mastered_ids = mentor_db.get_mastered_question_ids(conn, chat_id)
+        bank_seen = mentor_quiz.competency_mastery_counts(questions, seen)
+        bank_mastery = mentor_quiz.competency_mastery_counts(questions, mastered_ids)
+        api.send_message(
+            chat_id,
+            mentor_progress.format_coverage_summary(
+                competencies,
+                bank_seen,
+                bank_mastery,
+            ),
+        )
+        return
+
+    if cmd == "/probe":
+        seen = mentor_db.get_seen_question_ids(conn, chat_id)
+        unseen = mentor_quiz.unseen_question_ids(questions, seen)
+        comp_stats = mentor_db.get_competency_stats(conn, chat_id)
+        tip = mentor_comp.suggest_practice_competency(competencies, comp_stats)
+        if tip is not None:
+            tip_unseen = {q.id for q in questions if q.id in unseen and q.competency_id == tip.id}
+            if tip_unseen:
+                deliver_quiz_question(
+                    api,
+                    conn,
+                    chat_id,
+                    questions,
+                    competencies,
+                    comp_filter=tip.id,
+                    only_ids=tip_unseen,
+                    intro=f"Probe: новый из «{tip.title}»",
+                )
+                return
+            deliver_quiz_question(
+                api,
+                conn,
+                chat_id,
+                questions,
+                competencies,
+                comp_filter=tip.id,
+                intro=f"Probe: «{tip.title}»",
+            )
+            return
+        if unseen:
+            deliver_quiz_question(
+                api,
+                conn,
+                chat_id,
+                questions,
+                competencies,
+                only_ids=unseen,
+                intro="Probe: новый вопрос",
+            )
+            return
+        deliver_quiz_question(
+            api,
+            conn,
+            chat_id,
+            questions,
+            competencies,
+            intro="Probe",
         )
         return
 
