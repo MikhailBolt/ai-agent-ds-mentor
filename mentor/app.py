@@ -85,6 +85,8 @@ BOT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("spot", "Spot-check вопрос"),
     ("coverage", "Покрытие банка"),
     ("probe", "Новый из слабой темы"),
+    ("outlook", "Обзор тренировки"),
+    ("fill", "Заполнить покрытие"),
     ("compare", "Слабая vs сильная тема"),
     ("record", "Личные рекорды"),
     ("seen", "Встреченные вопросы"),
@@ -222,8 +224,10 @@ def _help_text() -> str:
         "/weaklist или /weakspots — слабые и не начатые темы\n"
         "/momentum, /heat или /tempo — импульс: серия и последние ответы\n"
         "/spot или /check — spot-check: ошибка или слабая тема\n"
-        "/coverage или /cover — покрытие банка по темам\n"
-        "/probe — новый вопрос из слабой темы\n"
+        "/coverage, /cover или /scan — покрытие банка по темам\n"
+        "/probe или /test — новый вопрос из слабой темы\n"
+        "/outlook или /view — обзор тренировки\n"
+        "/fill — вопрос из темы с низким покрытием\n"
         "/level или /rank — уровень по ответам и банку\n"
         "/record или /best — личные рекорды\n"
         "/plan или /guide — что тренировать дальше\n"
@@ -1120,7 +1124,7 @@ def handle_text(
         )
         return
 
-    if cmd in {"/coverage", "/cover"}:
+    if cmd in {"/coverage", "/cover", "/scan"}:
         seen = mentor_db.get_seen_question_ids(conn, chat_id)
         mastered_ids = mentor_db.get_mastered_question_ids(conn, chat_id)
         bank_seen = mentor_quiz.competency_mastery_counts(questions, seen)
@@ -1135,7 +1139,7 @@ def handle_text(
         )
         return
 
-    if cmd == "/probe":
+    if cmd in {"/probe", "/test"}:
         seen = mentor_db.get_seen_question_ids(conn, chat_id)
         unseen = mentor_quiz.unseen_question_ids(questions, seen)
         comp_stats = mentor_db.get_competency_stats(conn, chat_id)
@@ -1182,6 +1186,69 @@ def handle_text(
             questions,
             competencies,
             intro="Probe",
+        )
+        return
+
+    if cmd in {"/outlook", "/view"}:
+        daily_goal = parse_daily_goal()
+        daily_count = mentor_db.get_daily_answer_count(conn, chat_id)
+        review_count = len(mentor_db.get_review_question_ids(conn, chat_id))
+        seen = mentor_db.get_seen_question_ids(conn, chat_id)
+        unseen = len(mentor_quiz.unseen_question_ids(questions, seen))
+        bank_seen = mentor_quiz.competency_mastery_counts(questions, seen)
+        lowest = mentor_progress.suggest_lowest_coverage(competencies, bank_seen)
+        api.send_message(
+            chat_id,
+            mentor_progress.format_outlook_summary(
+                daily_count=daily_count,
+                daily_goal=daily_goal,
+                review_count=review_count,
+                bank_unseen=unseen,
+                lowest_title=lowest[0].title if lowest else None,
+                lowest_id=lowest[0].id if lowest else None,
+                lowest_seen=lowest[1] if lowest else 0,
+                lowest_bank=lowest[2] if lowest else 0,
+            ),
+        )
+        return
+
+    if cmd == "/fill":
+        seen = mentor_db.get_seen_question_ids(conn, chat_id)
+        unseen = mentor_quiz.unseen_question_ids(questions, seen)
+        bank_seen = mentor_quiz.competency_mastery_counts(questions, seen)
+        lowest = mentor_progress.suggest_lowest_coverage(competencies, bank_seen)
+        if lowest is None:
+            deliver_quiz_question(
+                api,
+                conn,
+                chat_id,
+                questions,
+                competencies,
+                intro="Fill",
+            )
+            return
+        tip, _, _ = lowest
+        tip_unseen = {q.id for q in questions if q.id in unseen and q.competency_id == tip.id}
+        if tip_unseen:
+            deliver_quiz_question(
+                api,
+                conn,
+                chat_id,
+                questions,
+                competencies,
+                comp_filter=tip.id,
+                only_ids=tip_unseen,
+                intro=f"Fill: покрытие «{tip.title}»",
+            )
+            return
+        deliver_quiz_question(
+            api,
+            conn,
+            chat_id,
+            questions,
+            competencies,
+            comp_filter=tip.id,
+            intro=f"Fill: «{tip.title}»",
         )
         return
 

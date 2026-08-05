@@ -545,6 +545,58 @@ def format_coverage_summary(
     return "\n".join(lines)
 
 
+def format_outlook_summary(
+    *,
+    daily_count: int,
+    daily_goal: int | None,
+    review_count: int,
+    bank_unseen: int,
+    lowest_title: str | None = None,
+    lowest_id: str | None = None,
+    lowest_seen: int = 0,
+    lowest_bank: int = 0,
+) -> str:
+    lines = ["Обзор тренировки:", ""]
+    if daily_goal:
+        lines.append(format_daily_goal_line(daily_count, daily_goal))
+    else:
+        lines.append(f"Ответов сегодня: {daily_count}")
+    lines.append(f"На повтор: {review_count} · новых: {bank_unseen}")
+    if lowest_id and lowest_title and lowest_bank:
+        lines.append(f"Слабое покрытие: {lowest_title} ({lowest_id}) — {lowest_seen}/{lowest_bank}")
+    lines.append("")
+    if daily_goal and daily_count < daily_goal:
+        lines.append("/quiz · /fill")
+    elif review_count:
+        lines.append("/review · /spot")
+    elif bank_unseen:
+        lines.append("/fill · /probe · /new")
+    else:
+        lines.append("/challenge · /deep")
+    return "\n".join(lines)
+
+
+def suggest_lowest_coverage(
+    competencies: list[Competency],
+    bank_seen: dict[str, tuple[int, int]],
+) -> tuple[Competency, int, int] | None:
+    best: tuple[Competency, int, int] | None = None
+    best_ratio = 2.0
+    for c in competencies:
+        seen_n, bank_n = bank_seen.get(c.id, (0, 0))
+        if bank_n == 0:
+            continue
+        ratio = seen_n / bank_n
+        if (
+            best is None
+            or ratio < best_ratio
+            or (ratio == best_ratio and bank_n - seen_n > best[2] - best[1])
+        ):
+            best_ratio = ratio
+            best = (c, seen_n, bank_n)
+    return best
+
+
 def collect_achievement_labels(
     *,
     total: int,
@@ -573,6 +625,8 @@ def collect_achievement_labels(
         labels.append("400 ответов")
     if total >= 500:
         labels.append("500 ответов")
+    if total >= 600:
+        labels.append("600 ответов")
     if correct >= 5:
         labels.append("5 верных ответов")
     if correct >= 10:
@@ -595,6 +649,8 @@ def collect_achievement_labels(
         labels.append("90 верных ответов")
     if correct >= 100:
         labels.append("100 верных ответов")
+    if correct >= 110:
+        labels.append("110 верных ответов")
     if best_streak >= 5:
         labels.append("Серия 5+")
     if best_streak >= 10:
@@ -609,6 +665,8 @@ def collect_achievement_labels(
         labels.append("Серия 30+")
     if best_streak >= 35:
         labels.append("Серия 35+")
+    if best_streak >= 40:
+        labels.append("Серия 40+")
     if total >= 10 and correct / total >= 0.7:
         labels.append("Точность 70%+")
     if total >= 10 and correct / total >= 0.8:

@@ -221,6 +221,41 @@ def test_five_hundred_and_hundred_correct_achievements() -> None:
     assert "100 верных ответов" in labels
 
 
+def test_six_hundred_outlook_and_fill_helpers() -> None:
+    from mentor.competencies import Competency
+
+    labels = prog.collect_achievement_labels(
+        total=600,
+        correct=110,
+        best_streak=40,
+        bank_total=108,
+        bank_mastered=80,
+    )
+    assert "600 ответов" in labels
+    assert "110 верных ответов" in labels
+    assert "Серия 40+" in labels
+
+    comps = [
+        Competency(id="a", title="Alpha", description=""),
+        Competency(id="b", title="Beta", description=""),
+    ]
+    lowest = prog.suggest_lowest_coverage(comps, {"a": (4, 5), "b": (1, 5)})
+    assert lowest is not None
+    assert lowest[0].id == "b"
+    outlook = prog.format_outlook_summary(
+        daily_count=2,
+        daily_goal=5,
+        review_count=3,
+        bank_unseen=10,
+        lowest_title="Beta",
+        lowest_id="b",
+        lowest_seen=1,
+        lowest_bank=5,
+    )
+    assert "Слабое покрытие" in outlook
+    assert "/quiz" in outlook
+
+
 def test_format_balance_summary() -> None:
     text = prog.format_balance_summary(
         bank_by_diff={1: 10, 2: 20, 3: 5},

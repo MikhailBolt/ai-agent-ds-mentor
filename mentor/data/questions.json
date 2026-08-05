@@ -1197,5 +1197,38 @@
       "target leakage future info",
       "утечка признаков"
     ]
+  },
+  {
+    "id": "ml-059",
+    "competency_id": "ml-metrics",
+    "difficulty": 2,
+    "prompt": "Что такое specificity (true negative rate)?",
+    "answer": "доля правильно распознанных отрицательных среди всех реальных отрицательных tn/(tn+fp)",
+    "aliases": [
+      "tnr true negative rate",
+      "специфичность"
+    ]
+  },
+  {
+    "id": "ml-060",
+    "competency_id": "ml-validation",
+    "difficulty": 2,
+    "prompt": "Что такое leave-one-out cross-validation LOOCV?",
+    "answer": "кросс валидация где каждый фолд это один объект остальные в train n фолдов для n объектов",
+    "aliases": [
+      "n fold leave one out",
+      "leave one out"
+    ]
+  },
+  {
+    "id": "py-027",
+    "competency_id": "python-ds",
+    "difficulty": 2,
+    "prompt": "Что делает df.value_counts() в pandas?",
+    "answer": "считает частоты уникальных значений в серии или датафрейме",
+    "aliases": [
+      "count unique frequencies",
+      "частоты значений"
+    ]
   }
 ]
