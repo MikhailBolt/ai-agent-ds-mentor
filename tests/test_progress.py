@@ -256,6 +256,41 @@ def test_six_hundred_outlook_and_fill_helpers() -> None:
     assert "/quiz" in outlook
 
 
+def test_digest_rotate_and_700_achievements() -> None:
+    from mentor.competencies import Competency
+
+    labels = prog.collect_achievement_labels(
+        total=700,
+        correct=120,
+        best_streak=45,
+        bank_total=111,
+        bank_mastered=90,
+    )
+    assert "700 ответов" in labels
+    assert "120 верных ответов" in labels
+    assert "Серия 45+" in labels
+
+    digest = prog.format_digest_summary(
+        correct=12,
+        total=20,
+        streak=3,
+        daily_count=2,
+        daily_goal=5,
+        review_count=1,
+        bank_unseen=8,
+    )
+    assert "60%" in digest
+    assert "/review" in digest
+
+    comps = [
+        Competency(id="a", title="Alpha", description=""),
+        Competency(id="b", title="Beta", description=""),
+    ]
+    assert prog.next_rotate_competency(comps, "a").id == "b"
+    assert prog.next_rotate_competency(comps, "b").id == "a"
+    assert prog.next_rotate_competency(comps, None).id == "a"
+
+
 def test_format_balance_summary() -> None:
     text = prog.format_balance_summary(
         bank_by_diff={1: 10, 2: 20, 3: 5},

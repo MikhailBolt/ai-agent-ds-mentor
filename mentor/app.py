@@ -87,6 +87,8 @@ BOT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("probe", "Новый из слабой темы"),
     ("outlook", "Обзор тренировки"),
     ("fill", "Заполнить покрытие"),
+    ("digest", "Дайджест дня"),
+    ("rotate", "Следующая тема"),
     ("compare", "Слабая vs сильная тема"),
     ("record", "Личные рекорды"),
     ("seen", "Встреченные вопросы"),
@@ -226,8 +228,10 @@ def _help_text() -> str:
         "/spot или /check — spot-check: ошибка или слабая тема\n"
         "/coverage, /cover или /scan — покрытие банка по темам\n"
         "/probe или /test — новый вопрос из слабой темы\n"
-        "/outlook или /view — обзор тренировки\n"
-        "/fill — вопрос из темы с низким покрытием\n"
+        "/outlook, /view или /agenda — обзор тренировки\n"
+        "/fill или /pad — вопрос из темы с низким покрытием\n"
+        "/digest или /recap — короткий дайджест дня\n"
+        "/rotate или /cycle — вопрос из следующей темы\n"
         "/level или /rank — уровень по ответам и банку\n"
         "/record или /best — личные рекорды\n"
         "/plan или /guide — что тренировать дальше\n"
@@ -1189,7 +1193,7 @@ def handle_text(
         )
         return
 
-    if cmd in {"/outlook", "/view"}:
+    if cmd in {"/outlook", "/view", "/agenda"}:
         daily_goal = parse_daily_goal()
         daily_count = mentor_db.get_daily_answer_count(conn, chat_id)
         review_count = len(mentor_db.get_review_question_ids(conn, chat_id))
@@ -1212,7 +1216,7 @@ def handle_text(
         )
         return
 
-    if cmd == "/fill":
+    if cmd in {"/fill", "/pad"}:
         seen = mentor_db.get_seen_question_ids(conn, chat_id)
         unseen = mentor_quiz.unseen_question_ids(questions, seen)
         bank_seen = mentor_quiz.competency_mastery_counts(questions, seen)
@@ -1249,6 +1253,74 @@ def handle_text(
             competencies,
             comp_filter=tip.id,
             intro=f"Fill: «{tip.title}»",
+        )
+        return
+
+    if cmd in {"/digest", "/recap"}:
+        st = mentor_db.get_stats(conn, chat_id)
+        streak = mentor_db.get_streak(conn, chat_id)
+        daily_goal = parse_daily_goal()
+        daily_count = mentor_db.get_daily_answer_count(conn, chat_id)
+        review_count = len(mentor_db.get_review_question_ids(conn, chat_id))
+        seen = mentor_db.get_seen_question_ids(conn, chat_id)
+        unseen = len(mentor_quiz.unseen_question_ids(questions, seen))
+        api.send_message(
+            chat_id,
+            mentor_progress.format_digest_summary(
+                correct=st.correct,
+                total=st.total,
+                streak=streak,
+                daily_count=daily_count,
+                daily_goal=daily_goal,
+                review_count=review_count,
+                bank_unseen=unseen,
+            ),
+        )
+        return
+
+    if cmd in {"/rotate", "/cycle"}:
+        last_id = mentor_db.get_last_question_id(conn, chat_id)
+        if not last_id:
+            last_id = mentor_db.get_active_question(conn, chat_id)
+        current_comp: str | None = None
+        if last_id:
+            last_q = mentor_quiz.find_by_id(questions, last_id)
+            if last_q is not None:
+                current_comp = last_q.competency_id
+        tip = mentor_progress.next_rotate_competency(competencies, current_comp)
+        if tip is None:
+            deliver_quiz_question(
+                api,
+                conn,
+                chat_id,
+                questions,
+                competencies,
+                intro="Rotate",
+            )
+            return
+        seen = mentor_db.get_seen_question_ids(conn, chat_id)
+        unseen = mentor_quiz.unseen_question_ids(questions, seen)
+        tip_unseen = {q.id for q in questions if q.id in unseen and q.competency_id == tip.id}
+        if tip_unseen:
+            deliver_quiz_question(
+                api,
+                conn,
+                chat_id,
+                questions,
+                competencies,
+                comp_filter=tip.id,
+                only_ids=tip_unseen,
+                intro=f"Rotate: «{tip.title}»",
+            )
+            return
+        deliver_quiz_question(
+            api,
+            conn,
+            chat_id,
+            questions,
+            competencies,
+            comp_filter=tip.id,
+            intro=f"Rotate: «{tip.title}»",
         )
         return
 

@@ -1230,5 +1230,38 @@
       "count unique frequencies",
       "частоты значений"
     ]
+  },
+  {
+    "id": "st-022",
+    "competency_id": "stats-basics",
+    "difficulty": 3,
+    "prompt": "Что такое p-value в проверке гипотез?",
+    "answer": "вероятность получить такие или более экстремальные данные если верна нулевая гипотеза",
+    "aliases": [
+      "probability under null hypothesis",
+      "значимость p value"
+    ]
+  },
+  {
+    "id": "ml-061",
+    "competency_id": "ml-foundations",
+    "difficulty": 2,
+    "prompt": "Чем bagging отличается от boosting?",
+    "answer": "bagging обучает модели параллельно на бутстрэп выборках boosting последовательно исправляет ошибки",
+    "aliases": [
+      "parallel vs sequential ensembles",
+      "бэггинг vs бустинг"
+    ]
+  },
+  {
+    "id": "py-028",
+    "competency_id": "python-ds",
+    "difficulty": 2,
+    "prompt": "Что делает df.drop_duplicates() в pandas?",
+    "answer": "удаляет повторяющиеся строки оставляя уникальные",
+    "aliases": [
+      "remove duplicate rows",
+      "убрать дубликаты"
+    ]
   }
 ]
