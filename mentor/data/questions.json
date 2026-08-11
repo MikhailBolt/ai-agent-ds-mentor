@@ -1263,5 +1263,38 @@
       "remove duplicate rows",
       "убрать дубликаты"
     ]
+  },
+  {
+    "id": "ml-062",
+    "competency_id": "ml-metrics",
+    "difficulty": 3,
+    "prompt": "Когда лучше смотреть на PR-AUC вместо ROC-AUC?",
+    "answer": "при сильном дисбалансе классов когда отрицательный класс доминирует и roc может быть обманчиво высоким",
+    "aliases": [
+      "imbalanced classes precision recall",
+      "дисбаланс классов pr auc"
+    ]
+  },
+  {
+    "id": "ml-063",
+    "competency_id": "ml-validation",
+    "difficulty": 2,
+    "prompt": "Что такое nested cross-validation?",
+    "answer": "внешний цикл оценивает модель внутренний подбирает гиперпараметры чтобы оценка не была завышенной",
+    "aliases": [
+      "outer inner cv hyperparameters",
+      "вложенная кросс валидация"
+    ]
+  },
+  {
+    "id": "st-023",
+    "competency_id": "stats-basics",
+    "difficulty": 1,
+    "prompt": "Что такое медиана выборки?",
+    "answer": "значение которое делит упорядоченную выборку пополам половина меньше или равна половина больше или равна",
+    "aliases": [
+      "50th percentile middle value",
+      "серединное значение"
+    ]
   }
 ]

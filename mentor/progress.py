@@ -645,6 +645,38 @@ def next_rotate_competency(
     return competencies[(idx + 1) % len(competencies)]
 
 
+def format_delta_summary(
+    *,
+    daily_count: int,
+    daily_goal: int | None,
+    review_count: int,
+    bank_unseen: int,
+    bank_mastered: int,
+    bank_total: int,
+) -> str:
+    lines = ["Осталось:", ""]
+    if daily_goal:
+        left = max(0, daily_goal - daily_count)
+        if left:
+            lines.append(f"• до цели дня: {left}")
+        else:
+            lines.append("• дневная цель закрыта")
+    lines.append(f"• на повтор: {review_count}")
+    lines.append(f"• новых в банке: {bank_unseen}")
+    if bank_total:
+        lines.append(f"• неосвоено: {max(0, bank_total - bank_mastered)}/{bank_total}")
+    lines.append("")
+    if daily_goal and daily_count < daily_goal:
+        lines.append("/quiz · /anchor")
+    elif review_count:
+        lines.append("/review · /spot")
+    elif bank_unseen:
+        lines.append("/new · /fill · /anchor")
+    else:
+        lines.append("/challenge · /deep")
+    return "\n".join(lines)
+
+
 def collect_achievement_labels(
     *,
     total: int,
@@ -677,6 +709,8 @@ def collect_achievement_labels(
         labels.append("600 ответов")
     if total >= 700:
         labels.append("700 ответов")
+    if total >= 800:
+        labels.append("800 ответов")
     if correct >= 5:
         labels.append("5 верных ответов")
     if correct >= 10:
@@ -703,6 +737,8 @@ def collect_achievement_labels(
         labels.append("110 верных ответов")
     if correct >= 120:
         labels.append("120 верных ответов")
+    if correct >= 130:
+        labels.append("130 верных ответов")
     if best_streak >= 5:
         labels.append("Серия 5+")
     if best_streak >= 10:
@@ -721,6 +757,8 @@ def collect_achievement_labels(
         labels.append("Серия 40+")
     if best_streak >= 45:
         labels.append("Серия 45+")
+    if best_streak >= 50:
+        labels.append("Серия 50+")
     if total >= 10 and correct / total >= 0.7:
         labels.append("Точность 70%+")
     if total >= 10 and correct / total >= 0.8:

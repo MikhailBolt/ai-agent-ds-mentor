@@ -291,6 +291,31 @@ def test_digest_rotate_and_700_achievements() -> None:
     assert prog.next_rotate_competency(comps, None).id == "a"
 
 
+def test_delta_and_800_achievements() -> None:
+    labels = prog.collect_achievement_labels(
+        total=800,
+        correct=130,
+        best_streak=50,
+        bank_total=114,
+        bank_mastered=100,
+    )
+    assert "800 ответов" in labels
+    assert "130 верных ответов" in labels
+    assert "Серия 50+" in labels
+
+    text = prog.format_delta_summary(
+        daily_count=2,
+        daily_goal=5,
+        review_count=3,
+        bank_unseen=12,
+        bank_mastered=40,
+        bank_total=114,
+    )
+    assert "до цели дня: 3" in text
+    assert "на повтор: 3" in text
+    assert "/quiz" in text
+
+
 def test_format_balance_summary() -> None:
     text = prog.format_balance_summary(
         bank_by_diff={1: 10, 2: 20, 3: 5},
