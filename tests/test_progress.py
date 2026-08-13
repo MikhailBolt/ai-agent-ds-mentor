@@ -316,6 +316,45 @@ def test_delta_and_800_achievements() -> None:
     assert "/quiz" in text
 
 
+def test_checkpoint_switch_and_900_achievements() -> None:
+    from mentor.competencies import Competency
+
+    labels = prog.collect_achievement_labels(
+        total=900,
+        correct=140,
+        best_streak=55,
+        bank_total=117,
+        bank_mastered=105,
+    )
+    assert "900 ответов" in labels
+    assert "140 верных ответов" in labels
+    assert "Серия 55+" in labels
+
+    text = prog.format_checkpoint_summary(
+        correct=8,
+        total=10,
+        streak=4,
+        daily_count=2,
+        daily_goal=5,
+        review_count=1,
+        bank_unseen=6,
+        tip_title="Alpha",
+        tip_id="a",
+    )
+    assert "80%" in text
+    assert "Фокус: Alpha" in text
+    assert "/review" in text
+
+    comps = [
+        Competency(id="a", title="Alpha", description=""),
+        Competency(id="b", title="Beta", description=""),
+        Competency(id="c", title="Gamma", description=""),
+    ]
+    switched = prog.suggest_switch_competency(comps, "a", {"a": (5, 5), "b": (1, 4), "c": (0, 0)})
+    assert switched is not None
+    assert switched.id == "c"
+
+
 def test_format_balance_summary() -> None:
     text = prog.format_balance_summary(
         bank_by_diff={1: 10, 2: 20, 3: 5},

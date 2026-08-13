@@ -677,6 +677,66 @@ def format_delta_summary(
     return "\n".join(lines)
 
 
+def format_checkpoint_summary(
+    *,
+    correct: int,
+    total: int,
+    streak: int,
+    daily_count: int,
+    daily_goal: int | None,
+    review_count: int,
+    bank_unseen: int,
+    tip_title: str | None = None,
+    tip_id: str | None = None,
+) -> str:
+    acc = (correct / total * 100.0) if total else 0.0
+    lines = [
+        "Чекпоинт:",
+        f"{correct}/{total} ({acc:.0f}%) · серия {streak}",
+    ]
+    if daily_goal:
+        lines.append(format_daily_goal_line(daily_count, daily_goal))
+    else:
+        lines.append(f"Сегодня: {daily_count}")
+    lines.append(f"Повтор {review_count} · новых {bank_unseen}")
+    if tip_id and tip_title:
+        lines.append(f"Фокус: {tip_title} ({tip_id})")
+    lines.append("")
+    if review_count:
+        lines.append("/review · /switch")
+    elif daily_goal and daily_count < daily_goal:
+        lines.append("/quiz · /anchor")
+    elif bank_unseen:
+        lines.append("/switch · /fill · /new")
+    else:
+        lines.append("/challenge · /deep")
+    return "\n".join(lines)
+
+
+def suggest_switch_competency(
+    competencies: list[Competency],
+    current_id: str | None,
+    comp_stats: dict[str, tuple[int, int]],
+) -> Competency | None:
+    candidates = [c for c in competencies if c.id != current_id] or list(competencies)
+    if not candidates:
+        return None
+    unseen = [c for c in candidates if comp_stats.get(c.id, (0, 0))[1] == 0]
+    if unseen:
+        return unseen[0]
+    weakest: Competency | None = None
+    worst = 2.0
+    for c in candidates:
+        ok, tot = comp_stats.get(c.id, (0, 0))
+        if tot == 0:
+            continue
+        acc = ok / tot
+        if acc < worst:
+            worst = acc
+            weakest = c
+    return weakest or candidates[0]
+
+
 def collect_achievement_labels(
     *,
     total: int,
@@ -711,6 +771,8 @@ def collect_achievement_labels(
         labels.append("700 ответов")
     if total >= 800:
         labels.append("800 ответов")
+    if total >= 900:
+        labels.append("900 ответов")
     if correct >= 5:
         labels.append("5 верных ответов")
     if correct >= 10:
@@ -739,6 +801,8 @@ def collect_achievement_labels(
         labels.append("120 верных ответов")
     if correct >= 130:
         labels.append("130 верных ответов")
+    if correct >= 140:
+        labels.append("140 верных ответов")
     if best_streak >= 5:
         labels.append("Серия 5+")
     if best_streak >= 10:
@@ -759,6 +823,8 @@ def collect_achievement_labels(
         labels.append("Серия 45+")
     if best_streak >= 50:
         labels.append("Серия 50+")
+    if best_streak >= 55:
+        labels.append("Серия 55+")
     if total >= 10 and correct / total >= 0.7:
         labels.append("Точность 70%+")
     if total >= 10 and correct / total >= 0.8:

@@ -1296,5 +1296,38 @@
       "50th percentile middle value",
       "серединное значение"
     ]
+  },
+  {
+    "id": "py-029",
+    "competency_id": "python-ds",
+    "difficulty": 2,
+    "prompt": "Что делает df.sort_values('col') в pandas?",
+    "answer": "сортирует строки датафрейма по значениям столбца col по возрастанию по умолчанию",
+    "aliases": [
+      "sort rows by column",
+      "сортировка по колонке"
+    ]
+  },
+  {
+    "id": "ml-064",
+    "competency_id": "ml-foundations",
+    "difficulty": 2,
+    "prompt": "Что такое underfitting?",
+    "answer": "модель слишком простая не улавливает закономерности низкое качество и на train и на test",
+    "aliases": [
+      "high bias underfit",
+      "недообучение"
+    ]
+  },
+  {
+    "id": "ml-065",
+    "competency_id": "ml-metrics",
+    "difficulty": 2,
+    "prompt": "Что такое calibration кривой вероятностей модели?",
+    "answer": "насколько предсказанные вероятности совпадают с реальной частотой класса если модель говорит 0.7 то около 70 процентов должны быть положительными",
+    "aliases": [
+      "predicted probability reliability",
+      "калибровка вероятностей"
+    ]
   }
 ]
