@@ -355,6 +355,33 @@ def test_checkpoint_switch_and_900_achievements() -> None:
     assert switched.id == "c"
 
 
+def test_lap_climb_and_1000_achievements() -> None:
+    labels = prog.collect_achievement_labels(
+        total=1000,
+        correct=150,
+        best_streak=60,
+        bank_total=120,
+        bank_mastered=110,
+    )
+    assert "1000 ответов" in labels
+    assert "150 верных ответов" in labels
+    assert "Серия 60+" in labels
+
+    lap = prog.format_lap_summary(
+        daily_count=2,
+        daily_goal=5,
+        streak=3,
+        review_count=0,
+        bank_unseen=10,
+    )
+    assert "Серия: 3" in lap
+    assert "/quiz" in lap
+    assert prog.next_climb_difficulty(None) == 1
+    assert prog.next_climb_difficulty(1) == 2
+    assert prog.next_climb_difficulty(2) == 3
+    assert prog.next_climb_difficulty(3) == 3
+
+
 def test_format_balance_summary() -> None:
     text = prog.format_balance_summary(
         bank_by_diff={1: 10, 2: 20, 3: 5},

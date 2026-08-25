@@ -737,6 +737,39 @@ def suggest_switch_competency(
     return weakest or candidates[0]
 
 
+def format_lap_summary(
+    *,
+    daily_count: int,
+    daily_goal: int | None,
+    streak: int,
+    review_count: int,
+    bank_unseen: int,
+) -> str:
+    lines = ["Круг тренировки:", ""]
+    if daily_goal:
+        lines.append(format_daily_goal_line(daily_count, daily_goal))
+    else:
+        lines.append(f"Сегодня: {daily_count}")
+    lines.append(f"Серия: {streak}")
+    lines.append(f"Повтор {review_count} · новых {bank_unseen}")
+    lines.append("")
+    if daily_goal and daily_count < daily_goal:
+        lines.append("/quiz · /climb")
+    elif review_count:
+        lines.append("/review · /spot")
+    elif bank_unseen:
+        lines.append("/climb · /new · /fill")
+    else:
+        lines.append("/challenge · /deep")
+    return "\n".join(lines)
+
+
+def next_climb_difficulty(current: int | None) -> int:
+    if current is None or current < 1:
+        return 1
+    return min(3, current + 1)
+
+
 def collect_achievement_labels(
     *,
     total: int,
@@ -773,6 +806,8 @@ def collect_achievement_labels(
         labels.append("800 ответов")
     if total >= 900:
         labels.append("900 ответов")
+    if total >= 1000:
+        labels.append("1000 ответов")
     if correct >= 5:
         labels.append("5 верных ответов")
     if correct >= 10:
@@ -803,6 +838,8 @@ def collect_achievement_labels(
         labels.append("130 верных ответов")
     if correct >= 140:
         labels.append("140 верных ответов")
+    if correct >= 150:
+        labels.append("150 верных ответов")
     if best_streak >= 5:
         labels.append("Серия 5+")
     if best_streak >= 10:
@@ -825,6 +862,8 @@ def collect_achievement_labels(
         labels.append("Серия 50+")
     if best_streak >= 55:
         labels.append("Серия 55+")
+    if best_streak >= 60:
+        labels.append("Серия 60+")
     if total >= 10 and correct / total >= 0.7:
         labels.append("Точность 70%+")
     if total >= 10 and correct / total >= 0.8:
