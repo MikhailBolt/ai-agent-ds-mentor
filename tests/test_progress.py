@@ -382,6 +382,37 @@ def test_lap_climb_and_1000_achievements() -> None:
     assert prog.next_climb_difficulty(3) == 3
 
 
+def test_ease_radar_and_1100_achievements() -> None:
+    labels = prog.collect_achievement_labels(
+        total=1100,
+        correct=160,
+        best_streak=65,
+        bank_total=123,
+        bank_mastered=115,
+    )
+    assert "1100 ответов" in labels
+    assert "160 верных ответов" in labels
+    assert "Серия 65+" in labels
+
+    assert prog.next_ease_difficulty(None) == 1
+    assert prog.next_ease_difficulty(3) == 2
+    assert prog.next_ease_difficulty(2) == 1
+    assert prog.next_ease_difficulty(1) == 1
+
+    radar = prog.format_radar_summary(
+        review_count=2,
+        bank_unseen=8,
+        weak_title="Alpha",
+        weak_id="a",
+        lowest_title="Beta",
+        lowest_id="b",
+        lowest_seen=1,
+        lowest_bank=5,
+    )
+    assert "Слабая тема: Alpha" in radar
+    assert "/review" in radar
+
+
 def test_format_balance_summary() -> None:
     text = prog.format_balance_summary(
         bank_by_diff={1: 10, 2: 20, 3: 5},

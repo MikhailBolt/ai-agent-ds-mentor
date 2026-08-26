@@ -1362,5 +1362,38 @@
       "no future leakage temporal split",
       "временная валидация"
     ]
+  },
+  {
+    "id": "py-031",
+    "competency_id": "python-ds",
+    "difficulty": 2,
+    "prompt": "Что делает df.query(\"age > 18\") в pandas?",
+    "answer": "фильтрует строки датафрейма по выражению в строке как sql where",
+    "aliases": [
+      "filter rows by expression string",
+      "фильтр по строковому условию"
+    ]
+  },
+  {
+    "id": "ml-067",
+    "competency_id": "ml-foundations",
+    "difficulty": 2,
+    "prompt": "Что такое feature scaling и зачем оно нужно?",
+    "answer": "приведение признаков к одному масштабу чтобы алгоритмы на градиенте и расстоянии работали стабильнее",
+    "aliases": [
+      "normalization standardization scale",
+      "масштабирование признаков"
+    ]
+  },
+  {
+    "id": "st-025",
+    "competency_id": "stats-basics",
+    "difficulty": 3,
+    "prompt": "Что такое стандартная ошибка среднего SEM?",
+    "answer": "насколько выборочное среднее разбросано относительно истинного среднего оценивается как std/sqrt(n)",
+    "aliases": [
+      "standard error of the mean",
+      "ошибка среднего"
+    ]
   }
 ]

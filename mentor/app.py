@@ -95,6 +95,8 @@ BOT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("switch", "Другая тема"),
     ("lap", "Круг тренировки"),
     ("climb", "Повысить сложность"),
+    ("ease", "Снизить сложность"),
+    ("radar", "Радар прогресса"),
     ("compare", "Слабая vs сильная тема"),
     ("record", "Личные рекорды"),
     ("seen", "Встреченные вопросы"),
@@ -242,8 +244,10 @@ def _help_text() -> str:
         "/anchor или /stay — продолжить ту же тему\n"
         "/checkpoint, /mark или /gate — чекпоинт: точность и фокус\n"
         "/switch, /flip или /swap — вопрос из другой темы\n"
-        "/lap или /circuit — круг тренировки\n"
-        "/climb или /up — повысить сложность\n"
+        "/lap, /circuit или /round — круг тренировки\n"
+        "/climb, /up или /ascend — повысить сложность\n"
+        "/ease, /down или /soften — снизить сложность\n"
+        "/radar — радар: слабая тема и покрытие\n"
         "/level или /rank — уровень по ответам и банку\n"
         "/record или /best — личные рекорды\n"
         "/plan или /guide — что тренировать дальше\n"
@@ -1484,7 +1488,7 @@ def handle_text(
         )
         return
 
-    if cmd in {"/lap", "/circuit"}:
+    if cmd in {"/lap", "/circuit", "/round"}:
         daily_goal = parse_daily_goal()
         daily_count = mentor_db.get_daily_answer_count(conn, chat_id)
         streak = mentor_db.get_streak(conn, chat_id)
@@ -1503,7 +1507,7 @@ def handle_text(
         )
         return
 
-    if cmd in {"/climb", "/up"}:
+    if cmd in {"/climb", "/up", "/ascend"}:
         last_id = mentor_db.get_last_question_id(conn, chat_id)
         if not last_id:
             last_id = mentor_db.get_active_question(conn, chat_id)
@@ -1537,6 +1541,66 @@ def handle_text(
             competencies,
             difficulty_filter=target,
             intro=f"Climb: {stars}",
+        )
+        return
+
+    if cmd in {"/ease", "/down", "/soften"}:
+        last_id = mentor_db.get_last_question_id(conn, chat_id)
+        if not last_id:
+            last_id = mentor_db.get_active_question(conn, chat_id)
+        current_diff: int | None = None
+        if last_id:
+            last_q = mentor_quiz.find_by_id(questions, last_id)
+            if last_q is not None:
+                current_diff = last_q.difficulty
+        target = mentor_progress.next_ease_difficulty(current_diff)
+        seen = mentor_db.get_seen_question_ids(conn, chat_id)
+        unseen = mentor_quiz.unseen_question_ids(questions, seen)
+        target_unseen = {q.id for q in questions if q.id in unseen and q.difficulty == target}
+        stars = {1: "★☆☆", 2: "★★☆", 3: "★★★"}[target]
+        if target_unseen:
+            deliver_quiz_question(
+                api,
+                conn,
+                chat_id,
+                questions,
+                competencies,
+                difficulty_filter=target,
+                only_ids=target_unseen,
+                intro=f"Ease: {stars}",
+            )
+            return
+        deliver_quiz_question(
+            api,
+            conn,
+            chat_id,
+            questions,
+            competencies,
+            difficulty_filter=target,
+            intro=f"Ease: {stars}",
+        )
+        return
+
+    if cmd == "/radar":
+        review_count = len(mentor_db.get_review_question_ids(conn, chat_id))
+        seen = mentor_db.get_seen_question_ids(conn, chat_id)
+        unseen = len(mentor_quiz.unseen_question_ids(questions, seen))
+        comp_stats = mentor_db.get_competency_stats(conn, chat_id)
+        weak = mentor_comp.suggest_practice_competency(competencies, comp_stats)
+        bank_seen = mentor_quiz.competency_mastery_counts(questions, seen)
+        lowest = mentor_progress.suggest_lowest_coverage(competencies, bank_seen)
+        api.send_message(
+            chat_id,
+            mentor_progress.format_radar_summary(
+                review_count=review_count,
+                bank_unseen=unseen,
+                weak_title=weak.title if weak else None,
+                weak_id=weak.id if weak else None,
+                lowest_title=lowest[0].title if lowest else None,
+                lowest_id=lowest[0].id if lowest else None,
+                lowest_seen=lowest[1] if lowest else 0,
+                lowest_bank=lowest[2] if lowest else 0,
+            ),
         )
         return
 

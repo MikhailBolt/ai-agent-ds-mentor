@@ -770,6 +770,41 @@ def next_climb_difficulty(current: int | None) -> int:
     return min(3, current + 1)
 
 
+def next_ease_difficulty(current: int | None) -> int:
+    if current is None or current < 1:
+        return 1
+    return max(1, current - 1)
+
+
+def format_radar_summary(
+    *,
+    review_count: int,
+    bank_unseen: int,
+    weak_title: str | None = None,
+    weak_id: str | None = None,
+    lowest_title: str | None = None,
+    lowest_id: str | None = None,
+    lowest_seen: int = 0,
+    lowest_bank: int = 0,
+) -> str:
+    lines = ["Радар:", ""]
+    lines.append(f"Повтор: {review_count} · новых: {bank_unseen}")
+    if weak_id and weak_title:
+        lines.append(f"Слабая тема: {weak_title} ({weak_id})")
+    if lowest_id and lowest_title and lowest_bank:
+        lines.append(f"Слабое покрытие: {lowest_title} ({lowest_id}) — {lowest_seen}/{lowest_bank}")
+    lines.append("")
+    if review_count:
+        lines.append("/review · /spot")
+    elif weak_id:
+        lines.append(f"/topic {weak_id} · /focus · /fill")
+    elif bank_unseen:
+        lines.append("/new · /probe · /fill")
+    else:
+        lines.append("/challenge · /climb")
+    return "\n".join(lines)
+
+
 def collect_achievement_labels(
     *,
     total: int,
@@ -808,6 +843,8 @@ def collect_achievement_labels(
         labels.append("900 ответов")
     if total >= 1000:
         labels.append("1000 ответов")
+    if total >= 1100:
+        labels.append("1100 ответов")
     if correct >= 5:
         labels.append("5 верных ответов")
     if correct >= 10:
@@ -840,6 +877,8 @@ def collect_achievement_labels(
         labels.append("140 верных ответов")
     if correct >= 150:
         labels.append("150 верных ответов")
+    if correct >= 160:
+        labels.append("160 верных ответов")
     if best_streak >= 5:
         labels.append("Серия 5+")
     if best_streak >= 10:
@@ -864,6 +903,8 @@ def collect_achievement_labels(
         labels.append("Серия 55+")
     if best_streak >= 60:
         labels.append("Серия 60+")
+    if best_streak >= 65:
+        labels.append("Серия 65+")
     if total >= 10 and correct / total >= 0.7:
         labels.append("Точность 70%+")
     if total >= 10 and correct / total >= 0.8:
