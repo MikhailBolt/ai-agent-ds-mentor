@@ -1395,5 +1395,38 @@
       "standard error of the mean",
       "ошибка среднего"
     ]
+  },
+  {
+    "id": "py-032",
+    "competency_id": "python-ds",
+    "difficulty": 2,
+    "prompt": "Что делает pd.melt(df) в pandas?",
+    "answer": "переводит широкий датафрейм в длинный формат с колонками переменная и значение",
+    "aliases": [
+      "wide to long unpivot",
+      "расплавить таблицу"
+    ]
+  },
+  {
+    "id": "st-026",
+    "competency_id": "stats-basics",
+    "difficulty": 3,
+    "prompt": "Что утверждает центральная предельная теорема CLT?",
+    "answer": "распределение выборочных средних приближается к нормальному при росте размера выборки даже если исходные данные не нормальны",
+    "aliases": [
+      "sample means approach normal",
+      "цпт"
+    ]
+  },
+  {
+    "id": "ml-068",
+    "competency_id": "ml-validation",
+    "difficulty": 2,
+    "prompt": "Почему imputation нужно делать после train/test split?",
+    "answer": "чтобы статистики заполнения брались только из train и не было утечки информации из теста",
+    "aliases": [
+      "fit imputer on train only",
+      "заполнение после сплита"
+    ]
   }
 ]

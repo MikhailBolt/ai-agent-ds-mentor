@@ -413,6 +413,33 @@ def test_ease_radar_and_1100_achievements() -> None:
     assert "/review" in radar
 
 
+def test_hold_signal_and_1200_achievements() -> None:
+    labels = prog.collect_achievement_labels(
+        total=1200,
+        correct=170,
+        best_streak=70,
+        bank_total=126,
+        bank_mastered=120,
+    )
+    assert "1200 ответов" in labels
+    assert "170 верных ответов" in labels
+    assert "Серия 70+" in labels
+
+    assert prog.hold_difficulty(None) == 2
+    assert prog.hold_difficulty(1) == 1
+    assert prog.hold_difficulty(3) == 3
+
+    signal = prog.format_signal_summary(
+        streak=4,
+        daily_count=1,
+        daily_goal=5,
+        review_count=0,
+        bank_unseen=10,
+    )
+    assert "до цели 4" in signal
+    assert "/quiz" in signal
+
+
 def test_format_balance_summary() -> None:
     text = prog.format_balance_summary(
         bank_by_diff={1: 10, 2: 20, 3: 5},

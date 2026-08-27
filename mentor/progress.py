@@ -805,6 +805,30 @@ def format_radar_summary(
     return "\n".join(lines)
 
 
+def hold_difficulty(current: int | None) -> int:
+    if current is None or current < 1:
+        return 2
+    return max(1, min(3, current))
+
+
+def format_signal_summary(
+    *,
+    streak: int,
+    daily_count: int,
+    daily_goal: int | None,
+    review_count: int,
+    bank_unseen: int,
+) -> str:
+    if daily_goal and daily_count < daily_goal:
+        left = daily_goal - daily_count
+        return f"Сигнал: серия {streak} · до цели {left} — /quiz"
+    if review_count:
+        return f"Сигнал: серия {streak} · повтор {review_count} — /review"
+    if bank_unseen:
+        return f"Сигнал: серия {streak} · новых {bank_unseen} — /hold или /new"
+    return f"Сигнал: серия {streak} · банк закрыт — /challenge"
+
+
 def collect_achievement_labels(
     *,
     total: int,
@@ -845,6 +869,8 @@ def collect_achievement_labels(
         labels.append("1000 ответов")
     if total >= 1100:
         labels.append("1100 ответов")
+    if total >= 1200:
+        labels.append("1200 ответов")
     if correct >= 5:
         labels.append("5 верных ответов")
     if correct >= 10:
@@ -879,6 +905,8 @@ def collect_achievement_labels(
         labels.append("150 верных ответов")
     if correct >= 160:
         labels.append("160 верных ответов")
+    if correct >= 170:
+        labels.append("170 верных ответов")
     if best_streak >= 5:
         labels.append("Серия 5+")
     if best_streak >= 10:
@@ -905,6 +933,8 @@ def collect_achievement_labels(
         labels.append("Серия 60+")
     if best_streak >= 65:
         labels.append("Серия 65+")
+    if best_streak >= 70:
+        labels.append("Серия 70+")
     if total >= 10 and correct / total >= 0.7:
         labels.append("Точность 70%+")
     if total >= 10 and correct / total >= 0.8:

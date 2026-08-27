@@ -97,6 +97,8 @@ BOT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("climb", "Повысить сложность"),
     ("ease", "Снизить сложность"),
     ("radar", "Радар прогресса"),
+    ("hold", "Та же сложность"),
+    ("signal", "Короткий сигнал"),
     ("compare", "Слабая vs сильная тема"),
     ("record", "Личные рекорды"),
     ("seen", "Встреченные вопросы"),
@@ -247,7 +249,9 @@ def _help_text() -> str:
         "/lap, /circuit или /round — круг тренировки\n"
         "/climb, /up или /ascend — повысить сложность\n"
         "/ease, /down или /soften — снизить сложность\n"
-        "/radar — радар: слабая тема и покрытие\n"
+        "/radar или /scope — радар: слабая тема и покрытие\n"
+        "/hold, /keep или /same — остаться на той же сложности\n"
+        "/signal или /ping — одна строка: что делать дальше\n"
         "/level или /rank — уровень по ответам и банку\n"
         "/record или /best — личные рекорды\n"
         "/plan или /guide — что тренировать дальше\n"
@@ -1581,7 +1585,7 @@ def handle_text(
         )
         return
 
-    if cmd == "/radar":
+    if cmd in {"/radar", "/scope"}:
         review_count = len(mentor_db.get_review_question_ids(conn, chat_id))
         seen = mentor_db.get_seen_question_ids(conn, chat_id)
         unseen = len(mentor_quiz.unseen_question_ids(questions, seen))
@@ -1600,6 +1604,62 @@ def handle_text(
                 lowest_id=lowest[0].id if lowest else None,
                 lowest_seen=lowest[1] if lowest else 0,
                 lowest_bank=lowest[2] if lowest else 0,
+            ),
+        )
+        return
+
+    if cmd in {"/hold", "/keep", "/same"}:
+        last_id = mentor_db.get_last_question_id(conn, chat_id)
+        if not last_id:
+            last_id = mentor_db.get_active_question(conn, chat_id)
+        current_diff: int | None = None
+        if last_id:
+            last_q = mentor_quiz.find_by_id(questions, last_id)
+            if last_q is not None:
+                current_diff = last_q.difficulty
+        target = mentor_progress.hold_difficulty(current_diff)
+        seen = mentor_db.get_seen_question_ids(conn, chat_id)
+        unseen = mentor_quiz.unseen_question_ids(questions, seen)
+        target_unseen = {q.id for q in questions if q.id in unseen and q.difficulty == target}
+        stars = {1: "★☆☆", 2: "★★☆", 3: "★★★"}[target]
+        if target_unseen:
+            deliver_quiz_question(
+                api,
+                conn,
+                chat_id,
+                questions,
+                competencies,
+                difficulty_filter=target,
+                only_ids=target_unseen,
+                intro=f"Hold: {stars}",
+            )
+            return
+        deliver_quiz_question(
+            api,
+            conn,
+            chat_id,
+            questions,
+            competencies,
+            difficulty_filter=target,
+            intro=f"Hold: {stars}",
+        )
+        return
+
+    if cmd in {"/signal", "/ping"}:
+        streak = mentor_db.get_streak(conn, chat_id)
+        daily_goal = parse_daily_goal()
+        daily_count = mentor_db.get_daily_answer_count(conn, chat_id)
+        review_count = len(mentor_db.get_review_question_ids(conn, chat_id))
+        seen = mentor_db.get_seen_question_ids(conn, chat_id)
+        unseen = len(mentor_quiz.unseen_question_ids(questions, seen))
+        api.send_message(
+            chat_id,
+            mentor_progress.format_signal_summary(
+                streak=streak,
+                daily_count=daily_count,
+                daily_goal=daily_goal,
+                review_count=review_count,
+                bank_unseen=unseen,
             ),
         )
         return
