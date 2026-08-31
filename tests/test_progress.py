@@ -440,6 +440,34 @@ def test_hold_signal_and_1200_achievements() -> None:
     assert "/quiz" in signal
 
 
+def test_gauge_drift_and_1300_achievements() -> None:
+    import random
+
+    labels = prog.collect_achievement_labels(
+        total=1300,
+        correct=180,
+        best_streak=75,
+        bank_total=129,
+        bank_mastered=125,
+    )
+    assert "1300 ответов" in labels
+    assert "180 верных ответов" in labels
+    assert "Серия 75+" in labels
+
+    gauge = prog.format_gauge_summary(
+        correct=40,
+        total=50,
+        bank_mastered=60,
+        bank_total=129,
+    )
+    assert "80%" in gauge
+    assert "Шкала:" in gauge
+
+    rng = random.Random(0)
+    assert prog.pick_drift_difficulty(2, rng=rng) in {1, 3}
+    assert prog.pick_drift_difficulty(1, rng=rng) in {2, 3}
+
+
 def test_format_balance_summary() -> None:
     text = prog.format_balance_summary(
         bank_by_diff={1: 10, 2: 20, 3: 5},

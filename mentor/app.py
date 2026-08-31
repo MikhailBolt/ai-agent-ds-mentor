@@ -99,6 +99,8 @@ BOT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("radar", "Радар прогресса"),
     ("hold", "Та же сложность"),
     ("signal", "Короткий сигнал"),
+    ("gauge", "Шкала прогресса"),
+    ("drift", "Другая сложность"),
     ("compare", "Слабая vs сильная тема"),
     ("record", "Личные рекорды"),
     ("seen", "Встреченные вопросы"),
@@ -250,8 +252,10 @@ def _help_text() -> str:
         "/climb, /up или /ascend — повысить сложность\n"
         "/ease, /down или /soften — снизить сложность\n"
         "/radar или /scope — радар: слабая тема и покрытие\n"
-        "/hold, /keep или /same — остаться на той же сложности\n"
-        "/signal или /ping — одна строка: что делать дальше\n"
+        "/hold, /keep, /same или /lock — остаться на той же сложности\n"
+        "/signal, /ping или /tone — одна строка: что делать дальше\n"
+        "/gauge или /meter — шкала: уровень, точность, банк\n"
+        "/drift — вопрос случайной другой сложности\n"
         "/level или /rank — уровень по ответам и банку\n"
         "/record или /best — личные рекорды\n"
         "/plan или /guide — что тренировать дальше\n"
@@ -1608,7 +1612,7 @@ def handle_text(
         )
         return
 
-    if cmd in {"/hold", "/keep", "/same"}:
+    if cmd in {"/hold", "/keep", "/same", "/lock"}:
         last_id = mentor_db.get_last_question_id(conn, chat_id)
         if not last_id:
             last_id = mentor_db.get_active_question(conn, chat_id)
@@ -1645,7 +1649,7 @@ def handle_text(
         )
         return
 
-    if cmd in {"/signal", "/ping"}:
+    if cmd in {"/signal", "/ping", "/tone"}:
         streak = mentor_db.get_streak(conn, chat_id)
         daily_goal = parse_daily_goal()
         daily_count = mentor_db.get_daily_answer_count(conn, chat_id)
@@ -1661,6 +1665,57 @@ def handle_text(
                 review_count=review_count,
                 bank_unseen=unseen,
             ),
+        )
+        return
+
+    if cmd in {"/gauge", "/meter"}:
+        st = mentor_db.get_stats(conn, chat_id)
+        mastered = len(mentor_db.get_mastered_question_ids(conn, chat_id))
+        api.send_message(
+            chat_id,
+            mentor_progress.format_gauge_summary(
+                correct=st.correct,
+                total=st.total,
+                bank_mastered=mastered,
+                bank_total=len(questions),
+            ),
+        )
+        return
+
+    if cmd == "/drift":
+        last_id = mentor_db.get_last_question_id(conn, chat_id)
+        if not last_id:
+            last_id = mentor_db.get_active_question(conn, chat_id)
+        current_diff: int | None = None
+        if last_id:
+            last_q = mentor_quiz.find_by_id(questions, last_id)
+            if last_q is not None:
+                current_diff = last_q.difficulty
+        target = mentor_progress.pick_drift_difficulty(current_diff)
+        seen = mentor_db.get_seen_question_ids(conn, chat_id)
+        unseen = mentor_quiz.unseen_question_ids(questions, seen)
+        target_unseen = {q.id for q in questions if q.id in unseen and q.difficulty == target}
+        stars = {1: "★☆☆", 2: "★★☆", 3: "★★★"}[target]
+        if target_unseen:
+            deliver_quiz_question(
+                api,
+                conn,
+                chat_id,
+                questions,
+                competencies,
+                difficulty_filter=target,
+                only_ids=target_unseen,
+                intro=f"Drift: {stars}",
+            )
+            return
+        deliver_quiz_question(
+            api,
+            conn,
+            chat_id,
+            questions,
+            competencies,
+            difficulty_filter=target,
+            intro=f"Drift: {stars}",
         )
         return
 

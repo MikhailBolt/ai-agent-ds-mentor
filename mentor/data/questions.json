@@ -1428,5 +1428,38 @@
       "fit imputer on train only",
       "заполнение после сплита"
     ]
+  },
+  {
+    "id": "py-033",
+    "competency_id": "python-ds",
+    "difficulty": 2,
+    "prompt": "Что делает df.pivot_table в pandas?",
+    "answer": "сводная таблица агрегирует значения по строкам и столбцам как excel pivot",
+    "aliases": [
+      "spreadsheet pivot aggregation",
+      "сводная таблица"
+    ]
+  },
+  {
+    "id": "st-027",
+    "competency_id": "stats-basics",
+    "difficulty": 2,
+    "prompt": "Что такое bootstrap в статистике?",
+    "answer": "многократная повторная выборка с возвращением из исходных данных для оценки разброса метрики",
+    "aliases": [
+      "resampling with replacement",
+      "бутстрэп выборка"
+    ]
+  },
+  {
+    "id": "ml-069",
+    "competency_id": "ml-foundations",
+    "difficulty": 3,
+    "prompt": "Чем отличается bagging от random forest?",
+    "answer": "random forest это bagging деревьев плюс случайный поднабор признаков в каждом узле",
+    "aliases": [
+      "feature subsampling at splits",
+      "лес случайных признаков"
+    ]
   }
 ]

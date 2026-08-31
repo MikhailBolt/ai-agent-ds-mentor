@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import random
+
 from mentor.competencies import Competency
 
 
@@ -829,6 +831,40 @@ def format_signal_summary(
     return f"Сигнал: серия {streak} · банк закрыт — /challenge"
 
 
+def format_gauge_summary(
+    *,
+    correct: int,
+    total: int,
+    bank_mastered: int,
+    bank_total: int,
+) -> str:
+    acc = (correct / total * 100.0) if total else 0.0
+    bank_pct = (bank_mastered / bank_total * 100.0) if bank_total else 0.0
+    if total == 0:
+        level = "Новичок"
+    elif bank_total and bank_mastered >= bank_total:
+        level = "Мастер"
+    elif total >= 100 or (bank_total and bank_mastered * 2 >= bank_total):
+        level = "Продвинутый"
+    elif total >= 30:
+        level = "Практик"
+    else:
+        level = "Новичок"
+    return f"Шкала: {level} · {acc:.0f}% · банк {bank_pct:.0f}%\n/level · /stats · /signal"
+
+
+def pick_drift_difficulty(
+    current: int | None,
+    *,
+    rng: random.Random | None = None,
+) -> int:
+    r = rng or random
+    options = [d for d in (1, 2, 3) if d != current]
+    if not options:
+        return 2
+    return r.choice(options)
+
+
 def collect_achievement_labels(
     *,
     total: int,
@@ -871,6 +907,8 @@ def collect_achievement_labels(
         labels.append("1100 ответов")
     if total >= 1200:
         labels.append("1200 ответов")
+    if total >= 1300:
+        labels.append("1300 ответов")
     if correct >= 5:
         labels.append("5 верных ответов")
     if correct >= 10:
@@ -907,6 +945,8 @@ def collect_achievement_labels(
         labels.append("160 верных ответов")
     if correct >= 170:
         labels.append("170 верных ответов")
+    if correct >= 180:
+        labels.append("180 верных ответов")
     if best_streak >= 5:
         labels.append("Серия 5+")
     if best_streak >= 10:
@@ -935,6 +975,8 @@ def collect_achievement_labels(
         labels.append("Серия 65+")
     if best_streak >= 70:
         labels.append("Серия 70+")
+    if best_streak >= 75:
+        labels.append("Серия 75+")
     if total >= 10 and correct / total >= 0.7:
         labels.append("Точность 70%+")
     if total >= 10 and correct / total >= 0.8:
