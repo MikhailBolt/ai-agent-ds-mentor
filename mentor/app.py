@@ -101,6 +101,8 @@ BOT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("signal", "Короткий сигнал"),
     ("gauge", "Шкала прогресса"),
     ("drift", "Другая сложность"),
+    ("trail", "След вопросов"),
+    ("surge", "Surge-практика"),
     ("compare", "Слабая vs сильная тема"),
     ("record", "Личные рекорды"),
     ("seen", "Встреченные вопросы"),
@@ -253,9 +255,11 @@ def _help_text() -> str:
         "/ease, /down или /soften — снизить сложность\n"
         "/radar или /scope — радар: слабая тема и покрытие\n"
         "/hold, /keep, /same или /lock — остаться на той же сложности\n"
-        "/signal, /ping или /tone — одна строка: что делать дальше\n"
+        "/signal, /ping, /tone или /beam — одна строка: что делать дальше\n"
         "/gauge или /meter — шкала: уровень, точность, банк\n"
-        "/drift — вопрос случайной другой сложности\n"
+        "/drift или /shift — вопрос случайной другой сложности\n"
+        "/trail или /track — след: последние 3 вопроса\n"
+        "/surge или /wave — surge: повтор → средний новый\n"
         "/level или /rank — уровень по ответам и банку\n"
         "/record или /best — личные рекорды\n"
         "/plan или /guide — что тренировать дальше\n"
@@ -1649,7 +1653,7 @@ def handle_text(
         )
         return
 
-    if cmd in {"/signal", "/ping", "/tone"}:
+    if cmd in {"/signal", "/ping", "/tone", "/beam"}:
         streak = mentor_db.get_streak(conn, chat_id)
         daily_goal = parse_daily_goal()
         daily_count = mentor_db.get_daily_answer_count(conn, chat_id)
@@ -1682,7 +1686,7 @@ def handle_text(
         )
         return
 
-    if cmd == "/drift":
+    if cmd in {"/drift", "/shift"}:
         last_id = mentor_db.get_last_question_id(conn, chat_id)
         if not last_id:
             last_id = mentor_db.get_active_question(conn, chat_id)
@@ -1716,6 +1720,54 @@ def handle_text(
             competencies,
             difficulty_filter=target,
             intro=f"Drift: {stars}",
+        )
+        return
+
+    if cmd in {"/trail", "/track"}:
+        rows = mentor_db.get_recent_history_rows(conn, chat_id, limit=3)
+        recent = [(r.question_id, r.attempts, r.correct_count) for r in rows]
+        api.send_message(
+            chat_id,
+            mentor_progress.format_trail_summary(recent),
+        )
+        return
+
+    if cmd in {"/surge", "/wave"}:
+        review_ids = mentor_db.get_review_question_ids(conn, chat_id)
+        if review_ids:
+            deliver_quiz_question(
+                api,
+                conn,
+                chat_id,
+                questions,
+                competencies,
+                only_ids=review_ids,
+                intro="Surge: повтор ошибки",
+            )
+            return
+        seen = mentor_db.get_seen_question_ids(conn, chat_id)
+        unseen = mentor_quiz.unseen_question_ids(questions, seen)
+        medium_unseen = {q.id for q in questions if q.id in unseen and q.difficulty == 2}
+        if medium_unseen:
+            deliver_quiz_question(
+                api,
+                conn,
+                chat_id,
+                questions,
+                competencies,
+                difficulty_filter=2,
+                only_ids=medium_unseen,
+                intro="Surge: средний новый",
+            )
+            return
+        deliver_quiz_question(
+            api,
+            conn,
+            chat_id,
+            questions,
+            competencies,
+            difficulty_filter=2,
+            intro="Surge: средний",
         )
         return
 

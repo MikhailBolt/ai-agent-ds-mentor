@@ -282,6 +282,16 @@ def format_history_summary(rows: list[tuple[str, int, int]]) -> str:
     return "\n".join(lines)
 
 
+def format_trail_summary(rows: list[tuple[str, int, int]]) -> str:
+    """rows: (question_id, attempts, correct_count)."""
+    if not rows:
+        return "След пуст — напиши /quiz!"
+    sample = rows[:3]
+    marks = "".join("✓" if correct >= 1 else "·" for _, _, correct in sample)
+    ids = " · ".join(qid for qid, _, _ in sample)
+    return f"След ({len(sample)}): {marks}\n{ids}\n/history · /last · /review"
+
+
 def format_brief_summary(
     *,
     correct: int,
@@ -909,6 +919,8 @@ def collect_achievement_labels(
         labels.append("1200 ответов")
     if total >= 1300:
         labels.append("1300 ответов")
+    if total >= 1400:
+        labels.append("1400 ответов")
     if correct >= 5:
         labels.append("5 верных ответов")
     if correct >= 10:
@@ -947,6 +959,8 @@ def collect_achievement_labels(
         labels.append("170 верных ответов")
     if correct >= 180:
         labels.append("180 верных ответов")
+    if correct >= 190:
+        labels.append("190 верных ответов")
     if best_streak >= 5:
         labels.append("Серия 5+")
     if best_streak >= 10:
@@ -977,6 +991,8 @@ def collect_achievement_labels(
         labels.append("Серия 70+")
     if best_streak >= 75:
         labels.append("Серия 75+")
+    if best_streak >= 80:
+        labels.append("Серия 80+")
     if total >= 10 and correct / total >= 0.7:
         labels.append("Точность 70%+")
     if total >= 10 and correct / total >= 0.8:

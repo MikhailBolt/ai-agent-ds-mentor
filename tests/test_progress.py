@@ -468,6 +468,24 @@ def test_gauge_drift_and_1300_achievements() -> None:
     assert prog.pick_drift_difficulty(1, rng=rng) in {2, 3}
 
 
+def test_trail_surge_and_1400_achievements() -> None:
+    labels = prog.collect_achievement_labels(
+        total=1400,
+        correct=190,
+        best_streak=80,
+        bank_total=132,
+        bank_mastered=128,
+    )
+    assert "1400 ответов" in labels
+    assert "190 верных ответов" in labels
+    assert "Серия 80+" in labels
+
+    trail = prog.format_trail_summary([("q1", 1, 1), ("q2", 2, 0)])
+    assert "След (2):" in trail
+    assert "q1" in trail
+    assert "/history" in trail
+
+
 def test_format_balance_summary() -> None:
     text = prog.format_balance_summary(
         bank_by_diff={1: 10, 2: 20, 3: 5},

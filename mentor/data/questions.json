@@ -1461,5 +1461,38 @@
       "feature subsampling at splits",
       "лес случайных признаков"
     ]
+  },
+  {
+    "id": "ml-070",
+    "competency_id": "ml-validation",
+    "difficulty": 3,
+    "prompt": "Что такое permutation importance?",
+    "answer": "важность признака оценивают по падению метрики после перемешивания значений этого признака",
+    "aliases": [
+      "shuffle feature importance",
+      "перестановочная важность"
+    ]
+  },
+  {
+    "id": "py-034",
+    "competency_id": "python-ds",
+    "difficulty": 2,
+    "prompt": "Что делает df.apply(func) в pandas?",
+    "answer": "применяет функцию к каждой строке или столбцу датафрейма и собирает результат",
+    "aliases": [
+      "apply function row or column",
+      "применить функцию к осям"
+    ]
+  },
+  {
+    "id": "st-028",
+    "competency_id": "stats-basics",
+    "difficulty": 2,
+    "prompt": "Что такое выборочное среднее и чем оно отличается от генерального среднего?",
+    "answer": "выборочное среднее считается по данным выборки генеральное это истинное среднее всей популяции",
+    "aliases": [
+      "sample mean vs population mean",
+      "среднее выборки vs популяции"
+    ]
   }
 ]
