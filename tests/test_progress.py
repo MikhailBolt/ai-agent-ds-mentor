@@ -486,6 +486,34 @@ def test_trail_surge_and_1400_achievements() -> None:
     assert "/history" in trail
 
 
+def test_compass_steady_and_1500_achievements() -> None:
+    labels = prog.collect_achievement_labels(
+        total=1500,
+        correct=200,
+        best_streak=85,
+        bank_total=135,
+        bank_mastered=130,
+    )
+    assert "1500 ответов" in labels
+    assert "200 верных ответов" in labels
+    assert "Серия 85+" in labels
+
+    compass = prog.format_compass_summary(
+        review_count=0,
+        bank_unseen=12,
+        daily_count=0,
+        daily_goal=None,
+        tip_title="ML Metrics",
+        tip_id="ml-metrics",
+    )
+    assert "Компас:" in compass
+    assert "ml-metrics" in compass
+    assert "/focus" in compass
+
+    assert prog.hold_difficulty(2) == 2
+    assert prog.hold_difficulty(None) == 2
+
+
 def test_format_balance_summary() -> None:
     text = prog.format_balance_summary(
         bank_by_diff={1: 10, 2: 20, 3: 5},

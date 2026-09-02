@@ -103,6 +103,8 @@ BOT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("drift", "Другая сложность"),
     ("trail", "След вопросов"),
     ("surge", "Surge-практика"),
+    ("compass", "Компас тренировки"),
+    ("steady", "Та же тема и сложность"),
     ("compare", "Слабая vs сильная тема"),
     ("record", "Личные рекорды"),
     ("seen", "Встреченные вопросы"),
@@ -255,11 +257,13 @@ def _help_text() -> str:
         "/ease, /down или /soften — снизить сложность\n"
         "/radar или /scope — радар: слабая тема и покрытие\n"
         "/hold, /keep, /same или /lock — остаться на той же сложности\n"
-        "/signal, /ping, /tone или /beam — одна строка: что делать дальше\n"
+        "/signal, /ping, /tone, /beam или /flash — одна строка: что делать дальше\n"
         "/gauge или /meter — шкала: уровень, точность, банк\n"
         "/drift или /shift — вопрос случайной другой сложности\n"
-        "/trail или /track — след: последние 3 вопроса\n"
+        "/trail, /track или /route — след: последние 3 вопроса\n"
         "/surge или /wave — surge: повтор → средний новый\n"
+        "/compass или /north — компас: слабая тема и шаг\n"
+        "/steady или /firm — та же тема и сложность\n"
         "/level или /rank — уровень по ответам и банку\n"
         "/record или /best — личные рекорды\n"
         "/plan или /guide — что тренировать дальше\n"
@@ -1653,7 +1657,7 @@ def handle_text(
         )
         return
 
-    if cmd in {"/signal", "/ping", "/tone", "/beam"}:
+    if cmd in {"/signal", "/ping", "/tone", "/beam", "/flash"}:
         streak = mentor_db.get_streak(conn, chat_id)
         daily_goal = parse_daily_goal()
         daily_count = mentor_db.get_daily_answer_count(conn, chat_id)
@@ -1723,7 +1727,7 @@ def handle_text(
         )
         return
 
-    if cmd in {"/trail", "/track"}:
+    if cmd in {"/trail", "/track", "/route"}:
         rows = mentor_db.get_recent_history_rows(conn, chat_id, limit=3)
         recent = [(r.question_id, r.attempts, r.correct_count) for r in rows]
         api.send_message(
@@ -1768,6 +1772,90 @@ def handle_text(
             competencies,
             difficulty_filter=2,
             intro="Surge: средний",
+        )
+        return
+
+    if cmd in {"/compass", "/north"}:
+        daily_goal = parse_daily_goal()
+        daily_count = mentor_db.get_daily_answer_count(conn, chat_id)
+        review_count = len(mentor_db.get_review_question_ids(conn, chat_id))
+        seen = mentor_db.get_seen_question_ids(conn, chat_id)
+        unseen = len(mentor_quiz.unseen_question_ids(questions, seen))
+        tip = mentor_comp.suggest_practice_competency(
+            competencies,
+            mentor_db.get_competency_stats(conn, chat_id),
+        )
+        api.send_message(
+            chat_id,
+            mentor_progress.format_compass_summary(
+                review_count=review_count,
+                bank_unseen=unseen,
+                daily_count=daily_count,
+                daily_goal=daily_goal,
+                tip_title=tip.title if tip else None,
+                tip_id=tip.id if tip else None,
+            ),
+        )
+        return
+
+    if cmd in {"/steady", "/firm"}:
+        last_id = mentor_db.get_last_question_id(conn, chat_id)
+        if not last_id:
+            last_id = mentor_db.get_active_question(conn, chat_id)
+        tip = None
+        target = mentor_progress.hold_difficulty(None)
+        if last_id:
+            last_q = mentor_quiz.find_by_id(questions, last_id)
+            if last_q is not None:
+                target = mentor_progress.hold_difficulty(last_q.difficulty)
+                if last_q.competency_id:
+                    tip = mentor_comp.competency_by_id(competencies).get(last_q.competency_id)
+        if tip is None:
+            tip = mentor_comp.suggest_practice_competency(
+                competencies,
+                mentor_db.get_competency_stats(conn, chat_id),
+            )
+        if tip is None:
+            deliver_quiz_question(
+                api,
+                conn,
+                chat_id,
+                questions,
+                competencies,
+                difficulty_filter=target,
+                intro="Steady",
+            )
+            return
+        seen = mentor_db.get_seen_question_ids(conn, chat_id)
+        unseen = mentor_quiz.unseen_question_ids(questions, seen)
+        tip_unseen = {
+            q.id
+            for q in questions
+            if q.id in unseen and q.competency_id == tip.id and q.difficulty == target
+        }
+        stars = {1: "★☆☆", 2: "★★☆", 3: "★★★"}[target]
+        if tip_unseen:
+            deliver_quiz_question(
+                api,
+                conn,
+                chat_id,
+                questions,
+                competencies,
+                comp_filter=tip.id,
+                difficulty_filter=target,
+                only_ids=tip_unseen,
+                intro=f"Steady: «{tip.title}» {stars}",
+            )
+            return
+        deliver_quiz_question(
+            api,
+            conn,
+            chat_id,
+            questions,
+            competencies,
+            comp_filter=tip.id,
+            difficulty_filter=target,
+            intro=f"Steady: «{tip.title}» {stars}",
         )
         return
 

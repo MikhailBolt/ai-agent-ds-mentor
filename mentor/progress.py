@@ -292,6 +292,27 @@ def format_trail_summary(rows: list[tuple[str, int, int]]) -> str:
     return f"След ({len(sample)}): {marks}\n{ids}\n/history · /last · /review"
 
 
+def format_compass_summary(
+    *,
+    review_count: int,
+    bank_unseen: int,
+    daily_count: int,
+    daily_goal: int | None,
+    tip_title: str | None = None,
+    tip_id: str | None = None,
+) -> str:
+    if daily_goal and daily_count < daily_goal:
+        left = daily_goal - daily_count
+        return f"Компас: цель ({left}) — /quiz · /signal"
+    if review_count:
+        return f"Компас: повтор ({review_count}) — /review · /surge"
+    if tip_id and tip_title:
+        return f"Компас: {tip_title} ({tip_id}) — /focus · /topic {tip_id}"
+    if bank_unseen:
+        return f"Компас: новых {bank_unseen} — /new · /probe"
+    return "Компас: банк закрыт — /challenge · /deep"
+
+
 def format_brief_summary(
     *,
     correct: int,
@@ -921,6 +942,8 @@ def collect_achievement_labels(
         labels.append("1300 ответов")
     if total >= 1400:
         labels.append("1400 ответов")
+    if total >= 1500:
+        labels.append("1500 ответов")
     if correct >= 5:
         labels.append("5 верных ответов")
     if correct >= 10:
@@ -961,6 +984,8 @@ def collect_achievement_labels(
         labels.append("180 верных ответов")
     if correct >= 190:
         labels.append("190 верных ответов")
+    if correct >= 200:
+        labels.append("200 верных ответов")
     if best_streak >= 5:
         labels.append("Серия 5+")
     if best_streak >= 10:
@@ -993,6 +1018,8 @@ def collect_achievement_labels(
         labels.append("Серия 75+")
     if best_streak >= 80:
         labels.append("Серия 80+")
+    if best_streak >= 85:
+        labels.append("Серия 85+")
     if total >= 10 and correct / total >= 0.7:
         labels.append("Точность 70%+")
     if total >= 10 and correct / total >= 0.8:

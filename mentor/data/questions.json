@@ -1494,5 +1494,38 @@
       "sample mean vs population mean",
       "среднее выборки vs популяции"
     ]
+  },
+  {
+    "id": "ml-071",
+    "competency_id": "ml-metrics",
+    "difficulty": 3,
+    "prompt": "Что такое коэффициент корреляции Matthews (MCC)?",
+    "answer": "метрика качества бинарной классификации учитывающая все четыре ячейки confusion matrix и устойчива к дисбалансу классов",
+    "aliases": [
+      "Matthews correlation coefficient",
+      "MCC metric"
+    ]
+  },
+  {
+    "id": "ml-072",
+    "competency_id": "ml-validation",
+    "difficulty": 2,
+    "prompt": "Зачем при разбиении данных используют стратифицированную выборку?",
+    "answer": "чтобы сохранить пропорции классов или целевой переменной в train и test как в исходной выборке",
+    "aliases": [
+      "stratified sampling",
+      "стратификация классов"
+    ]
+  },
+  {
+    "id": "py-035",
+    "competency_id": "python-ds",
+    "difficulty": 1,
+    "prompt": "Что делает df.astype(dtype) в pandas?",
+    "answer": "приводит столбцы датафрейма к указанным типам данных",
+    "aliases": [
+      "cast column types",
+      "привести типы столбцов"
+    ]
   }
 ]
