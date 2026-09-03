@@ -313,6 +313,28 @@ def format_compass_summary(
     return "Компас: банк закрыт — /challenge · /deep"
 
 
+def format_bearing_summary(
+    *,
+    correct: int,
+    total: int,
+    streak: int,
+    review_count: int,
+    bank_unseen: int,
+) -> str:
+    acc = (correct / total * 100.0) if total else 0.0
+    if total == 0:
+        return "Курс: старт — /quiz · /warmup"
+    if acc < 55.0:
+        return f"Курс: {acc:.0f}% · серия {streak} — /ease · /review"
+    if review_count:
+        return f"Курс: {acc:.0f}% · повтор {review_count} — /review · /steady"
+    if bank_unseen:
+        return f"Курс: {acc:.0f}% · новых {bank_unseen} — /pivot · /new"
+    if acc >= 80.0:
+        return f"Курс: {acc:.0f}% · серия {streak} — /climb · /challenge"
+    return f"Курс: {acc:.0f}% · серия {streak} — /grind · /hold"
+
+
 def format_brief_summary(
     *,
     correct: int,
@@ -944,6 +966,8 @@ def collect_achievement_labels(
         labels.append("1400 ответов")
     if total >= 1500:
         labels.append("1500 ответов")
+    if total >= 1600:
+        labels.append("1600 ответов")
     if correct >= 5:
         labels.append("5 верных ответов")
     if correct >= 10:
@@ -986,6 +1010,8 @@ def collect_achievement_labels(
         labels.append("190 верных ответов")
     if correct >= 200:
         labels.append("200 верных ответов")
+    if correct >= 210:
+        labels.append("210 верных ответов")
     if best_streak >= 5:
         labels.append("Серия 5+")
     if best_streak >= 10:
@@ -1020,6 +1046,8 @@ def collect_achievement_labels(
         labels.append("Серия 80+")
     if best_streak >= 85:
         labels.append("Серия 85+")
+    if best_streak >= 90:
+        labels.append("Серия 90+")
     if total >= 10 and correct / total >= 0.7:
         labels.append("Точность 70%+")
     if total >= 10 and correct / total >= 0.8:

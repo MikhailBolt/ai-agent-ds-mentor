@@ -1527,5 +1527,38 @@
       "cast column types",
       "привести типы столбцов"
     ]
+  },
+  {
+    "id": "ml-073",
+    "competency_id": "ml-foundations",
+    "difficulty": 3,
+    "prompt": "Зачем в нейросетях используют batch normalization?",
+    "answer": "стабилизирует распределение активаций внутри мини-батча ускоряет обучение и снижает чувствительность к инициализации",
+    "aliases": [
+      "batch normalization purpose",
+      "нормализация батча"
+    ]
+  },
+  {
+    "id": "st-029",
+    "competency_id": "stats-basics",
+    "difficulty": 3,
+    "prompt": "Что измеряет коэффициент каппа Коэна (Cohen's kappa)?",
+    "answer": "согласованность двух оценщиков сверх случайного совпадения часто для разметки или классификации",
+    "aliases": [
+      "Cohen kappa agreement",
+      "каппа Коэна согласованность"
+    ]
+  },
+  {
+    "id": "py-036",
+    "competency_id": "python-ds",
+    "difficulty": 1,
+    "prompt": "Что делает df.rename(columns={...}) в pandas?",
+    "answer": "переименовывает столбцы датафрейма по словарю старых и новых имён",
+    "aliases": [
+      "rename dataframe columns",
+      "переименовать столбцы"
+    ]
   }
 ]

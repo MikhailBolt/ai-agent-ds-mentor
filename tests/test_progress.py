@@ -514,6 +514,32 @@ def test_compass_steady_and_1500_achievements() -> None:
     assert prog.hold_difficulty(None) == 2
 
 
+def test_bearing_pivot_and_1600_achievements() -> None:
+    labels = prog.collect_achievement_labels(
+        total=1600,
+        correct=210,
+        best_streak=90,
+        bank_total=138,
+        bank_mastered=133,
+    )
+    assert "1600 ответов" in labels
+    assert "210 верных ответов" in labels
+    assert "Серия 90+" in labels
+
+    bearing = prog.format_bearing_summary(
+        correct=40,
+        total=50,
+        streak=6,
+        review_count=0,
+        bank_unseen=8,
+    )
+    assert "Курс:" in bearing
+    assert "80%" in bearing
+    assert "/pivot" in bearing or "/climb" in bearing
+
+    assert prog.hold_difficulty(3) == 3
+
+
 def test_format_balance_summary() -> None:
     text = prog.format_balance_summary(
         bank_by_diff={1: 10, 2: 20, 3: 5},
