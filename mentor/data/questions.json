@@ -1560,5 +1560,38 @@
       "rename dataframe columns",
       "переименовать столбцы"
     ]
+  },
+  {
+    "id": "ml-074",
+    "competency_id": "ml-validation",
+    "difficulty": 2,
+    "prompt": "Зачем перед обучением модели применяют StandardScaler?",
+    "answer": "приводит признаки к нулевому среднему и единичной дисперсии чтобы градиентные и расстояние-чувствительные модели обучались стабильнее",
+    "aliases": [
+      "standardize features mean std",
+      "стандартизация признаков"
+    ]
+  },
+  {
+    "id": "ml-075",
+    "competency_id": "ml-foundations",
+    "difficulty": 2,
+    "prompt": "Что такое learning rate decay (расписание learning rate)?",
+    "answer": "постепенное уменьшение шага обучения во время тренировки чтобы сходиться точнее ближе к минимуму",
+    "aliases": [
+      "learning rate schedule decay",
+      "уменьшение learning rate"
+    ]
+  },
+  {
+    "id": "py-037",
+    "competency_id": "python-ds",
+    "difficulty": 1,
+    "prompt": "Что делает df.nunique() в pandas?",
+    "answer": "считает число уникальных значений по каждому столбцу или по серии",
+    "aliases": [
+      "count unique values",
+      "число уникальных значений"
+    ]
   }
 ]

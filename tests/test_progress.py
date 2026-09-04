@@ -540,6 +540,32 @@ def test_bearing_pivot_and_1600_achievements() -> None:
     assert prog.hold_difficulty(3) == 3
 
 
+def test_tally_lane_and_1700_achievements() -> None:
+    labels = prog.collect_achievement_labels(
+        total=1700,
+        correct=220,
+        best_streak=95,
+        bank_total=141,
+        bank_mastered=136,
+    )
+    assert "1700 ответов" in labels
+    assert "220 верных ответов" in labels
+    assert "Серия 95+" in labels
+
+    tally = prog.format_tally_summary(
+        correct=22,
+        total=30,
+        streak=4,
+        bank_unseen=11,
+        review_count=2,
+    )
+    assert "Счёт:" in tally
+    assert "22/30" in tally
+    assert "/lane" in tally
+
+    assert prog.hold_difficulty(1) == 1
+
+
 def test_format_balance_summary() -> None:
     text = prog.format_balance_summary(
         bank_by_diff={1: 10, 2: 20, 3: 5},

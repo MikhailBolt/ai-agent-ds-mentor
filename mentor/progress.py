@@ -335,6 +335,24 @@ def format_bearing_summary(
     return f"Курс: {acc:.0f}% · серия {streak} — /grind · /hold"
 
 
+def format_tally_summary(
+    *,
+    correct: int,
+    total: int,
+    streak: int,
+    bank_unseen: int,
+    review_count: int,
+) -> str:
+    acc = (correct / total * 100.0) if total else 0.0
+    if total == 0:
+        return "Счёт: пусто — /quiz · /warmup"
+    return (
+        f"Счёт: {correct}/{total} ({acc:.0f}%) · серия {streak}\n"
+        f"новых {bank_unseen} · повтор {review_count}\n"
+        f"/lane · /bearing · /review"
+    )
+
+
 def format_brief_summary(
     *,
     correct: int,
@@ -968,6 +986,8 @@ def collect_achievement_labels(
         labels.append("1500 ответов")
     if total >= 1600:
         labels.append("1600 ответов")
+    if total >= 1700:
+        labels.append("1700 ответов")
     if correct >= 5:
         labels.append("5 верных ответов")
     if correct >= 10:
@@ -1012,6 +1032,8 @@ def collect_achievement_labels(
         labels.append("200 верных ответов")
     if correct >= 210:
         labels.append("210 верных ответов")
+    if correct >= 220:
+        labels.append("220 верных ответов")
     if best_streak >= 5:
         labels.append("Серия 5+")
     if best_streak >= 10:
@@ -1048,6 +1070,8 @@ def collect_achievement_labels(
         labels.append("Серия 85+")
     if best_streak >= 90:
         labels.append("Серия 90+")
+    if best_streak >= 95:
+        labels.append("Серия 95+")
     if total >= 10 and correct / total >= 0.7:
         labels.append("Точность 70%+")
     if total >= 10 and correct / total >= 0.8:

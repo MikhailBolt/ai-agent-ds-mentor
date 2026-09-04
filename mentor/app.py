@@ -107,6 +107,8 @@ BOT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("steady", "Та же тема и сложность"),
     ("bearing", "Курс по точности"),
     ("pivot", "Другая тема, та же сложность"),
+    ("tally", "Счёт прогресса"),
+    ("lane", "Полоса сложности"),
     ("compare", "Слабая vs сильная тема"),
     ("record", "Личные рекорды"),
     ("seen", "Встреченные вопросы"),
@@ -266,8 +268,10 @@ def _help_text() -> str:
         "/surge или /wave — surge: повтор → средний новый\n"
         "/compass, /north или /cue — компас: слабая тема и шаг\n"
         "/steady, /firm или /stick — та же тема и сложность\n"
-        "/bearing или /aim — курс: точность и следующий шаг\n"
-        "/pivot или /swerve — другая тема на той же сложности\n"
+        "/bearing, /aim или /heading — курс: точность и следующий шаг\n"
+        "/pivot, /swerve или /veer — другая тема на той же сложности\n"
+        "/tally или /tab — счёт: точность, серия, новые\n"
+        "/lane или /rail — та же сложность, лучше новый\n"
         "/level или /rank — уровень по ответам и банку\n"
         "/record или /best — личные рекорды\n"
         "/plan или /guide — что тренировать дальше\n"
@@ -1863,7 +1867,7 @@ def handle_text(
         )
         return
 
-    if cmd in {"/bearing", "/aim"}:
+    if cmd in {"/bearing", "/aim", "/heading"}:
         st = mentor_db.get_stats(conn, chat_id)
         streak = mentor_db.get_streak(conn, chat_id)
         review_count = len(mentor_db.get_review_question_ids(conn, chat_id))
@@ -1881,7 +1885,7 @@ def handle_text(
         )
         return
 
-    if cmd in {"/pivot", "/swerve"}:
+    if cmd in {"/pivot", "/swerve", "/veer"}:
         last_id = mentor_db.get_last_question_id(conn, chat_id)
         if not last_id:
             last_id = mentor_db.get_active_question(conn, chat_id)
@@ -1938,6 +1942,60 @@ def handle_text(
             comp_filter=tip.id,
             difficulty_filter=target,
             intro=f"Pivot: «{tip.title}» {stars}",
+        )
+        return
+
+    if cmd in {"/tally", "/tab"}:
+        st = mentor_db.get_stats(conn, chat_id)
+        streak = mentor_db.get_streak(conn, chat_id)
+        review_count = len(mentor_db.get_review_question_ids(conn, chat_id))
+        seen = mentor_db.get_seen_question_ids(conn, chat_id)
+        unseen = len(mentor_quiz.unseen_question_ids(questions, seen))
+        api.send_message(
+            chat_id,
+            mentor_progress.format_tally_summary(
+                correct=st.correct,
+                total=st.total,
+                streak=streak,
+                bank_unseen=unseen,
+                review_count=review_count,
+            ),
+        )
+        return
+
+    if cmd in {"/lane", "/rail"}:
+        last_id = mentor_db.get_last_question_id(conn, chat_id)
+        if not last_id:
+            last_id = mentor_db.get_active_question(conn, chat_id)
+        target = mentor_progress.hold_difficulty(None)
+        if last_id:
+            last_q = mentor_quiz.find_by_id(questions, last_id)
+            if last_q is not None:
+                target = mentor_progress.hold_difficulty(last_q.difficulty)
+        seen = mentor_db.get_seen_question_ids(conn, chat_id)
+        unseen = mentor_quiz.unseen_question_ids(questions, seen)
+        lane_unseen = {q.id for q in questions if q.id in unseen and q.difficulty == target}
+        stars = {1: "★☆☆", 2: "★★☆", 3: "★★★"}[target]
+        if lane_unseen:
+            deliver_quiz_question(
+                api,
+                conn,
+                chat_id,
+                questions,
+                competencies,
+                difficulty_filter=target,
+                only_ids=lane_unseen,
+                intro=f"Lane: {stars}",
+            )
+            return
+        deliver_quiz_question(
+            api,
+            conn,
+            chat_id,
+            questions,
+            competencies,
+            difficulty_filter=target,
+            intro=f"Lane: {stars}",
         )
         return
 
