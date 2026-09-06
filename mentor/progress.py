@@ -353,6 +353,24 @@ def format_tally_summary(
     )
 
 
+def format_glance_summary(
+    *,
+    correct: int,
+    total: int,
+    streak: int,
+    review_count: int,
+    bank_unseen: int,
+) -> str:
+    acc = (correct / total * 100.0) if total else 0.0
+    if total == 0:
+        return "Взгляд: старт — /quiz · /warmup"
+    if review_count:
+        return f"Взгляд: {acc:.0f}% · серия {streak} · повтор {review_count} — /review · /glance"
+    if bank_unseen:
+        return f"Взгляд: {acc:.0f}% · серия {streak} · новых {bank_unseen} — /lane · /tilt"
+    return f"Взгляд: {acc:.0f}% · серия {streak} · банк закрыт — /challenge · /bearing"
+
+
 def format_brief_summary(
     *,
     correct: int,
@@ -988,6 +1006,8 @@ def collect_achievement_labels(
         labels.append("1600 ответов")
     if total >= 1700:
         labels.append("1700 ответов")
+    if total >= 1800:
+        labels.append("1800 ответов")
     if correct >= 5:
         labels.append("5 верных ответов")
     if correct >= 10:
@@ -1034,6 +1054,8 @@ def collect_achievement_labels(
         labels.append("210 верных ответов")
     if correct >= 220:
         labels.append("220 верных ответов")
+    if correct >= 230:
+        labels.append("230 верных ответов")
     if best_streak >= 5:
         labels.append("Серия 5+")
     if best_streak >= 10:
@@ -1072,6 +1094,8 @@ def collect_achievement_labels(
         labels.append("Серия 90+")
     if best_streak >= 95:
         labels.append("Серия 95+")
+    if best_streak >= 100:
+        labels.append("Серия 100+")
     if total >= 10 and correct / total >= 0.7:
         labels.append("Точность 70%+")
     if total >= 10 and correct / total >= 0.8:

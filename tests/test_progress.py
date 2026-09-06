@@ -566,6 +566,39 @@ def test_tally_lane_and_1700_achievements() -> None:
     assert prog.hold_difficulty(1) == 1
 
 
+def test_glance_tilt_and_1800_achievements() -> None:
+    labels = prog.collect_achievement_labels(
+        total=1800,
+        correct=230,
+        best_streak=100,
+        bank_total=144,
+        bank_mastered=138,
+    )
+    assert "1800 ответов" in labels
+    assert "230 верных ответов" in labels
+    assert "Серия 100+" in labels
+
+    glance = prog.format_glance_summary(
+        correct=36,
+        total=45,
+        streak=7,
+        review_count=0,
+        bank_unseen=9,
+    )
+    assert "Взгляд:" in glance
+    assert "80%" in glance
+    assert "/lane" in glance
+
+    glance_review = prog.format_glance_summary(
+        correct=12,
+        total=20,
+        streak=2,
+        review_count=3,
+        bank_unseen=5,
+    )
+    assert "/review" in glance_review
+
+
 def test_format_balance_summary() -> None:
     text = prog.format_balance_summary(
         bank_by_diff={1: 10, 2: 20, 3: 5},

@@ -1593,5 +1593,38 @@
       "count unique values",
       "число уникальных значений"
     ]
+  },
+  {
+    "id": "ml-076",
+    "competency_id": "ml-validation",
+    "difficulty": 1,
+    "prompt": "Что делает MinMaxScaler с признаками?",
+    "answer": "масштабирует признаки в заданный диапазон обычно от 0 до 1 сохраняя относительный порядок значений",
+    "aliases": [
+      "min max scaling",
+      "масштабирование 0 1"
+    ]
+  },
+  {
+    "id": "st-030",
+    "competency_id": "stats-basics",
+    "difficulty": 2,
+    "prompt": "Что такое квантиль распределения?",
+    "answer": "значение ниже которого лежит заданная доля наблюдений например медиана это квантиль 0.5",
+    "aliases": [
+      "quantile definition",
+      "доля наблюдений ниже значения"
+    ]
+  },
+  {
+    "id": "py-038",
+    "competency_id": "python-ds",
+    "difficulty": 1,
+    "prompt": "Что делает df.clip(lower=0, upper=1) в pandas?",
+    "answer": "обрезает значения ниже нижней границы и выше верхней оставляя все значения в указанном диапазоне",
+    "aliases": [
+      "clip values to range",
+      "обрезать значения по границам"
+    ]
   }
 ]

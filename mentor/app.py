@@ -109,6 +109,8 @@ BOT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("pivot", "Другая тема, та же сложность"),
     ("tally", "Счёт прогресса"),
     ("lane", "Полоса сложности"),
+    ("glance", "Короткая сводка"),
+    ("tilt", "Та же тема, другая сложность"),
     ("compare", "Слабая vs сильная тема"),
     ("record", "Личные рекорды"),
     ("seen", "Встреченные вопросы"),
@@ -270,8 +272,10 @@ def _help_text() -> str:
         "/steady, /firm или /stick — та же тема и сложность\n"
         "/bearing, /aim или /heading — курс: точность и следующий шаг\n"
         "/pivot, /swerve или /veer — другая тема на той же сложности\n"
-        "/tally или /tab — счёт: точность, серия, новые\n"
-        "/lane или /rail — та же сложность, лучше новый\n"
+        "/tally, /tab или /scoreline — счёт: точность, серия, новые\n"
+        "/lane, /rail или /trackline — та же сложность, лучше новый\n"
+        "/glance или /peek — короткий взгляд на прогресс\n"
+        "/tilt или /lean — тот же топик, другая сложность\n"
         "/level или /rank — уровень по ответам и банку\n"
         "/record или /best — личные рекорды\n"
         "/plan или /guide — что тренировать дальше\n"
@@ -1945,7 +1949,7 @@ def handle_text(
         )
         return
 
-    if cmd in {"/tally", "/tab"}:
+    if cmd in {"/tally", "/tab", "/scoreline"}:
         st = mentor_db.get_stats(conn, chat_id)
         streak = mentor_db.get_streak(conn, chat_id)
         review_count = len(mentor_db.get_review_question_ids(conn, chat_id))
@@ -1963,7 +1967,7 @@ def handle_text(
         )
         return
 
-    if cmd in {"/lane", "/rail"}:
+    if cmd in {"/lane", "/rail", "/trackline"}:
         last_id = mentor_db.get_last_question_id(conn, chat_id)
         if not last_id:
             last_id = mentor_db.get_active_question(conn, chat_id)
@@ -1996,6 +2000,80 @@ def handle_text(
             competencies,
             difficulty_filter=target,
             intro=f"Lane: {stars}",
+        )
+        return
+
+    if cmd in {"/glance", "/peek"}:
+        st = mentor_db.get_stats(conn, chat_id)
+        streak = mentor_db.get_streak(conn, chat_id)
+        review_count = len(mentor_db.get_review_question_ids(conn, chat_id))
+        seen = mentor_db.get_seen_question_ids(conn, chat_id)
+        unseen = len(mentor_quiz.unseen_question_ids(questions, seen))
+        api.send_message(
+            chat_id,
+            mentor_progress.format_glance_summary(
+                correct=st.correct,
+                total=st.total,
+                streak=streak,
+                review_count=review_count,
+                bank_unseen=unseen,
+            ),
+        )
+        return
+
+    if cmd in {"/tilt", "/lean"}:
+        last_id = mentor_db.get_last_question_id(conn, chat_id)
+        if not last_id:
+            last_id = mentor_db.get_active_question(conn, chat_id)
+        current_comp: str | None = None
+        current_diff: int | None = None
+        if last_id:
+            last_q = mentor_quiz.find_by_id(questions, last_id)
+            if last_q is not None:
+                current_comp = last_q.competency_id
+                current_diff = last_q.difficulty
+        target = mentor_progress.pick_drift_difficulty(current_diff)
+        if current_comp is None:
+            deliver_quiz_question(
+                api,
+                conn,
+                chat_id,
+                questions,
+                competencies,
+                difficulty_filter=target,
+                intro="Tilt",
+            )
+            return
+        seen = mentor_db.get_seen_question_ids(conn, chat_id)
+        unseen = mentor_quiz.unseen_question_ids(questions, seen)
+        tip_unseen = {
+            q.id
+            for q in questions
+            if q.id in unseen and q.competency_id == current_comp and q.difficulty == target
+        }
+        stars = {1: "★☆☆", 2: "★★☆", 3: "★★★"}[target]
+        if tip_unseen:
+            deliver_quiz_question(
+                api,
+                conn,
+                chat_id,
+                questions,
+                competencies,
+                comp_filter=current_comp,
+                difficulty_filter=target,
+                only_ids=tip_unseen,
+                intro=f"Tilt: {stars}",
+            )
+            return
+        deliver_quiz_question(
+            api,
+            conn,
+            chat_id,
+            questions,
+            competencies,
+            comp_filter=current_comp,
+            difficulty_filter=target,
+            intro=f"Tilt: {stars}",
         )
         return
 
