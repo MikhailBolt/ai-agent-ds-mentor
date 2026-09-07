@@ -599,6 +599,19 @@ def test_glance_tilt_and_1800_achievements() -> None:
     assert "/review" in glance_review
 
 
+def test_1900_achievements_thresholds() -> None:
+    labels = prog.collect_achievement_labels(
+        total=1900,
+        correct=240,
+        best_streak=105,
+        bank_total=147,
+        bank_mastered=140,
+    )
+    assert "1900 ответов" in labels
+    assert "240 верных ответов" in labels
+    assert "Серия 105+" in labels
+
+
 def test_format_balance_summary() -> None:
     text = prog.format_balance_summary(
         bank_by_diff={1: 10, 2: 20, 3: 5},

@@ -168,3 +168,19 @@ def test_load_questions_rejects_duplicate_ids(tmp_path: Path) -> None:
     with pytest.raises(ValueError) as e:
         qz.load_questions(str(p))
     assert "duplicate" in str(e.value)
+
+
+def test_load_questions_rejects_duplicate_prompts(tmp_path: Path) -> None:
+    p = tmp_path / "q.json"
+    p.write_text(
+        json.dumps(
+            [
+                {"id": "q1", "prompt": "What is ROC AUC?", "answer": "a"},
+                {"id": "q2", "prompt": " What is ROC AUC?! ", "answer": "b"},
+            ]
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError) as e:
+        qz.load_questions(str(p))
+    assert "duplicate question prompt" in str(e.value)

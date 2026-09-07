@@ -70,6 +70,7 @@ def load_questions(
 
     out: list[Question] = []
     seen: set[str] = set()
+    seen_prompts: set[str] = set()
     for i, item in enumerate(raw):
         if not isinstance(item, dict):
             continue
@@ -107,7 +108,11 @@ def load_questions(
         if prompt and answer:
             if qid in seen:
                 raise ValueError(f"duplicate question id: {qid}")
+            prompt_key = normalize(prompt)
+            if prompt_key in seen_prompts:
+                raise ValueError(f"duplicate question prompt: {prompt}")
             seen.add(qid)
+            seen_prompts.add(prompt_key)
             out.append(
                 Question(
                     id=qid,

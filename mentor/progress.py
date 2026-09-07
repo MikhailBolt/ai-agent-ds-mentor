@@ -1008,6 +1008,8 @@ def collect_achievement_labels(
         labels.append("1700 ответов")
     if total >= 1800:
         labels.append("1800 ответов")
+    if total >= 1900:
+        labels.append("1900 ответов")
     if correct >= 5:
         labels.append("5 верных ответов")
     if correct >= 10:
@@ -1056,6 +1058,8 @@ def collect_achievement_labels(
         labels.append("220 верных ответов")
     if correct >= 230:
         labels.append("230 верных ответов")
+    if correct >= 240:
+        labels.append("240 верных ответов")
     if best_streak >= 5:
         labels.append("Серия 5+")
     if best_streak >= 10:
@@ -1096,6 +1100,8 @@ def collect_achievement_labels(
         labels.append("Серия 95+")
     if best_streak >= 100:
         labels.append("Серия 100+")
+    if best_streak >= 105:
+        labels.append("Серия 105+")
     if total >= 10 and correct / total >= 0.7:
         labels.append("Точность 70%+")
     if total >= 10 and correct / total >= 0.8:

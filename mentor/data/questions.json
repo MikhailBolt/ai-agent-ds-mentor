@@ -623,11 +623,11 @@
     "id": "py-014",
     "competency_id": "python-ds",
     "difficulty": 2,
-    "prompt": "Что делает df.dropna() в pandas?",
-    "answer": "удаляет строки или столбцы с пропущенными значениями nan",
+    "prompt": "Что делает s.rank() в pandas?",
+    "answer": "назначает значениям их ранги в отсортированном порядке с учетом правил обработки совпадений",
     "aliases": [
-      "убрать missing values",
-      "drop rows with nulls"
+      "rank values in series",
+      "ранжирование значений"
     ]
   },
   {
@@ -937,12 +937,12 @@
   {
     "id": "ml-046",
     "competency_id": "ml-foundations",
-    "difficulty": 1,
-    "prompt": "Что такое underfitting (недообучение)?",
-    "answer": "модель слишком простая и плохо описывает даже обучающие данные",
+    "difficulty": 3,
+    "prompt": "Что такое SHAP values?",
+    "answer": "оценки вклада каждого признака в предсказание конкретного объекта относительно базового значения модели",
     "aliases": [
-      "high bias low capacity",
-      "плохо и на train и на test"
+      "shapley values for features",
+      "вклад признаков в предсказание"
     ]
   },
   {
@@ -1068,13 +1068,13 @@
   },
   {
     "id": "ml-052",
-    "competency_id": "ml-foundations",
+    "competency_id": "ml-metrics",
     "difficulty": 3,
-    "prompt": "Что такое gradient boosting?",
-    "answer": "ансамбль последовательно добавляет слабые модели каждая исправляет ошибки предыдущих",
+    "prompt": "Что такое Brier score?",
+    "answer": "метрика качества вероятностных предсказаний равная среднему квадрату разницы между вероятностью и истинной меткой",
     "aliases": [
-      "sequential weak learners",
-      "градиентный бустинг"
+      "probability calibration error squared",
+      "квадратичная ошибка вероятности"
     ]
   },
   {
@@ -1224,11 +1224,11 @@
     "id": "py-027",
     "competency_id": "python-ds",
     "difficulty": 2,
-    "prompt": "Что делает df.value_counts() в pandas?",
-    "answer": "считает частоты уникальных значений в серии или датафрейме",
+    "prompt": "Что делает pd.crosstab(a, b) в pandas?",
+    "answer": "строит таблицу сопряженности показывая частоты сочетаний значений двух признаков",
     "aliases": [
-      "count unique frequencies",
-      "частоты значений"
+      "contingency table pandas",
+      "таблица частот по двум признакам"
     ]
   },
   {
@@ -1244,13 +1244,13 @@
   },
   {
     "id": "ml-061",
-    "competency_id": "ml-foundations",
+    "competency_id": "ml-validation",
     "difficulty": 2,
-    "prompt": "Чем bagging отличается от boosting?",
-    "answer": "bagging обучает модели параллельно на бутстрэп выборках boosting последовательно исправляет ошибки",
+    "prompt": "Что такое temperature scaling?",
+    "answer": "простая калибровка вероятностей где логиты делят на параметр температуры чтобы подстроить уверенность модели",
     "aliases": [
-      "parallel vs sequential ensembles",
-      "бэггинг vs бустинг"
+      "logit calibration temperature",
+      "калибровка температуры"
     ]
   },
   {
@@ -1301,11 +1301,11 @@
     "id": "py-029",
     "competency_id": "python-ds",
     "difficulty": 2,
-    "prompt": "Что делает df.sort_values('col') в pandas?",
-    "answer": "сортирует строки датафрейма по значениям столбца col по возрастанию по умолчанию",
+    "prompt": "Что делает df.explode('col') в pandas?",
+    "answer": "разворачивает списки или массивы в столбце в отдельные строки сохраняя остальные значения",
     "aliases": [
-      "sort rows by column",
-      "сортировка по колонке"
+      "expand list rows",
+      "развернуть список в строки"
     ]
   },
   {
@@ -1625,6 +1625,39 @@
     "aliases": [
       "clip values to range",
       "обрезать значения по границам"
+    ]
+  },
+  {
+    "id": "ml-077",
+    "competency_id": "ml-metrics",
+    "difficulty": 2,
+    "prompt": "Зачем используют class_weight='balanced' в классификации?",
+    "answer": "чтобы сильнее штрафовать ошибки на редком классе и частично компенсировать дисбаланс классов",
+    "aliases": [
+      "balanced class weights",
+      "веса классов при дисбалансе"
+    ]
+  },
+  {
+    "id": "st-031",
+    "competency_id": "stats-basics",
+    "difficulty": 2,
+    "prompt": "Что показывает асимметрия распределения (skewness)?",
+    "answer": "насколько распределение перекошено влево или вправо относительно среднего",
+    "aliases": [
+      "skewness meaning",
+      "перекос распределения"
+    ]
+  },
+  {
+    "id": "py-039",
+    "competency_id": "python-ds",
+    "difficulty": 1,
+    "prompt": "Что делает s.rolling(3).mean() в pandas?",
+    "answer": "считает скользящее среднее по окну из трех элементов",
+    "aliases": [
+      "rolling mean window",
+      "скользящее среднее"
     ]
   }
 ]
