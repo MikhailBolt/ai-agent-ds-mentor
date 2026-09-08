@@ -84,6 +84,30 @@ def test_check_print_config(monkeypatch: pytest.MonkeyPatch, capsys: pytest.Capt
     assert "token_present=" in out
 
 
+def test_check_print_summary(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture
+) -> None:
+    q, c = _minimal_bank(tmp_path)
+    monkeypatch.delenv("TELEGRAM_BOT_TOKEN", raising=False)
+    rc = main(
+        [
+            "check",
+            "--skip-token",
+            "--questions",
+            str(q),
+            "--competencies",
+            str(c),
+            "--print-summary",
+        ]
+    )
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert "version=" in out
+    assert "question_count=1" in out
+    assert "questions_difficulty_1=1" in out
+    assert "questions_competency_test-topic=1" in out
+
+
 def test_check_init_db(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     q, c = _minimal_bank(tmp_path)
     db = tmp_path / "bot.db"

@@ -15,6 +15,7 @@ from mentor.db import connect, ensure_schema, verify_schema
 from mentor.quiz import (
     default_questions_path,
     load_questions,
+    question_counts_by_competency,
     question_counts_by_difficulty,
     validate_competency_coverage,
 )
@@ -137,6 +138,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Print resolved configuration and exit (still validates questions)",
     )
     check.add_argument(
+        "--print-summary",
+        action="store_true",
+        help="Print compact question bank summary and exit",
+    )
+    check.add_argument(
         "--skip-token",
         action="store_true",
         help="Skip Telegram token presence check (useful in CI)",
@@ -201,6 +207,17 @@ def cmd_check(args: argparse.Namespace) -> int:
         except Exception as e:
             print(f"DB verify failed: {e}", file=sys.stderr)
             return 2
+
+    if getattr(args, "print_summary", False):
+        print(f"version={__version__}")
+        print(f"question_count={len(qs)}")
+        diff_counts = question_counts_by_difficulty(qs)
+        for level in sorted(diff_counts):
+            print(f"questions_difficulty_{level}={diff_counts[level]}")
+        comp_counts = question_counts_by_competency(qs)
+        for cid in sorted(comp_ids):
+            print(f"questions_competency_{cid}={comp_counts.get(cid, 0)}")
+        return 0
 
     if getattr(args, "print_config", False):
         print(f"version={__version__}")
