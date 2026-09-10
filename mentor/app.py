@@ -111,6 +111,8 @@ BOT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("lane", "Полоса сложности"),
     ("glance", "Короткая сводка"),
     ("tilt", "Та же тема, другая сложность"),
+    ("spark", "Искра тренировки"),
+    ("blend", "Другая тема и сложность"),
     ("compare", "Слабая vs сильная тема"),
     ("record", "Личные рекорды"),
     ("seen", "Встреченные вопросы"),
@@ -274,8 +276,10 @@ def _help_text() -> str:
         "/pivot, /swerve или /veer — другая тема на той же сложности\n"
         "/tally, /tab или /scoreline — счёт: точность, серия, новые\n"
         "/lane, /rail или /trackline — та же сложность, лучше новый\n"
-        "/glance или /peek — короткий взгляд на прогресс\n"
-        "/tilt или /lean — тот же топик, другая сложность\n"
+        "/glance, /peek или /look — короткий взгляд на прогресс\n"
+        "/tilt, /lean или /slant — тот же топик, другая сложность\n"
+        "/spark или /flare — искра: серия и следующий шаг\n"
+        "/blend или /twist — другая тема и сложность\n"
         "/level или /rank — уровень по ответам и банку\n"
         "/record или /best — личные рекорды\n"
         "/plan или /guide — что тренировать дальше\n"
@@ -2003,7 +2007,7 @@ def handle_text(
         )
         return
 
-    if cmd in {"/glance", "/peek"}:
+    if cmd in {"/glance", "/peek", "/look"}:
         st = mentor_db.get_stats(conn, chat_id)
         streak = mentor_db.get_streak(conn, chat_id)
         review_count = len(mentor_db.get_review_question_ids(conn, chat_id))
@@ -2021,7 +2025,7 @@ def handle_text(
         )
         return
 
-    if cmd in {"/tilt", "/lean"}:
+    if cmd in {"/tilt", "/lean", "/slant"}:
         last_id = mentor_db.get_last_question_id(conn, chat_id)
         if not last_id:
             last_id = mentor_db.get_active_question(conn, chat_id)
@@ -2074,6 +2078,86 @@ def handle_text(
             comp_filter=current_comp,
             difficulty_filter=target,
             intro=f"Tilt: {stars}",
+        )
+        return
+
+    if cmd in {"/spark", "/flare"}:
+        streak = mentor_db.get_streak(conn, chat_id)
+        daily_goal = parse_daily_goal()
+        daily_count = mentor_db.get_daily_answer_count(conn, chat_id)
+        review_count = len(mentor_db.get_review_question_ids(conn, chat_id))
+        seen = mentor_db.get_seen_question_ids(conn, chat_id)
+        unseen = len(mentor_quiz.unseen_question_ids(questions, seen))
+        api.send_message(
+            chat_id,
+            mentor_progress.format_spark_summary(
+                streak=streak,
+                daily_count=daily_count,
+                daily_goal=daily_goal,
+                review_count=review_count,
+                bank_unseen=unseen,
+            ),
+        )
+        return
+
+    if cmd in {"/blend", "/twist"}:
+        last_id = mentor_db.get_last_question_id(conn, chat_id)
+        if not last_id:
+            last_id = mentor_db.get_active_question(conn, chat_id)
+        current_comp: str | None = None
+        current_diff: int | None = None
+        if last_id:
+            last_q = mentor_quiz.find_by_id(questions, last_id)
+            if last_q is not None:
+                current_comp = last_q.competency_id
+                current_diff = last_q.difficulty
+        tip = mentor_progress.suggest_switch_competency(
+            competencies,
+            current_comp,
+            mentor_db.get_competency_stats(conn, chat_id),
+        )
+        target = mentor_progress.pick_drift_difficulty(current_diff)
+        if tip is None:
+            deliver_quiz_question(
+                api,
+                conn,
+                chat_id,
+                questions,
+                competencies,
+                difficulty_filter=target,
+                intro="Blend",
+            )
+            return
+        seen = mentor_db.get_seen_question_ids(conn, chat_id)
+        unseen = mentor_quiz.unseen_question_ids(questions, seen)
+        tip_unseen = {
+            q.id
+            for q in questions
+            if q.id in unseen and q.competency_id == tip.id and q.difficulty == target
+        }
+        stars = {1: "★☆☆", 2: "★★☆", 3: "★★★"}[target]
+        if tip_unseen:
+            deliver_quiz_question(
+                api,
+                conn,
+                chat_id,
+                questions,
+                competencies,
+                comp_filter=tip.id,
+                difficulty_filter=target,
+                only_ids=tip_unseen,
+                intro=f"Blend: «{tip.title}» {stars}",
+            )
+            return
+        deliver_quiz_question(
+            api,
+            conn,
+            chat_id,
+            questions,
+            competencies,
+            comp_filter=tip.id,
+            difficulty_filter=target,
+            intro=f"Blend: «{tip.title}» {stars}",
         )
         return
 

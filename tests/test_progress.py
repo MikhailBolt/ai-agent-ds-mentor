@@ -612,6 +612,39 @@ def test_1900_achievements_thresholds() -> None:
     assert "Серия 105+" in labels
 
 
+def test_spark_blend_and_2000_achievements() -> None:
+    labels = prog.collect_achievement_labels(
+        total=2000,
+        correct=250,
+        best_streak=110,
+        bank_total=150,
+        bank_mastered=145,
+    )
+    assert "2000 ответов" in labels
+    assert "250 верных ответов" in labels
+    assert "Серия 110+" in labels
+
+    spark = prog.format_spark_summary(
+        streak=6,
+        daily_count=2,
+        daily_goal=5,
+        review_count=0,
+        bank_unseen=10,
+    )
+    assert "Искра:" in spark
+    assert "до цели 3" in spark
+    assert "/quiz" in spark
+
+    spark_hot = prog.format_spark_summary(
+        streak=8,
+        daily_count=5,
+        daily_goal=5,
+        review_count=0,
+        bank_unseen=4,
+    )
+    assert "/blend" in spark_hot
+
+
 def test_format_balance_summary() -> None:
     text = prog.format_balance_summary(
         bank_by_diff={1: 10, 2: 20, 3: 5},

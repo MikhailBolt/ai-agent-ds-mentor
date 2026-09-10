@@ -1659,5 +1659,38 @@
       "rolling mean window",
       "скользящее среднее"
     ]
+  },
+  {
+    "id": "ml-078",
+    "competency_id": "ml-foundations",
+    "difficulty": 3,
+    "prompt": "Зачем в классификации используют label smoothing?",
+    "answer": "смягчает жёсткие one-hot метки чтобы снизить переуверенность модели и улучшить обобщение",
+    "aliases": [
+      "label smoothing regularization",
+      "сглаживание меток"
+    ]
+  },
+  {
+    "id": "st-032",
+    "competency_id": "stats-basics",
+    "difficulty": 2,
+    "prompt": "Что показывает эксцесс распределения (kurtosis)?",
+    "answer": "насколько тяжелые или лёгкие хвосты распределения относительно нормального",
+    "aliases": [
+      "kurtosis heavy tails",
+      "эксцесс хвостов"
+    ]
+  },
+  {
+    "id": "py-040",
+    "competency_id": "python-ds",
+    "difficulty": 2,
+    "prompt": "Что делает df.pipe(func) в pandas?",
+    "answer": "передаёт датафрейм в функцию и возвращает её результат удобно для цепочек преобразований",
+    "aliases": [
+      "pipe dataframe into function",
+      "передать датафрейм в функцию"
+    ]
   }
 ]

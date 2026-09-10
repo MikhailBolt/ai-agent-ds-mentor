@@ -371,6 +371,26 @@ def format_glance_summary(
     return f"Взгляд: {acc:.0f}% · серия {streak} · банк закрыт — /challenge · /bearing"
 
 
+def format_spark_summary(
+    *,
+    streak: int,
+    daily_count: int,
+    daily_goal: int | None,
+    review_count: int,
+    bank_unseen: int,
+) -> str:
+    if daily_goal and daily_count < daily_goal:
+        left = daily_goal - daily_count
+        return f"Искра: серия {streak} · до цели {left} — /quiz · /lane"
+    if streak >= 5 and bank_unseen:
+        return f"Искра: серия {streak} · новых {bank_unseen} — /blend · /climb"
+    if review_count:
+        return f"Искра: серия {streak} · повтор {review_count} — /review · /surge"
+    if bank_unseen:
+        return f"Искра: серия {streak} · новых {bank_unseen} — /new · /spark"
+    return f"Искра: серия {streak} · банк закрыт — /challenge · /deep"
+
+
 def format_brief_summary(
     *,
     correct: int,
@@ -1010,6 +1030,8 @@ def collect_achievement_labels(
         labels.append("1800 ответов")
     if total >= 1900:
         labels.append("1900 ответов")
+    if total >= 2000:
+        labels.append("2000 ответов")
     if correct >= 5:
         labels.append("5 верных ответов")
     if correct >= 10:
@@ -1060,6 +1082,8 @@ def collect_achievement_labels(
         labels.append("230 верных ответов")
     if correct >= 240:
         labels.append("240 верных ответов")
+    if correct >= 250:
+        labels.append("250 верных ответов")
     if best_streak >= 5:
         labels.append("Серия 5+")
     if best_streak >= 10:
@@ -1102,6 +1126,8 @@ def collect_achievement_labels(
         labels.append("Серия 100+")
     if best_streak >= 105:
         labels.append("Серия 105+")
+    if best_streak >= 110:
+        labels.append("Серия 110+")
     if total >= 10 and correct / total >= 0.7:
         labels.append("Точность 70%+")
     if total >= 10 and correct / total >= 0.8:
