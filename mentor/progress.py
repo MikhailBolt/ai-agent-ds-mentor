@@ -391,6 +391,25 @@ def format_spark_summary(
     return f"Искра: серия {streak} · банк закрыт — /challenge · /deep"
 
 
+def format_beacon_summary(
+    *,
+    correct: int,
+    total: int,
+    streak: int,
+    tip_title: str | None = None,
+    tip_id: str | None = None,
+    review_count: int = 0,
+) -> str:
+    acc = (correct / total * 100.0) if total else 0.0
+    if total == 0:
+        return "Маяк: старт — /quiz · /hop"
+    if review_count:
+        return f"Маяк: {acc:.0f}% · серия {streak} · повтор {review_count} — /review · /hop"
+    if tip_id and tip_title:
+        return f"Маяк: {acc:.0f}% · серия {streak} · {tip_title} ({tip_id}) — /focus · /hop"
+    return f"Маяк: {acc:.0f}% · серия {streak} — /blend · /challenge"
+
+
 def format_brief_summary(
     *,
     correct: int,
@@ -1032,6 +1051,8 @@ def collect_achievement_labels(
         labels.append("1900 ответов")
     if total >= 2000:
         labels.append("2000 ответов")
+    if total >= 2100:
+        labels.append("2100 ответов")
     if correct >= 5:
         labels.append("5 верных ответов")
     if correct >= 10:
@@ -1084,6 +1105,8 @@ def collect_achievement_labels(
         labels.append("240 верных ответов")
     if correct >= 250:
         labels.append("250 верных ответов")
+    if correct >= 260:
+        labels.append("260 верных ответов")
     if best_streak >= 5:
         labels.append("Серия 5+")
     if best_streak >= 10:
@@ -1128,6 +1151,8 @@ def collect_achievement_labels(
         labels.append("Серия 105+")
     if best_streak >= 110:
         labels.append("Серия 110+")
+    if best_streak >= 115:
+        labels.append("Серия 115+")
     if total >= 10 and correct / total >= 0.7:
         labels.append("Точность 70%+")
     if total >= 10 and correct / total >= 0.8:

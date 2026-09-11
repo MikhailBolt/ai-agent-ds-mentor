@@ -645,6 +645,39 @@ def test_spark_blend_and_2000_achievements() -> None:
     assert "/blend" in spark_hot
 
 
+def test_beacon_hop_and_2100_achievements() -> None:
+    labels = prog.collect_achievement_labels(
+        total=2100,
+        correct=260,
+        best_streak=115,
+        bank_total=153,
+        bank_mastered=148,
+    )
+    assert "2100 ответов" in labels
+    assert "260 верных ответов" in labels
+    assert "Серия 115+" in labels
+
+    beacon = prog.format_beacon_summary(
+        correct=40,
+        total=50,
+        streak=5,
+        tip_title="Python DS",
+        tip_id="python-ds",
+        review_count=0,
+    )
+    assert "Маяк:" in beacon
+    assert "python-ds" in beacon
+    assert "/hop" in beacon
+
+    beacon_review = prog.format_beacon_summary(
+        correct=10,
+        total=20,
+        streak=1,
+        review_count=4,
+    )
+    assert "/review" in beacon_review
+
+
 def test_format_balance_summary() -> None:
     text = prog.format_balance_summary(
         bank_by_diff={1: 10, 2: 20, 3: 5},

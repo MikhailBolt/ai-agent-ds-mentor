@@ -1692,5 +1692,38 @@
       "pipe dataframe into function",
       "передать датафрейм в функцию"
     ]
+  },
+  {
+    "id": "ml-079",
+    "competency_id": "ml-foundations",
+    "difficulty": 2,
+    "prompt": "Что делает Softmax в многоклассовой классификации?",
+    "answer": "преобразует логиты в вероятности классов которые суммируются в единицу",
+    "aliases": [
+      "softmax logits to probabilities",
+      "softmax вероятности классов"
+    ]
+  },
+  {
+    "id": "ml-080",
+    "competency_id": "ml-metrics",
+    "difficulty": 3,
+    "prompt": "Для чего используют hinge loss?",
+    "answer": "штрафует предсказания которые не отделяют правильный класс с достаточным запасом часто в SVM",
+    "aliases": [
+      "hinge loss SVM margin",
+      "хиндж лосс запас"
+    ]
+  },
+  {
+    "id": "py-041",
+    "competency_id": "python-ds",
+    "difficulty": 2,
+    "prompt": "Что делает s.ewm(span=5).mean() в pandas?",
+    "answer": "считает экспоненциально взвешенное скользящее среднее с большим весом на недавние значения",
+    "aliases": [
+      "exponentially weighted moving average",
+      "экспоненциальное скользящее среднее"
+    ]
   }
 ]
