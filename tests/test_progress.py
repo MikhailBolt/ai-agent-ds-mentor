@@ -678,6 +678,37 @@ def test_beacon_hop_and_2100_achievements() -> None:
     assert "/review" in beacon_review
 
 
+def test_orbit_vault_and_2200_achievements() -> None:
+    labels = prog.collect_achievement_labels(
+        total=2200,
+        correct=270,
+        best_streak=120,
+        bank_total=156,
+        bank_mastered=150,
+    )
+    assert "2200 ответов" in labels
+    assert "270 верных ответов" in labels
+    assert "Серия 120+" in labels
+
+    orbit = prog.format_orbit_summary(
+        current_title="Python DS",
+        next_title="ML Metrics",
+        next_id="ml-metrics",
+        next_unseen=4,
+    )
+    assert "Орбита:" in orbit
+    assert "ml-metrics" in orbit
+    assert "/rotate" in orbit
+
+    empty = prog.format_orbit_summary(
+        current_title=None,
+        next_title=None,
+        next_id=None,
+        next_unseen=0,
+    )
+    assert "/map" in empty
+
+
 def test_format_balance_summary() -> None:
     text = prog.format_balance_summary(
         bank_by_diff={1: 10, 2: 20, 3: 5},

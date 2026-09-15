@@ -115,6 +115,8 @@ BOT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("blend", "Другая тема и сложность"),
     ("beacon", "Маяк прогресса"),
     ("hop", "Лёгкий из слабой темы"),
+    ("orbit", "Орбита тем"),
+    ("vault", "Сложный из слабой темы"),
     ("compare", "Слабая vs сильная тема"),
     ("record", "Личные рекорды"),
     ("seen", "Встреченные вопросы"),
@@ -282,8 +284,10 @@ def _help_text() -> str:
         "/tilt, /lean или /slant — тот же топик, другая сложность\n"
         "/spark, /flare или /glow — искра: серия и следующий шаг\n"
         "/blend, /twist или /remix — другая тема и сложность\n"
-        "/beacon или /torch — маяк: точность и фокус темы\n"
-        "/hop или /bounce — лёгкий новый из слабой темы\n"
+        "/beacon, /torch или /lamp — маяк: точность и фокус темы\n"
+        "/hop, /bounce или /leap — лёгкий новый из слабой темы\n"
+        "/orbit или /loop — орбита: текущая и следующая тема\n"
+        "/vault или /chest — сложный новый из слабой темы\n"
         "/level или /rank — уровень по ответам и банку\n"
         "/record или /best — личные рекорды\n"
         "/plan или /guide — что тренировать дальше\n"
@@ -2165,7 +2169,7 @@ def handle_text(
         )
         return
 
-    if cmd in {"/beacon", "/torch"}:
+    if cmd in {"/beacon", "/torch", "/lamp"}:
         st = mentor_db.get_stats(conn, chat_id)
         streak = mentor_db.get_streak(conn, chat_id)
         review_count = len(mentor_db.get_review_question_ids(conn, chat_id))
@@ -2186,7 +2190,7 @@ def handle_text(
         )
         return
 
-    if cmd in {"/hop", "/bounce"}:
+    if cmd in {"/hop", "/bounce", "/leap"}:
         tip = mentor_comp.suggest_practice_competency(
             competencies,
             mentor_db.get_competency_stats(conn, chat_id),
@@ -2247,6 +2251,99 @@ def handle_text(
             competencies,
             difficulty_filter=1,
             intro="Hop: ★☆☆",
+        )
+        return
+
+    if cmd in {"/orbit", "/loop"}:
+        last_id = mentor_db.get_last_question_id(conn, chat_id)
+        if not last_id:
+            last_id = mentor_db.get_active_question(conn, chat_id)
+        current_comp: str | None = None
+        current_title: str | None = None
+        if last_id:
+            last_q = mentor_quiz.find_by_id(questions, last_id)
+            if last_q is not None and last_q.competency_id:
+                current_comp = last_q.competency_id
+                tip_cur = mentor_comp.competency_by_id(competencies).get(current_comp)
+                current_title = tip_cur.title if tip_cur else current_comp
+        nxt = mentor_progress.next_rotate_competency(competencies, current_comp)
+        seen = mentor_db.get_seen_question_ids(conn, chat_id)
+        unseen = mentor_quiz.unseen_question_ids(questions, seen)
+        next_unseen = 0
+        if nxt is not None:
+            next_unseen = sum(1 for q in questions if q.id in unseen and q.competency_id == nxt.id)
+        api.send_message(
+            chat_id,
+            mentor_progress.format_orbit_summary(
+                current_title=current_title,
+                next_title=nxt.title if nxt else None,
+                next_id=nxt.id if nxt else None,
+                next_unseen=next_unseen,
+            ),
+        )
+        return
+
+    if cmd in {"/vault", "/chest"}:
+        tip = mentor_comp.suggest_practice_competency(
+            competencies,
+            mentor_db.get_competency_stats(conn, chat_id),
+        )
+        seen = mentor_db.get_seen_question_ids(conn, chat_id)
+        unseen = mentor_quiz.unseen_question_ids(questions, seen)
+        if tip is not None:
+            tip_hard_unseen = {
+                q.id
+                for q in questions
+                if q.id in unseen and q.competency_id == tip.id and q.difficulty == 3
+            }
+            if tip_hard_unseen:
+                deliver_quiz_question(
+                    api,
+                    conn,
+                    chat_id,
+                    questions,
+                    competencies,
+                    comp_filter=tip.id,
+                    difficulty_filter=3,
+                    only_ids=tip_hard_unseen,
+                    intro=f"Vault: «{tip.title}» ★★★",
+                )
+                return
+            tip_hard = {q.id for q in questions if q.competency_id == tip.id and q.difficulty == 3}
+            if tip_hard:
+                deliver_quiz_question(
+                    api,
+                    conn,
+                    chat_id,
+                    questions,
+                    competencies,
+                    comp_filter=tip.id,
+                    difficulty_filter=3,
+                    only_ids=tip_hard,
+                    intro=f"Vault: «{tip.title}» ★★★",
+                )
+                return
+        hard_unseen = {q.id for q in questions if q.id in unseen and q.difficulty == 3}
+        if hard_unseen:
+            deliver_quiz_question(
+                api,
+                conn,
+                chat_id,
+                questions,
+                competencies,
+                difficulty_filter=3,
+                only_ids=hard_unseen,
+                intro="Vault: ★★★",
+            )
+            return
+        deliver_quiz_question(
+            api,
+            conn,
+            chat_id,
+            questions,
+            competencies,
+            difficulty_filter=3,
+            intro="Vault: ★★★",
         )
         return
 

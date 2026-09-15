@@ -410,6 +410,23 @@ def format_beacon_summary(
     return f"Маяк: {acc:.0f}% · серия {streak} — /blend · /challenge"
 
 
+def format_orbit_summary(
+    *,
+    current_title: str | None,
+    next_title: str | None,
+    next_id: str | None,
+    next_unseen: int,
+) -> str:
+    if next_title and next_id:
+        cur = current_title or "старт"
+        return (
+            f"Орбита: {cur} → {next_title} ({next_id})\n"
+            f"новых в следующей: {next_unseen}\n"
+            f"/rotate · /vault · /topic {next_id}"
+        )
+    return "Орбита: темы не загружены — /map · /topics"
+
+
 def format_brief_summary(
     *,
     correct: int,
@@ -1053,6 +1070,8 @@ def collect_achievement_labels(
         labels.append("2000 ответов")
     if total >= 2100:
         labels.append("2100 ответов")
+    if total >= 2200:
+        labels.append("2200 ответов")
     if correct >= 5:
         labels.append("5 верных ответов")
     if correct >= 10:
@@ -1107,6 +1126,8 @@ def collect_achievement_labels(
         labels.append("250 верных ответов")
     if correct >= 260:
         labels.append("260 верных ответов")
+    if correct >= 270:
+        labels.append("270 верных ответов")
     if best_streak >= 5:
         labels.append("Серия 5+")
     if best_streak >= 10:
@@ -1153,6 +1174,8 @@ def collect_achievement_labels(
         labels.append("Серия 110+")
     if best_streak >= 115:
         labels.append("Серия 115+")
+    if best_streak >= 120:
+        labels.append("Серия 120+")
     if total >= 10 and correct / total >= 0.7:
         labels.append("Точность 70%+")
     if total >= 10 and correct / total >= 0.8:

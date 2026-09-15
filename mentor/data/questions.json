@@ -1725,5 +1725,38 @@
       "exponentially weighted moving average",
       "экспоненциальное скользящее среднее"
     ]
+  },
+  {
+    "id": "ml-081",
+    "competency_id": "ml-foundations",
+    "difficulty": 1,
+    "prompt": "Что делает функция активации ReLU?",
+    "answer": "возвращает x если x больше нуля и ноль иначе вносит нелинейность без насыщения на положительной оси",
+    "aliases": [
+      "rectified linear unit",
+      "relu max zero"
+    ]
+  },
+  {
+    "id": "ml-082",
+    "competency_id": "ml-metrics",
+    "difficulty": 2,
+    "prompt": "Чем RMSE отличается от MAE?",
+    "answer": "RMSE сильнее штрафует крупные ошибки из-за возведения в квадрат а MAE считает средний абсолютный модуль ошибки",
+    "aliases": [
+      "rmse vs mae outliers",
+      "среднеквадратичная vs абсолютная ошибка"
+    ]
+  },
+  {
+    "id": "py-042",
+    "competency_id": "python-ds",
+    "difficulty": 1,
+    "prompt": "Что делает df.assign(new_col=...) в pandas?",
+    "answer": "возвращает копию датафрейма с добавленным или перезаписанным столбцом не меняя исходный на месте",
+    "aliases": [
+      "assign new column copy",
+      "добавить столбец копией"
+    ]
   }
 ]
