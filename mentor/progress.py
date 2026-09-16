@@ -427,6 +427,25 @@ def format_orbit_summary(
     return "Орбита: темы не загружены — /map · /topics"
 
 
+def format_kit_summary(
+    *,
+    review_count: int,
+    bank_unseen: int,
+    daily_count: int,
+    daily_goal: int | None,
+    tip_id: str | None = None,
+) -> str:
+    if daily_goal and daily_count < daily_goal:
+        return "Набор: /quiz · /forge · /spark"
+    if review_count:
+        return "Набор: /review · /hop · /surge"
+    if tip_id:
+        return f"Набор: /forge · /vault · /topic {tip_id}"
+    if bank_unseen:
+        return "Набор: /new · /lane · /orbit"
+    return "Набор: /challenge · /blend · /deep"
+
+
 def format_brief_summary(
     *,
     correct: int,
@@ -1072,6 +1091,8 @@ def collect_achievement_labels(
         labels.append("2100 ответов")
     if total >= 2200:
         labels.append("2200 ответов")
+    if total >= 2300:
+        labels.append("2300 ответов")
     if correct >= 5:
         labels.append("5 верных ответов")
     if correct >= 10:
@@ -1128,6 +1149,8 @@ def collect_achievement_labels(
         labels.append("260 верных ответов")
     if correct >= 270:
         labels.append("270 верных ответов")
+    if correct >= 280:
+        labels.append("280 верных ответов")
     if best_streak >= 5:
         labels.append("Серия 5+")
     if best_streak >= 10:
@@ -1176,6 +1199,8 @@ def collect_achievement_labels(
         labels.append("Серия 115+")
     if best_streak >= 120:
         labels.append("Серия 120+")
+    if best_streak >= 125:
+        labels.append("Серия 125+")
     if total >= 10 and correct / total >= 0.7:
         labels.append("Точность 70%+")
     if total >= 10 and correct / total >= 0.8:

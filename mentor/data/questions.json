@@ -1758,5 +1758,38 @@
       "assign new column copy",
       "добавить столбец копией"
     ]
+  },
+  {
+    "id": "ml-083",
+    "competency_id": "ml-foundations",
+    "difficulty": 2,
+    "prompt": "Чем оптимизатор Adam отличается от обычного SGD?",
+    "answer": "Adam адаптирует learning rate для каждого параметра через оценки первого и второго момента градиента",
+    "aliases": [
+      "adam adaptive moments",
+      "адаптивный learning rate adam"
+    ]
+  },
+  {
+    "id": "st-033",
+    "competency_id": "stats-basics",
+    "difficulty": 2,
+    "prompt": "Что измеряет корреляция Спирмена (Spearman)?",
+    "answer": "монотонную связь между рангами двух переменных устойчивее к выбросам чем Пирсон",
+    "aliases": [
+      "spearman rank correlation",
+      "ранговая корреляция спирмена"
+    ]
+  },
+  {
+    "id": "py-043",
+    "competency_id": "python-ds",
+    "difficulty": 1,
+    "prompt": "Что делает df.nlargest(3, 'col') в pandas?",
+    "answer": "возвращает три строки с наибольшими значениями в столбце col",
+    "aliases": [
+      "top n largest rows",
+      "наибольшие значения столбца"
+    ]
   }
 ]

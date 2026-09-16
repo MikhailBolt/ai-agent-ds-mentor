@@ -709,6 +709,36 @@ def test_orbit_vault_and_2200_achievements() -> None:
     assert "/map" in empty
 
 
+def test_kit_forge_and_2300_achievements() -> None:
+    labels = prog.collect_achievement_labels(
+        total=2300,
+        correct=280,
+        best_streak=125,
+        bank_total=159,
+        bank_mastered=152,
+    )
+    assert "2300 ответов" in labels
+    assert "280 верных ответов" in labels
+    assert "Серия 125+" in labels
+
+    kit = prog.format_kit_summary(
+        review_count=0,
+        bank_unseen=8,
+        daily_count=1,
+        daily_goal=5,
+    )
+    assert "Набор:" in kit
+    assert "/forge" in kit
+
+    kit_review = prog.format_kit_summary(
+        review_count=3,
+        bank_unseen=8,
+        daily_count=5,
+        daily_goal=5,
+    )
+    assert "/review" in kit_review
+
+
 def test_format_balance_summary() -> None:
     text = prog.format_balance_summary(
         bank_by_diff={1: 10, 2: 20, 3: 5},

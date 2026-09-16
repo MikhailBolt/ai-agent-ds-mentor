@@ -117,6 +117,8 @@ BOT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("hop", "Лёгкий из слабой темы"),
     ("orbit", "Орбита тем"),
     ("vault", "Сложный из слабой темы"),
+    ("kit", "Набор команд"),
+    ("forge", "Средний из слабой темы"),
     ("compare", "Слабая vs сильная тема"),
     ("record", "Личные рекорды"),
     ("seen", "Встреченные вопросы"),
@@ -286,8 +288,10 @@ def _help_text() -> str:
         "/blend, /twist или /remix — другая тема и сложность\n"
         "/beacon, /torch или /lamp — маяк: точность и фокус темы\n"
         "/hop, /bounce или /leap — лёгкий новый из слабой темы\n"
-        "/orbit или /loop — орбита: текущая и следующая тема\n"
-        "/vault или /chest — сложный новый из слабой темы\n"
+        "/orbit, /loop или /ring — орбита: текущая и следующая тема\n"
+        "/vault, /chest или /cache — сложный новый из слабой темы\n"
+        "/kit или /toolkit — набор команд под состояние\n"
+        "/forge или /smith — средний новый из слабой темы\n"
         "/level или /rank — уровень по ответам и банку\n"
         "/record или /best — личные рекорды\n"
         "/plan или /guide — что тренировать дальше\n"
@@ -2254,7 +2258,7 @@ def handle_text(
         )
         return
 
-    if cmd in {"/orbit", "/loop"}:
+    if cmd in {"/orbit", "/loop", "/ring"}:
         last_id = mentor_db.get_last_question_id(conn, chat_id)
         if not last_id:
             last_id = mentor_db.get_active_question(conn, chat_id)
@@ -2283,7 +2287,7 @@ def handle_text(
         )
         return
 
-    if cmd in {"/vault", "/chest"}:
+    if cmd in {"/vault", "/chest", "/cache"}:
         tip = mentor_comp.suggest_practice_competency(
             competencies,
             mentor_db.get_competency_stats(conn, chat_id),
@@ -2344,6 +2348,92 @@ def handle_text(
             competencies,
             difficulty_filter=3,
             intro="Vault: ★★★",
+        )
+        return
+
+    if cmd in {"/kit", "/toolkit"}:
+        daily_goal = parse_daily_goal()
+        daily_count = mentor_db.get_daily_answer_count(conn, chat_id)
+        review_count = len(mentor_db.get_review_question_ids(conn, chat_id))
+        seen = mentor_db.get_seen_question_ids(conn, chat_id)
+        unseen = len(mentor_quiz.unseen_question_ids(questions, seen))
+        tip = mentor_comp.suggest_practice_competency(
+            competencies,
+            mentor_db.get_competency_stats(conn, chat_id),
+        )
+        api.send_message(
+            chat_id,
+            mentor_progress.format_kit_summary(
+                review_count=review_count,
+                bank_unseen=unseen,
+                daily_count=daily_count,
+                daily_goal=daily_goal,
+                tip_id=tip.id if tip else None,
+            ),
+        )
+        return
+
+    if cmd in {"/forge", "/smith"}:
+        tip = mentor_comp.suggest_practice_competency(
+            competencies,
+            mentor_db.get_competency_stats(conn, chat_id),
+        )
+        seen = mentor_db.get_seen_question_ids(conn, chat_id)
+        unseen = mentor_quiz.unseen_question_ids(questions, seen)
+        if tip is not None:
+            tip_mid_unseen = {
+                q.id
+                for q in questions
+                if q.id in unseen and q.competency_id == tip.id and q.difficulty == 2
+            }
+            if tip_mid_unseen:
+                deliver_quiz_question(
+                    api,
+                    conn,
+                    chat_id,
+                    questions,
+                    competencies,
+                    comp_filter=tip.id,
+                    difficulty_filter=2,
+                    only_ids=tip_mid_unseen,
+                    intro=f"Forge: «{tip.title}» ★★☆",
+                )
+                return
+            tip_mid = {q.id for q in questions if q.competency_id == tip.id and q.difficulty == 2}
+            if tip_mid:
+                deliver_quiz_question(
+                    api,
+                    conn,
+                    chat_id,
+                    questions,
+                    competencies,
+                    comp_filter=tip.id,
+                    difficulty_filter=2,
+                    only_ids=tip_mid,
+                    intro=f"Forge: «{tip.title}» ★★☆",
+                )
+                return
+        mid_unseen = {q.id for q in questions if q.id in unseen and q.difficulty == 2}
+        if mid_unseen:
+            deliver_quiz_question(
+                api,
+                conn,
+                chat_id,
+                questions,
+                competencies,
+                difficulty_filter=2,
+                only_ids=mid_unseen,
+                intro="Forge: ★★☆",
+            )
+            return
+        deliver_quiz_question(
+            api,
+            conn,
+            chat_id,
+            questions,
+            competencies,
+            difficulty_filter=2,
+            intro="Forge: ★★☆",
         )
         return
 
