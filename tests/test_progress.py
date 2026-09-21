@@ -739,6 +739,39 @@ def test_kit_forge_and_2300_achievements() -> None:
     assert "/review" in kit_review
 
 
+def test_lint_patch_and_2400_achievements() -> None:
+    labels = prog.collect_achievement_labels(
+        total=2400,
+        correct=290,
+        best_streak=130,
+        bank_total=162,
+        bank_mastered=155,
+    )
+    assert "2400 ответов" in labels
+    assert "290 верных ответов" in labels
+    assert "Серия 130+" in labels
+
+    lint = prog.format_lint_summary(
+        correct=40,
+        total=50,
+        review_count=0,
+        bank_unseen=6,
+        lowest_title="Stats",
+        lowest_id="stats-basics",
+    )
+    assert "Lint:" in lint
+    assert "stats-basics" in lint
+    assert "/patch" in lint
+
+    lint_weak = prog.format_lint_summary(
+        correct=10,
+        total=20,
+        review_count=0,
+        bank_unseen=3,
+    )
+    assert "/ease" in lint_weak
+
+
 def test_format_balance_summary() -> None:
     text = prog.format_balance_summary(
         bank_by_diff={1: 10, 2: 20, 3: 5},

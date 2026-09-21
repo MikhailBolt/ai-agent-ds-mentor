@@ -1791,5 +1791,38 @@
       "top n largest rows",
       "наибольшие значения столбца"
     ]
+  },
+  {
+    "id": "ml-084",
+    "competency_id": "ml-foundations",
+    "difficulty": 2,
+    "prompt": "Что такое Gini impurity в деревьях решений?",
+    "answer": "мера неоднородности узла чем ближе к нулю тем чище узел по классам",
+    "aliases": [
+      "gini impurity decision tree",
+      "неоднородность узла джини"
+    ]
+  },
+  {
+    "id": "ml-085",
+    "competency_id": "ml-validation",
+    "difficulty": 3,
+    "prompt": "Что измеряет Silhouette score в кластеризации?",
+    "answer": "насколько объект ближе к своему кластеру чем к соседним значения от минус одного до одного",
+    "aliases": [
+      "silhouette cluster quality",
+      "силуэт кластеризации"
+    ]
+  },
+  {
+    "id": "py-044",
+    "competency_id": "python-ds",
+    "difficulty": 1,
+    "prompt": "Что делает df.nsmallest(3, 'col') в pandas?",
+    "answer": "возвращает три строки с наименьшими значениями в столбце col",
+    "aliases": [
+      "bottom n smallest rows",
+      "наименьшие значения столбца"
+    ]
   }
 ]

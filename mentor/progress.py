@@ -446,6 +446,29 @@ def format_kit_summary(
     return "Набор: /challenge · /blend · /deep"
 
 
+def format_lint_summary(
+    *,
+    correct: int,
+    total: int,
+    review_count: int,
+    bank_unseen: int,
+    lowest_title: str | None = None,
+    lowest_id: str | None = None,
+) -> str:
+    acc = (correct / total * 100.0) if total else 0.0
+    if total == 0:
+        return "Lint: старт — /quiz · /hop"
+    if acc < 55.0:
+        return f"Lint: {acc:.0f}% · слабо — /ease · /review · /hop"
+    if review_count:
+        return f"Lint: {acc:.0f}% · повтор {review_count} — /review · /patch"
+    if lowest_id and lowest_title:
+        return f"Lint: {acc:.0f}% · пробел {lowest_title} ({lowest_id}) — /patch · /fill"
+    if bank_unseen:
+        return f"Lint: {acc:.0f}% · новых {bank_unseen} — /forge · /lane"
+    return f"Lint: {acc:.0f}% · чисто — /challenge · /vault"
+
+
 def format_brief_summary(
     *,
     correct: int,
@@ -1093,6 +1116,8 @@ def collect_achievement_labels(
         labels.append("2200 ответов")
     if total >= 2300:
         labels.append("2300 ответов")
+    if total >= 2400:
+        labels.append("2400 ответов")
     if correct >= 5:
         labels.append("5 верных ответов")
     if correct >= 10:
@@ -1151,6 +1176,8 @@ def collect_achievement_labels(
         labels.append("270 верных ответов")
     if correct >= 280:
         labels.append("280 верных ответов")
+    if correct >= 290:
+        labels.append("290 верных ответов")
     if best_streak >= 5:
         labels.append("Серия 5+")
     if best_streak >= 10:
@@ -1201,6 +1228,8 @@ def collect_achievement_labels(
         labels.append("Серия 120+")
     if best_streak >= 125:
         labels.append("Серия 125+")
+    if best_streak >= 130:
+        labels.append("Серия 130+")
     if total >= 10 and correct / total >= 0.7:
         labels.append("Точность 70%+")
     if total >= 10 and correct / total >= 0.8:
