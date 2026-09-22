@@ -469,6 +469,20 @@ def format_lint_summary(
     return f"Lint: {acc:.0f}% · чисто — /challenge · /vault"
 
 
+def format_memo_summary(
+    *,
+    streak: int,
+    review_count: int,
+    tip_title: str | None = None,
+    tip_id: str | None = None,
+) -> str:
+    if review_count:
+        return f"Заметка: серия {streak} · повтор {review_count} — /review · /wedge"
+    if tip_id and tip_title:
+        return f"Заметка: серия {streak} · {tip_title} ({tip_id}) — /wedge · /forge"
+    return f"Заметка: серия {streak} — /quiz · /orbit"
+
+
 def format_brief_summary(
     *,
     correct: int,
@@ -1118,6 +1132,8 @@ def collect_achievement_labels(
         labels.append("2300 ответов")
     if total >= 2400:
         labels.append("2400 ответов")
+    if total >= 2500:
+        labels.append("2500 ответов")
     if correct >= 5:
         labels.append("5 верных ответов")
     if correct >= 10:
@@ -1178,6 +1194,8 @@ def collect_achievement_labels(
         labels.append("280 верных ответов")
     if correct >= 290:
         labels.append("290 верных ответов")
+    if correct >= 300:
+        labels.append("300 верных ответов")
     if best_streak >= 5:
         labels.append("Серия 5+")
     if best_streak >= 10:
@@ -1230,6 +1248,8 @@ def collect_achievement_labels(
         labels.append("Серия 125+")
     if best_streak >= 130:
         labels.append("Серия 130+")
+    if best_streak >= 135:
+        labels.append("Серия 135+")
     if total >= 10 and correct / total >= 0.7:
         labels.append("Точность 70%+")
     if total >= 10 and correct / total >= 0.8:

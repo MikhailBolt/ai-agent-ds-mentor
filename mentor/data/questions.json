@@ -1824,5 +1824,38 @@
       "bottom n smallest rows",
       "наименьшие значения столбца"
     ]
+  },
+  {
+    "id": "ml-086",
+    "competency_id": "ml-foundations",
+    "difficulty": 2,
+    "prompt": "Как размер батча (batch size) влияет на обучение?",
+    "answer": "маленький батч даёт шумный градиент и чаще лучше обобщает большой ускоряет и стабилизирует оценки но может хуже обобщать",
+    "aliases": [
+      "batch size tradeoff",
+      "размер мини батча"
+    ]
+  },
+  {
+    "id": "ml-087",
+    "competency_id": "ml-metrics",
+    "difficulty": 2,
+    "prompt": "Что измеряет cosine similarity?",
+    "answer": "похожесть направлений двух векторов независимо от их длины через косинус угла между ними",
+    "aliases": [
+      "cosine similarity vectors",
+      "косинусная близость"
+    ]
+  },
+  {
+    "id": "py-045",
+    "competency_id": "python-ds",
+    "difficulty": 2,
+    "prompt": "Что делает df.where(cond, other) в pandas?",
+    "answer": "оставляет значения где условие истинно и подставляет other где ложно",
+    "aliases": [
+      "where keep if true else other",
+      "условная подстановка where"
+    ]
   }
 ]

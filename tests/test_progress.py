@@ -772,6 +772,32 @@ def test_lint_patch_and_2400_achievements() -> None:
     assert "/ease" in lint_weak
 
 
+def test_memo_wedge_and_2500_achievements() -> None:
+    labels = prog.collect_achievement_labels(
+        total=2500,
+        correct=300,
+        best_streak=135,
+        bank_total=165,
+        bank_mastered=158,
+    )
+    assert "2500 ответов" in labels
+    assert "300 верных ответов" in labels
+    assert "Серия 135+" in labels
+
+    memo = prog.format_memo_summary(
+        streak=7,
+        review_count=0,
+        tip_title="Python DS",
+        tip_id="python-ds",
+    )
+    assert "Заметка:" in memo
+    assert "python-ds" in memo
+    assert "/wedge" in memo
+
+    memo_review = prog.format_memo_summary(streak=2, review_count=5)
+    assert "/review" in memo_review
+
+
 def test_format_balance_summary() -> None:
     text = prog.format_balance_summary(
         bank_by_diff={1: 10, 2: 20, 3: 5},

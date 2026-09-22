@@ -121,6 +121,8 @@ BOT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("forge", "Средний из слабой темы"),
     ("lint", "Проверка прогресса"),
     ("patch", "Закрыть пробел покрытия"),
+    ("memo", "Заметка тренировки"),
+    ("wedge", "Лёгкий по пробелу покрытия"),
     ("compare", "Слабая vs сильная тема"),
     ("record", "Личные рекорды"),
     ("seen", "Встреченные вопросы"),
@@ -294,8 +296,10 @@ def _help_text() -> str:
         "/vault, /chest или /cache — сложный новый из слабой темы\n"
         "/kit, /toolkit или /pack — набор команд под состояние\n"
         "/forge, /smith или /craft — средний новый из слабой темы\n"
-        "/lint или /checkup — проверка: точность и пробелы\n"
-        "/patch или /mend — вопрос из темы с низким покрытием\n"
+        "/lint, /checkup или /audit — проверка: точность и пробелы\n"
+        "/patch, /mend или /repair — вопрос из темы с низким покрытием\n"
+        "/memo или /note — заметка: серия и фокус темы\n"
+        "/wedge или /shim — лёгкий из темы с низким покрытием\n"
         "/level или /rank — уровень по ответам и банку\n"
         "/record или /best — личные рекорды\n"
         "/plan или /guide — что тренировать дальше\n"
@@ -2441,7 +2445,7 @@ def handle_text(
         )
         return
 
-    if cmd in {"/lint", "/checkup"}:
+    if cmd in {"/lint", "/checkup", "/audit"}:
         st = mentor_db.get_stats(conn, chat_id)
         review_count = len(mentor_db.get_review_question_ids(conn, chat_id))
         seen = mentor_db.get_seen_question_ids(conn, chat_id)
@@ -2461,7 +2465,7 @@ def handle_text(
         )
         return
 
-    if cmd in {"/patch", "/mend"}:
+    if cmd in {"/patch", "/mend", "/repair"}:
         seen = mentor_db.get_seen_question_ids(conn, chat_id)
         unseen = mentor_quiz.unseen_question_ids(questions, seen)
         bank_seen = mentor_quiz.competency_mastery_counts(questions, seen)
@@ -2518,6 +2522,84 @@ def handle_text(
             comp_filter=tip.id,
             difficulty_filter=2,
             intro=f"Patch: «{tip.title}» ★★☆",
+        )
+        return
+
+    if cmd in {"/memo", "/note"}:
+        streak = mentor_db.get_streak(conn, chat_id)
+        review_count = len(mentor_db.get_review_question_ids(conn, chat_id))
+        tip = mentor_comp.suggest_practice_competency(
+            competencies,
+            mentor_db.get_competency_stats(conn, chat_id),
+        )
+        api.send_message(
+            chat_id,
+            mentor_progress.format_memo_summary(
+                streak=streak,
+                review_count=review_count,
+                tip_title=tip.title if tip else None,
+                tip_id=tip.id if tip else None,
+            ),
+        )
+        return
+
+    if cmd in {"/wedge", "/shim"}:
+        seen = mentor_db.get_seen_question_ids(conn, chat_id)
+        unseen = mentor_quiz.unseen_question_ids(questions, seen)
+        bank_seen = mentor_quiz.competency_mastery_counts(questions, seen)
+        lowest = mentor_progress.suggest_lowest_coverage(competencies, bank_seen)
+        if lowest is None:
+            deliver_quiz_question(
+                api,
+                conn,
+                chat_id,
+                questions,
+                competencies,
+                difficulty_filter=1,
+                intro="Wedge",
+            )
+            return
+        tip, _, _ = lowest
+        tip_easy_unseen = {
+            q.id
+            for q in questions
+            if q.id in unseen and q.competency_id == tip.id and q.difficulty == 1
+        }
+        if tip_easy_unseen:
+            deliver_quiz_question(
+                api,
+                conn,
+                chat_id,
+                questions,
+                competencies,
+                comp_filter=tip.id,
+                difficulty_filter=1,
+                only_ids=tip_easy_unseen,
+                intro=f"Wedge: «{tip.title}» ★☆☆",
+            )
+            return
+        tip_unseen = {q.id for q in questions if q.id in unseen and q.competency_id == tip.id}
+        if tip_unseen:
+            deliver_quiz_question(
+                api,
+                conn,
+                chat_id,
+                questions,
+                competencies,
+                comp_filter=tip.id,
+                only_ids=tip_unseen,
+                intro=f"Wedge: «{tip.title}»",
+            )
+            return
+        deliver_quiz_question(
+            api,
+            conn,
+            chat_id,
+            questions,
+            competencies,
+            comp_filter=tip.id,
+            difficulty_filter=1,
+            intro=f"Wedge: «{tip.title}» ★☆☆",
         )
         return
 
