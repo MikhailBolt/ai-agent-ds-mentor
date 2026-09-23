@@ -123,6 +123,8 @@ BOT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("patch", "Закрыть пробел покрытия"),
     ("memo", "Заметка тренировки"),
     ("wedge", "Лёгкий по пробелу покрытия"),
+    ("ledger", "Журнал прогресса"),
+    ("spike", "Сложный по пробелу покрытия"),
     ("compare", "Слабая vs сильная тема"),
     ("record", "Личные рекорды"),
     ("seen", "Встреченные вопросы"),
@@ -298,8 +300,10 @@ def _help_text() -> str:
         "/forge, /smith или /craft — средний новый из слабой темы\n"
         "/lint, /checkup или /audit — проверка: точность и пробелы\n"
         "/patch, /mend или /repair — вопрос из темы с низким покрытием\n"
-        "/memo или /note — заметка: серия и фокус темы\n"
-        "/wedge или /shim — лёгкий из темы с низким покрытием\n"
+        "/memo, /note или /jot — заметка: серия и фокус темы\n"
+        "/wedge, /shim или /edge — лёгкий из темы с низким покрытием\n"
+        "/ledger или /card — журнал: точность и покрытие банка\n"
+        "/spike или /peak — сложный из темы с низким покрытием\n"
         "/level или /rank — уровень по ответам и банку\n"
         "/record или /best — личные рекорды\n"
         "/plan или /guide — что тренировать дальше\n"
@@ -2525,7 +2529,7 @@ def handle_text(
         )
         return
 
-    if cmd in {"/memo", "/note"}:
+    if cmd in {"/memo", "/note", "/jot"}:
         streak = mentor_db.get_streak(conn, chat_id)
         review_count = len(mentor_db.get_review_question_ids(conn, chat_id))
         tip = mentor_comp.suggest_practice_competency(
@@ -2543,7 +2547,7 @@ def handle_text(
         )
         return
 
-    if cmd in {"/wedge", "/shim"}:
+    if cmd in {"/wedge", "/shim", "/edge"}:
         seen = mentor_db.get_seen_question_ids(conn, chat_id)
         unseen = mentor_quiz.unseen_question_ids(questions, seen)
         bank_seen = mentor_quiz.competency_mastery_counts(questions, seen)
@@ -2600,6 +2604,82 @@ def handle_text(
             comp_filter=tip.id,
             difficulty_filter=1,
             intro=f"Wedge: «{tip.title}» ★☆☆",
+        )
+        return
+
+    if cmd in {"/ledger", "/card"}:
+        st = mentor_db.get_stats(conn, chat_id)
+        streak = mentor_db.get_streak(conn, chat_id)
+        seen = mentor_db.get_seen_question_ids(conn, chat_id)
+        api.send_message(
+            chat_id,
+            mentor_progress.format_ledger_summary(
+                correct=st.correct,
+                total=st.total,
+                streak=streak,
+                bank_seen=len(seen),
+                bank_total=len(questions),
+            ),
+        )
+        return
+
+    if cmd in {"/spike", "/peak"}:
+        seen = mentor_db.get_seen_question_ids(conn, chat_id)
+        unseen = mentor_quiz.unseen_question_ids(questions, seen)
+        bank_seen = mentor_quiz.competency_mastery_counts(questions, seen)
+        lowest = mentor_progress.suggest_lowest_coverage(competencies, bank_seen)
+        if lowest is None:
+            deliver_quiz_question(
+                api,
+                conn,
+                chat_id,
+                questions,
+                competencies,
+                difficulty_filter=3,
+                intro="Spike",
+            )
+            return
+        tip, _, _ = lowest
+        tip_hard_unseen = {
+            q.id
+            for q in questions
+            if q.id in unseen and q.competency_id == tip.id and q.difficulty == 3
+        }
+        if tip_hard_unseen:
+            deliver_quiz_question(
+                api,
+                conn,
+                chat_id,
+                questions,
+                competencies,
+                comp_filter=tip.id,
+                difficulty_filter=3,
+                only_ids=tip_hard_unseen,
+                intro=f"Spike: «{tip.title}» ★★★",
+            )
+            return
+        tip_unseen = {q.id for q in questions if q.id in unseen and q.competency_id == tip.id}
+        if tip_unseen:
+            deliver_quiz_question(
+                api,
+                conn,
+                chat_id,
+                questions,
+                competencies,
+                comp_filter=tip.id,
+                only_ids=tip_unseen,
+                intro=f"Spike: «{tip.title}»",
+            )
+            return
+        deliver_quiz_question(
+            api,
+            conn,
+            chat_id,
+            questions,
+            competencies,
+            comp_filter=tip.id,
+            difficulty_filter=3,
+            intro=f"Spike: «{tip.title}» ★★★",
         )
         return
 

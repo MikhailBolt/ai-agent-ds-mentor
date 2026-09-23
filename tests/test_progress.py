@@ -798,6 +798,39 @@ def test_memo_wedge_and_2500_achievements() -> None:
     assert "/review" in memo_review
 
 
+def test_ledger_spike_and_2600_achievements() -> None:
+    labels = prog.collect_achievement_labels(
+        total=2600,
+        correct=310,
+        best_streak=140,
+        bank_total=168,
+        bank_mastered=160,
+    )
+    assert "2600 ответов" in labels
+    assert "310 верных ответов" in labels
+    assert "Серия 140+" in labels
+
+    ledger = prog.format_ledger_summary(
+        correct=45,
+        total=60,
+        streak=8,
+        bank_seen=80,
+        bank_total=168,
+    )
+    assert "Журнал:" in ledger
+    assert "45/60" in ledger
+    assert "/spike" in ledger
+
+    empty = prog.format_ledger_summary(
+        correct=0,
+        total=0,
+        streak=0,
+        bank_seen=0,
+        bank_total=168,
+    )
+    assert "/quiz" in empty
+
+
 def test_format_balance_summary() -> None:
     text = prog.format_balance_summary(
         bank_by_diff={1: 10, 2: 20, 3: 5},

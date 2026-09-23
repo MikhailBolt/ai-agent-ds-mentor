@@ -1857,5 +1857,38 @@
       "where keep if true else other",
       "условная подстановка where"
     ]
+  },
+  {
+    "id": "ml-088",
+    "competency_id": "ml-foundations",
+    "difficulty": 1,
+    "prompt": "Что делает функция активации Sigmoid?",
+    "answer": "сжимает любое вещественное число в диапазон от 0 до 1 часто для вероятностей",
+    "aliases": [
+      "sigmoid 0 to 1",
+      "сигмоида вероятности"
+    ]
+  },
+  {
+    "id": "st-034",
+    "competency_id": "stats-basics",
+    "difficulty": 2,
+    "prompt": "Что измеряет корреляция Пирсона?",
+    "answer": "линейную связь между двумя числовыми переменными от минус одного до одного",
+    "aliases": [
+      "pearson linear correlation",
+      "линейная корреляция пирсона"
+    ]
+  },
+  {
+    "id": "py-046",
+    "competency_id": "python-ds",
+    "difficulty": 2,
+    "prompt": "Что делает df.filter(items=['a', 'b']) в pandas?",
+    "answer": "оставляет только указанные столбцы или строки по именам без ошибки если части нет",
+    "aliases": [
+      "filter columns by name",
+      "отфильтровать столбцы по именам"
+    ]
   }
 ]

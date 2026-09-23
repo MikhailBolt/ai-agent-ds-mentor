@@ -483,6 +483,25 @@ def format_memo_summary(
     return f"Заметка: серия {streak} — /quiz · /orbit"
 
 
+def format_ledger_summary(
+    *,
+    correct: int,
+    total: int,
+    streak: int,
+    bank_seen: int,
+    bank_total: int,
+) -> str:
+    acc = (correct / total * 100.0) if total else 0.0
+    bank_pct = (bank_seen / bank_total * 100.0) if bank_total else 0.0
+    if total == 0:
+        return "Журнал: пусто — /quiz · /wedge"
+    return (
+        f"Журнал: {correct}/{total} ({acc:.0f}%) · серия {streak}\n"
+        f"банк встречен {bank_seen}/{bank_total} ({bank_pct:.0f}%)\n"
+        f"/spike · /patch · /memo"
+    )
+
+
 def format_brief_summary(
     *,
     correct: int,
@@ -1134,6 +1153,8 @@ def collect_achievement_labels(
         labels.append("2400 ответов")
     if total >= 2500:
         labels.append("2500 ответов")
+    if total >= 2600:
+        labels.append("2600 ответов")
     if correct >= 5:
         labels.append("5 верных ответов")
     if correct >= 10:
@@ -1196,6 +1217,8 @@ def collect_achievement_labels(
         labels.append("290 верных ответов")
     if correct >= 300:
         labels.append("300 верных ответов")
+    if correct >= 310:
+        labels.append("310 верных ответов")
     if best_streak >= 5:
         labels.append("Серия 5+")
     if best_streak >= 10:
@@ -1250,6 +1273,8 @@ def collect_achievement_labels(
         labels.append("Серия 130+")
     if best_streak >= 135:
         labels.append("Серия 135+")
+    if best_streak >= 140:
+        labels.append("Серия 140+")
     if total >= 10 and correct / total >= 0.7:
         labels.append("Точность 70%+")
     if total >= 10 and correct / total >= 0.8:
