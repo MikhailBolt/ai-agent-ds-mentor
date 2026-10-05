@@ -125,6 +125,8 @@ BOT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("wedge", "Лёгкий по пробелу покрытия"),
     ("ledger", "Журнал прогресса"),
     ("spike", "Сложный по пробелу покрытия"),
+    ("rhythm", "Ритм тренировки"),
+    ("seam", "Средний из следующей темы"),
     ("compare", "Слабая vs сильная тема"),
     ("record", "Личные рекорды"),
     ("seen", "Встреченные вопросы"),
@@ -302,8 +304,10 @@ def _help_text() -> str:
         "/patch, /mend или /repair — вопрос из темы с низким покрытием\n"
         "/memo, /note или /jot — заметка: серия и фокус темы\n"
         "/wedge, /shim или /edge — лёгкий из темы с низким покрытием\n"
-        "/ledger или /card — журнал: точность и покрытие банка\n"
-        "/spike или /peak — сложный из темы с низким покрытием\n"
+        "/ledger, /card или /book — журнал: точность и покрытие банка\n"
+        "/spike, /peak или /apex — сложный из темы с низким покрытием\n"
+        "/rhythm или /beat — ритм: цель дня и серия\n"
+        "/seam или /join — средний из следующей темы по орбите\n"
         "/level или /rank — уровень по ответам и банку\n"
         "/record или /best — личные рекорды\n"
         "/plan или /guide — что тренировать дальше\n"
@@ -2607,7 +2611,7 @@ def handle_text(
         )
         return
 
-    if cmd in {"/ledger", "/card"}:
+    if cmd in {"/ledger", "/card", "/book"}:
         st = mentor_db.get_stats(conn, chat_id)
         streak = mentor_db.get_streak(conn, chat_id)
         seen = mentor_db.get_seen_question_ids(conn, chat_id)
@@ -2623,7 +2627,7 @@ def handle_text(
         )
         return
 
-    if cmd in {"/spike", "/peak"}:
+    if cmd in {"/spike", "/peak", "/apex"}:
         seen = mentor_db.get_seen_question_ids(conn, chat_id)
         unseen = mentor_quiz.unseen_question_ids(questions, seen)
         bank_seen = mentor_quiz.competency_mastery_counts(questions, seen)
@@ -2680,6 +2684,88 @@ def handle_text(
             comp_filter=tip.id,
             difficulty_filter=3,
             intro=f"Spike: «{tip.title}» ★★★",
+        )
+        return
+
+    if cmd in {"/rhythm", "/beat"}:
+        streak = mentor_db.get_streak(conn, chat_id)
+        daily_goal = parse_daily_goal()
+        daily_count = mentor_db.get_daily_answer_count(conn, chat_id)
+        review_count = len(mentor_db.get_review_question_ids(conn, chat_id))
+        api.send_message(
+            chat_id,
+            mentor_progress.format_rhythm_summary(
+                streak=streak,
+                daily_count=daily_count,
+                daily_goal=daily_goal,
+                review_count=review_count,
+            ),
+        )
+        return
+
+    if cmd in {"/seam", "/join"}:
+        last_id = mentor_db.get_last_question_id(conn, chat_id)
+        if not last_id:
+            last_id = mentor_db.get_active_question(conn, chat_id)
+        current_comp: str | None = None
+        if last_id:
+            last_q = mentor_quiz.find_by_id(questions, last_id)
+            if last_q is not None:
+                current_comp = last_q.competency_id
+        tip = mentor_progress.next_rotate_competency(competencies, current_comp)
+        seen = mentor_db.get_seen_question_ids(conn, chat_id)
+        unseen = mentor_quiz.unseen_question_ids(questions, seen)
+        if tip is None:
+            deliver_quiz_question(
+                api,
+                conn,
+                chat_id,
+                questions,
+                competencies,
+                difficulty_filter=2,
+                intro="Seam",
+            )
+            return
+        tip_mid_unseen = {
+            q.id
+            for q in questions
+            if q.id in unseen and q.competency_id == tip.id and q.difficulty == 2
+        }
+        if tip_mid_unseen:
+            deliver_quiz_question(
+                api,
+                conn,
+                chat_id,
+                questions,
+                competencies,
+                comp_filter=tip.id,
+                difficulty_filter=2,
+                only_ids=tip_mid_unseen,
+                intro=f"Seam: «{tip.title}» ★★☆",
+            )
+            return
+        tip_unseen = {q.id for q in questions if q.id in unseen and q.competency_id == tip.id}
+        if tip_unseen:
+            deliver_quiz_question(
+                api,
+                conn,
+                chat_id,
+                questions,
+                competencies,
+                comp_filter=tip.id,
+                only_ids=tip_unseen,
+                intro=f"Seam: «{tip.title}»",
+            )
+            return
+        deliver_quiz_question(
+            api,
+            conn,
+            chat_id,
+            questions,
+            competencies,
+            comp_filter=tip.id,
+            difficulty_filter=2,
+            intro=f"Seam: «{tip.title}» ★★☆",
         )
         return
 

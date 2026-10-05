@@ -1890,5 +1890,38 @@
       "filter columns by name",
       "отфильтровать столбцы по именам"
     ]
+  },
+  {
+    "id": "ml-089",
+    "competency_id": "ml-foundations",
+    "difficulty": 2,
+    "prompt": "Чем Tanh отличается от Sigmoid как активация?",
+    "answer": "Tanh центрирован около нуля и выдаёт значения от минус одного до одного а Sigmoid от нуля до одного",
+    "aliases": [
+      "tanh vs sigmoid centered",
+      "tanh от минус одного до одного"
+    ]
+  },
+  {
+    "id": "st-035",
+    "competency_id": "stats-basics",
+    "difficulty": 3,
+    "prompt": "Что измеряет коэффициент Кендалла (Kendall tau)?",
+    "answer": "ранговую согласованность пар наблюдений по доле согласных и несогласных пар",
+    "aliases": [
+      "kendall tau rank concordance",
+      "тау кендалла ранги"
+    ]
+  },
+  {
+    "id": "py-047",
+    "competency_id": "python-ds",
+    "difficulty": 2,
+    "prompt": "Что делает df.eval('c = a + b') в pandas?",
+    "answer": "вычисляет выражение над столбцами и может создать или обновить столбец без явного Python-цикла",
+    "aliases": [
+      "eval column expression",
+      "выражение над столбцами eval"
+    ]
   }
 ]

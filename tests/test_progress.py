@@ -831,6 +831,37 @@ def test_ledger_spike_and_2600_achievements() -> None:
     assert "/quiz" in empty
 
 
+def test_rhythm_seam_and_2700_achievements() -> None:
+    labels = prog.collect_achievement_labels(
+        total=2700,
+        correct=320,
+        best_streak=145,
+        bank_total=171,
+        bank_mastered=163,
+    )
+    assert "2700 ответов" in labels
+    assert "320 верных ответов" in labels
+    assert "Серия 145+" in labels
+
+    rhythm = prog.format_rhythm_summary(
+        streak=6,
+        daily_count=2,
+        daily_goal=5,
+        review_count=0,
+    )
+    assert "Ритм:" in rhythm
+    assert "до цели 3" in rhythm
+    assert "/seam" in rhythm
+
+    rhythm_done = prog.format_rhythm_summary(
+        streak=9,
+        daily_count=5,
+        daily_goal=5,
+        review_count=0,
+    )
+    assert "цель закрыта" in rhythm_done
+
+
 def test_format_balance_summary() -> None:
     text = prog.format_balance_summary(
         bank_by_diff={1: 10, 2: 20, 3: 5},

@@ -502,6 +502,23 @@ def format_ledger_summary(
     )
 
 
+def format_rhythm_summary(
+    *,
+    streak: int,
+    daily_count: int,
+    daily_goal: int | None,
+    review_count: int,
+) -> str:
+    if daily_goal and daily_count < daily_goal:
+        left = daily_goal - daily_count
+        return f"Ритм: серия {streak} · до цели {left} — /quiz · /seam"
+    if review_count:
+        return f"Ритм: серия {streak} · повтор {review_count} — /review · /wedge"
+    if daily_goal and daily_count >= daily_goal:
+        return f"Ритм: серия {streak} · цель закрыта — /seam · /spike"
+    return f"Ритм: серия {streak} · сегодня {daily_count} — /forge · /orbit"
+
+
 def format_brief_summary(
     *,
     correct: int,
@@ -1155,6 +1172,8 @@ def collect_achievement_labels(
         labels.append("2500 ответов")
     if total >= 2600:
         labels.append("2600 ответов")
+    if total >= 2700:
+        labels.append("2700 ответов")
     if correct >= 5:
         labels.append("5 верных ответов")
     if correct >= 10:
@@ -1219,6 +1238,8 @@ def collect_achievement_labels(
         labels.append("300 верных ответов")
     if correct >= 310:
         labels.append("310 верных ответов")
+    if correct >= 320:
+        labels.append("320 верных ответов")
     if best_streak >= 5:
         labels.append("Серия 5+")
     if best_streak >= 10:
@@ -1275,6 +1296,8 @@ def collect_achievement_labels(
         labels.append("Серия 135+")
     if best_streak >= 140:
         labels.append("Серия 140+")
+    if best_streak >= 145:
+        labels.append("Серия 145+")
     if total >= 10 and correct / total >= 0.7:
         labels.append("Точность 70%+")
     if total >= 10 and correct / total >= 0.8:
