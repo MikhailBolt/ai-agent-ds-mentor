@@ -1923,5 +1923,38 @@
       "eval column expression",
       "выражение над столбцами eval"
     ]
+  },
+  {
+    "id": "ml-090",
+    "competency_id": "ml-foundations",
+    "difficulty": 3,
+    "prompt": "Что такое активация GELU?",
+    "answer": "гладкая аппроксимация ReLU которая взвешивает вход вероятностью нормального распределения",
+    "aliases": [
+      "gaussian error linear unit",
+      "gelu activation"
+    ]
+  },
+  {
+    "id": "st-036",
+    "competency_id": "stats-basics",
+    "difficulty": 3,
+    "prompt": "Что измеряет взаимная информация (mutual information)?",
+    "answer": "сколько информации одна случайная величина сообщает о другой через снижение неопределенности",
+    "aliases": [
+      "mutual information dependency",
+      "взаимная информация"
+    ]
+  },
+  {
+    "id": "py-048",
+    "competency_id": "python-ds",
+    "difficulty": 1,
+    "prompt": "Что делает df.squeeze() в pandas?",
+    "answer": "убирает оси длины один превращая датафрейм в серию если остаётся одна колонка или одна строка",
+    "aliases": [
+      "squeeze singleton axes",
+      "сжать оси длины один"
+    ]
   }
 ]

@@ -862,6 +862,39 @@ def test_rhythm_seam_and_2700_achievements() -> None:
     assert "цель закрыта" in rhythm_done
 
 
+def test_cadence_bridge_and_2800_achievements() -> None:
+    labels = prog.collect_achievement_labels(
+        total=2800,
+        correct=330,
+        best_streak=150,
+        bank_total=174,
+        bank_mastered=166,
+    )
+    assert "2800 ответов" in labels
+    assert "330 верных ответов" in labels
+    assert "Серия 150+" in labels
+
+    cadence = prog.format_cadence_summary(
+        correct=40,
+        total=50,
+        streak=7,
+        daily_count=1,
+        daily_goal=5,
+    )
+    assert "Каденс:" in cadence
+    assert "80%" in cadence
+    assert "/bridge" in cadence
+
+    cadence_weak = prog.format_cadence_summary(
+        correct=10,
+        total=20,
+        streak=1,
+        daily_count=5,
+        daily_goal=5,
+    )
+    assert "/ease" in cadence_weak
+
+
 def test_format_balance_summary() -> None:
     text = prog.format_balance_summary(
         bank_by_diff={1: 10, 2: 20, 3: 5},
