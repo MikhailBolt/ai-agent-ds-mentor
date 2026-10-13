@@ -895,6 +895,39 @@ def test_cadence_bridge_and_2800_achievements() -> None:
     assert "/ease" in cadence_weak
 
 
+def test_sync_link_and_2900_achievements() -> None:
+    labels = prog.collect_achievement_labels(
+        total=2900,
+        correct=340,
+        best_streak=155,
+        bank_total=177,
+        bank_mastered=169,
+    )
+    assert "2900 ответов" in labels
+    assert "340 верных ответов" in labels
+    assert "Серия 155+" in labels
+
+    sync = prog.format_sync_summary(
+        correct=36,
+        total=45,
+        streak=4,
+        review_count=0,
+        bank_unseen=9,
+    )
+    assert "Синхрон:" in sync
+    assert "80%" in sync
+    assert "/link" in sync
+
+    sync_review = prog.format_sync_summary(
+        correct=12,
+        total=20,
+        streak=1,
+        review_count=3,
+        bank_unseen=5,
+    )
+    assert "/review" in sync_review
+
+
 def test_format_balance_summary() -> None:
     text = prog.format_balance_summary(
         bank_by_diff={1: 10, 2: 20, 3: 5},

@@ -540,6 +540,24 @@ def format_cadence_summary(
     return f"Каденс: {acc:.0f}% · серия {streak} — /forge · /seam"
 
 
+def format_sync_summary(
+    *,
+    correct: int,
+    total: int,
+    streak: int,
+    review_count: int,
+    bank_unseen: int,
+) -> str:
+    acc = (correct / total * 100.0) if total else 0.0
+    if total == 0:
+        return "Синхрон: старт — /quiz · /link"
+    if review_count:
+        return f"Синхрон: {acc:.0f}% · серия {streak} · повтор {review_count} — /review · /link"
+    if bank_unseen:
+        return f"Синхрон: {acc:.0f}% · серия {streak} · новых {bank_unseen} — /link · /seam"
+    return f"Синхрон: {acc:.0f}% · серия {streak} · банк закрыт — /bridge · /challenge"
+
+
 def format_brief_summary(
     *,
     correct: int,
@@ -1197,6 +1215,8 @@ def collect_achievement_labels(
         labels.append("2700 ответов")
     if total >= 2800:
         labels.append("2800 ответов")
+    if total >= 2900:
+        labels.append("2900 ответов")
     if correct >= 5:
         labels.append("5 верных ответов")
     if correct >= 10:
@@ -1265,6 +1285,8 @@ def collect_achievement_labels(
         labels.append("320 верных ответов")
     if correct >= 330:
         labels.append("330 верных ответов")
+    if correct >= 340:
+        labels.append("340 верных ответов")
     if best_streak >= 5:
         labels.append("Серия 5+")
     if best_streak >= 10:
@@ -1325,6 +1347,8 @@ def collect_achievement_labels(
         labels.append("Серия 145+")
     if best_streak >= 150:
         labels.append("Серия 150+")
+    if best_streak >= 155:
+        labels.append("Серия 155+")
     if total >= 10 and correct / total >= 0.7:
         labels.append("Точность 70%+")
     if total >= 10 and correct / total >= 0.8:

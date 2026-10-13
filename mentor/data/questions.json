@@ -1956,5 +1956,38 @@
       "squeeze singleton axes",
       "сжать оси длины один"
     ]
+  },
+  {
+    "id": "ml-091",
+    "competency_id": "ml-foundations",
+    "difficulty": 3,
+    "prompt": "Что такое активация Swish (SiLU)?",
+    "answer": "x умноженный на sigmoid(x) гладкая нелинейность часто лучше ReLU в глубоких сетях",
+    "aliases": [
+      "swish silu x sigmoid",
+      "swish активация"
+    ]
+  },
+  {
+    "id": "ml-092",
+    "competency_id": "ml-foundations",
+    "difficulty": 2,
+    "prompt": "Что такое information gain при построении дерева решений?",
+    "answer": "снижение энтропии или неопределенности после разбиения узла по признаку",
+    "aliases": [
+      "information gain entropy split",
+      "информационный выигрыш"
+    ]
+  },
+  {
+    "id": "py-049",
+    "competency_id": "python-ds",
+    "difficulty": 2,
+    "prompt": "Что делает df.mask(cond, other) в pandas?",
+    "answer": "заменяет значения на other там где условие истинно оставляя остальные без изменений",
+    "aliases": [
+      "mask replace where true",
+      "замена по маске"
+    ]
   }
 ]
