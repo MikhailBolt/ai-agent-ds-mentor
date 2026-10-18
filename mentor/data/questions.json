@@ -1989,5 +1989,38 @@
       "mask replace where true",
       "замена по маске"
     ]
+  },
+  {
+    "id": "ml-093",
+    "competency_id": "ml-foundations",
+    "difficulty": 3,
+    "prompt": "Зачем используют Layer Normalization?",
+    "answer": "нормализует активации по признакам одного примера стабилизируя обучение особенно в трансформерах и RNN",
+    "aliases": [
+      "layer norm per example",
+      "послойная нормализация"
+    ]
+  },
+  {
+    "id": "st-037",
+    "competency_id": "stats-basics",
+    "difficulty": 2,
+    "prompt": "Для чего применяют критерий хи-квадрат (chi-square)?",
+    "answer": "проверяет связь категориальных переменных или согласие наблюдаемых частот с ожидаемыми",
+    "aliases": [
+      "chi square independence test",
+      "хи квадрат частоты"
+    ]
+  },
+  {
+    "id": "py-050",
+    "competency_id": "python-ds",
+    "difficulty": 1,
+    "prompt": "Что делает df.pop('col') в pandas?",
+    "answer": "удаляет столбец из датафрейма и возвращает его как серию",
+    "aliases": [
+      "pop column return series",
+      "вынуть столбец"
+    ]
   }
 ]

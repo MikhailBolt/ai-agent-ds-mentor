@@ -558,6 +558,26 @@ def format_sync_summary(
     return f"Синхрон: {acc:.0f}% · серия {streak} · банк закрыт — /bridge · /challenge"
 
 
+def format_phase_summary(
+    *,
+    correct: int,
+    total: int,
+    bank_mastered: int,
+    bank_total: int,
+) -> str:
+    acc = (correct / total * 100.0) if total else 0.0
+    bank_pct = (bank_mastered / bank_total * 100.0) if bank_total else 0.0
+    if total == 0:
+        return "Фаза: старт — /quiz · /link"
+    if bank_total and bank_mastered >= bank_total and acc >= 80.0:
+        return f"Фаза: мастер · {acc:.0f}% · банк {bank_pct:.0f}% — /challenge · /hook"
+    if total >= 100 or bank_pct >= 50.0:
+        return f"Фаза: продвинутый · {acc:.0f}% · банк {bank_pct:.0f}% — /bridge · /forge"
+    if total >= 30:
+        return f"Фаза: практик · {acc:.0f}% · банк {bank_pct:.0f}% — /seam · /hook"
+    return f"Фаза: новичок · {acc:.0f}% · банк {bank_pct:.0f}% — /warmup · /link"
+
+
 def format_brief_summary(
     *,
     correct: int,
@@ -1217,6 +1237,8 @@ def collect_achievement_labels(
         labels.append("2800 ответов")
     if total >= 2900:
         labels.append("2900 ответов")
+    if total >= 3000:
+        labels.append("3000 ответов")
     if correct >= 5:
         labels.append("5 верных ответов")
     if correct >= 10:
@@ -1287,6 +1309,8 @@ def collect_achievement_labels(
         labels.append("330 верных ответов")
     if correct >= 340:
         labels.append("340 верных ответов")
+    if correct >= 350:
+        labels.append("350 верных ответов")
     if best_streak >= 5:
         labels.append("Серия 5+")
     if best_streak >= 10:
@@ -1349,6 +1373,8 @@ def collect_achievement_labels(
         labels.append("Серия 150+")
     if best_streak >= 155:
         labels.append("Серия 155+")
+    if best_streak >= 160:
+        labels.append("Серия 160+")
     if total >= 10 and correct / total >= 0.7:
         labels.append("Точность 70%+")
     if total >= 10 and correct / total >= 0.8:

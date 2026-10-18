@@ -928,6 +928,37 @@ def test_sync_link_and_2900_achievements() -> None:
     assert "/review" in sync_review
 
 
+def test_phase_hook_and_3000_achievements() -> None:
+    labels = prog.collect_achievement_labels(
+        total=3000,
+        correct=350,
+        best_streak=160,
+        bank_total=180,
+        bank_mastered=172,
+    )
+    assert "3000 ответов" in labels
+    assert "350 верных ответов" in labels
+    assert "Серия 160+" in labels
+
+    phase = prog.format_phase_summary(
+        correct=40,
+        total=50,
+        bank_mastered=20,
+        bank_total=180,
+    )
+    assert "Фаза:" in phase
+    assert "практик" in phase
+    assert "/hook" in phase
+
+    phase_new = prog.format_phase_summary(
+        correct=0,
+        total=0,
+        bank_mastered=0,
+        bank_total=180,
+    )
+    assert "/quiz" in phase_new
+
+
 def test_format_balance_summary() -> None:
     text = prog.format_balance_summary(
         bank_by_diff={1: 10, 2: 20, 3: 5},
