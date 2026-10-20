@@ -959,6 +959,41 @@ def test_phase_hook_and_3000_achievements() -> None:
     assert "/quiz" in phase_new
 
 
+def test_stamp_crown_and_3100_achievements() -> None:
+    labels = prog.collect_achievement_labels(
+        total=3100,
+        correct=360,
+        best_streak=165,
+        bank_total=183,
+        bank_mastered=175,
+    )
+    assert "3100 ответов" in labels
+    assert "360 верных ответов" in labels
+    assert "Серия 165+" in labels
+
+    stamp = prog.format_stamp_summary(
+        correct=40,
+        total=50,
+        streak=6,
+        bank_mastered=20,
+        bank_total=183,
+        review_count=0,
+    )
+    assert "Штамп:" in stamp
+    assert "практик" in stamp
+    assert "/crown" in stamp
+
+    stamp_review = prog.format_stamp_summary(
+        correct=20,
+        total=30,
+        streak=2,
+        bank_mastered=5,
+        bank_total=183,
+        review_count=4,
+    )
+    assert "/review" in stamp_review
+
+
 def test_format_balance_summary() -> None:
     text = prog.format_balance_summary(
         bank_by_diff={1: 10, 2: 20, 3: 5},

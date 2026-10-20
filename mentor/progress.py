@@ -578,6 +578,29 @@ def format_phase_summary(
     return f"Фаза: новичок · {acc:.0f}% · банк {bank_pct:.0f}% — /warmup · /link"
 
 
+def format_stamp_summary(
+    *,
+    correct: int,
+    total: int,
+    streak: int,
+    bank_mastered: int,
+    bank_total: int,
+    review_count: int,
+) -> str:
+    phase = format_phase_summary(
+        correct=correct,
+        total=total,
+        bank_mastered=bank_mastered,
+        bank_total=bank_total,
+    )
+    phase_label = phase.split(" · ", 1)[0].replace("Фаза: ", "")
+    if total == 0:
+        return "Штамп: старт · серия 0 — /quiz · /link"
+    if review_count:
+        return f"Штамп: {phase_label} · серия {streak} · повтор {review_count} — /review · /crown"
+    return f"Штамп: {phase_label} · серия {streak} — /hook · /crown"
+
+
 def format_brief_summary(
     *,
     correct: int,
@@ -1239,6 +1262,8 @@ def collect_achievement_labels(
         labels.append("2900 ответов")
     if total >= 3000:
         labels.append("3000 ответов")
+    if total >= 3100:
+        labels.append("3100 ответов")
     if correct >= 5:
         labels.append("5 верных ответов")
     if correct >= 10:
@@ -1311,6 +1336,8 @@ def collect_achievement_labels(
         labels.append("340 верных ответов")
     if correct >= 350:
         labels.append("350 верных ответов")
+    if correct >= 360:
+        labels.append("360 верных ответов")
     if best_streak >= 5:
         labels.append("Серия 5+")
     if best_streak >= 10:
@@ -1375,6 +1402,8 @@ def collect_achievement_labels(
         labels.append("Серия 155+")
     if best_streak >= 160:
         labels.append("Серия 160+")
+    if best_streak >= 165:
+        labels.append("Серия 165+")
     if total >= 10 and correct / total >= 0.7:
         labels.append("Точность 70%+")
     if total >= 10 and correct / total >= 0.8:

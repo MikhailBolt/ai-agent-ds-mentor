@@ -2022,5 +2022,38 @@
       "pop column return series",
       "вынуть столбец"
     ]
+  },
+  {
+    "id": "ml-094",
+    "competency_id": "ml-foundations",
+    "difficulty": 3,
+    "prompt": "Зачем в глубоких сетях добавляют residual (skip) connections?",
+    "answer": "позволяют градиенту обходить слои и облегчают обучение очень глубоких сетей снижая vanishing gradients",
+    "aliases": [
+      "residual skip connections",
+      "остаточные связи"
+    ]
+  },
+  {
+    "id": "st-038",
+    "competency_id": "stats-basics",
+    "difficulty": 3,
+    "prompt": "Для чего используют ANOVA?",
+    "answer": "сравнивает средние нескольких групп чтобы проверить есть ли статистически значимые различия между ними",
+    "aliases": [
+      "analysis of variance groups",
+      "дисперсионный анализ"
+    ]
+  },
+  {
+    "id": "py-051",
+    "competency_id": "python-ds",
+    "difficulty": 1,
+    "prompt": "Что делает df.insert(1, 'col', values) в pandas?",
+    "answer": "вставляет новый столбец на заданную позицию в датафрейме",
+    "aliases": [
+      "insert column at position",
+      "вставить столбец по индексу"
+    ]
   }
 ]
