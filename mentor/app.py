@@ -137,6 +137,8 @@ BOT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("crown", "Сложный из сильной темы"),
     ("sigil", "Знак прогресса"),
     ("grip", "Лёгкий из сильной темы"),
+    ("rune", "Руна прогресса"),
+    ("dart", "Средний повтор ошибки"),
     ("compare", "Слабая vs сильная тема"),
     ("record", "Личные рекорды"),
     ("seen", "Встреченные вопросы"),
@@ -326,8 +328,10 @@ def _help_text() -> str:
         "/hook, /snag или /grab — средний из сильной темы\n"
         "/stamp, /seal или /brand — штамп: фаза, серия и шаг\n"
         "/crown, /crest или /helm — сложный из сильной темы\n"
-        "/sigil или /emblem — знак: точность, серия и банк\n"
-        "/grip или /clasp — лёгкий из сильной темы\n"
+        "/sigil, /emblem или /ink — знак: точность, серия и банк\n"
+        "/grip, /clasp или /clamp — лёгкий из сильной темы\n"
+        "/rune или /glyph — руна: точность, серия и повтор\n"
+        "/dart или /bolt — средний повтор ошибки\n"
         "/level или /rank — уровень по ответам и банку\n"
         "/record или /best — личные рекорды\n"
         "/plan или /guide — что тренировать дальше\n"
@@ -3114,7 +3118,7 @@ def handle_text(
         )
         return
 
-    if cmd in {"/sigil", "/emblem"}:
+    if cmd in {"/sigil", "/emblem", "/ink"}:
         st = mentor_db.get_stats(conn, chat_id)
         streak = mentor_db.get_streak(conn, chat_id)
         seen = len(mentor_db.get_seen_question_ids(conn, chat_id))
@@ -3130,7 +3134,7 @@ def handle_text(
         )
         return
 
-    if cmd in {"/grip", "/clasp"}:
+    if cmd in {"/grip", "/clasp", "/clamp"}:
         tip_pair = mentor_comp.suggest_strongest_competency(
             competencies,
             mentor_db.get_competency_stats(conn, chat_id),
@@ -3190,6 +3194,61 @@ def handle_text(
             comp_filter=tip.id,
             difficulty_filter=1,
             intro=f"Grip: «{tip.title}» ★☆☆",
+        )
+        return
+
+    if cmd in {"/rune", "/glyph"}:
+        st = mentor_db.get_stats(conn, chat_id)
+        streak = mentor_db.get_streak(conn, chat_id)
+        review_count = len(mentor_db.get_review_question_ids(conn, chat_id))
+        seen = mentor_db.get_seen_question_ids(conn, chat_id)
+        bank_unseen = len(mentor_quiz.unseen_question_ids(questions, seen))
+        api.send_message(
+            chat_id,
+            mentor_progress.format_rune_summary(
+                correct=st.correct,
+                total=st.total,
+                streak=streak,
+                review_count=review_count,
+                bank_unseen=bank_unseen,
+            ),
+        )
+        return
+
+    if cmd in {"/dart", "/bolt"}:
+        review_ids = set(mentor_db.get_review_question_ids(conn, chat_id))
+        mid_review = {q.id for q in questions if q.id in review_ids and q.difficulty == 2}
+        if mid_review:
+            deliver_quiz_question(
+                api,
+                conn,
+                chat_id,
+                questions,
+                competencies,
+                difficulty_filter=2,
+                only_ids=mid_review,
+                intro="Dart: повтор ★★☆",
+            )
+            return
+        if review_ids:
+            deliver_quiz_question(
+                api,
+                conn,
+                chat_id,
+                questions,
+                competencies,
+                only_ids=review_ids,
+                intro="Dart: повтор",
+            )
+            return
+        deliver_quiz_question(
+            api,
+            conn,
+            chat_id,
+            questions,
+            competencies,
+            difficulty_filter=2,
+            intro="Dart ★★☆",
         )
         return
 

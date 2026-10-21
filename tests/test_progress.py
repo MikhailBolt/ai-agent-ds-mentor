@@ -1035,6 +1035,48 @@ def test_sigil_grip_and_3200_achievements() -> None:
     assert "/quiz" in sigil_new
 
 
+def test_rune_dart_and_3300_achievements() -> None:
+    labels = prog.collect_achievement_labels(
+        total=3300,
+        correct=380,
+        best_streak=175,
+        bank_total=189,
+        bank_mastered=181,
+    )
+    assert "3300 ответов" in labels
+    assert "380 верных ответов" in labels
+    assert "Серия 175+" in labels
+
+    rune = prog.format_rune_summary(
+        correct=40,
+        total=50,
+        streak=6,
+        review_count=0,
+        bank_unseen=20,
+    )
+    assert "Руна:" in rune
+    assert "/dart" in rune
+
+    rune_review = prog.format_rune_summary(
+        correct=20,
+        total=30,
+        streak=2,
+        review_count=4,
+        bank_unseen=10,
+    )
+    assert "/dart" in rune_review
+    assert "/review" in rune_review
+
+    rune_new = prog.format_rune_summary(
+        correct=0,
+        total=0,
+        streak=0,
+        review_count=0,
+        bank_unseen=189,
+    )
+    assert "/quiz" in rune_new
+
+
 def test_format_balance_summary() -> None:
     text = prog.format_balance_summary(
         bank_by_diff={1: 10, 2: 20, 3: 5},

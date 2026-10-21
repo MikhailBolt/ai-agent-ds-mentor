@@ -622,6 +622,24 @@ def format_sigil_summary(
     return f"Знак: {acc:.0f}% · серия {streak} · банк {bank_pct:.0f}% — /hook · /crown"
 
 
+def format_rune_summary(
+    *,
+    correct: int,
+    total: int,
+    streak: int,
+    review_count: int,
+    bank_unseen: int,
+) -> str:
+    acc = (correct / total * 100.0) if total else 0.0
+    if total == 0:
+        return "Руна: старт — /quiz · /grip"
+    if review_count:
+        return f"Руна: {acc:.0f}% · серия {streak} · повтор {review_count} — /dart · /review"
+    if bank_unseen:
+        return f"Руна: {acc:.0f}% · серия {streak} · новых {bank_unseen} — /grip · /dart"
+    return f"Руна: {acc:.0f}% · серия {streak} · банк закрыт — /crown · /challenge"
+
+
 def format_brief_summary(
     *,
     correct: int,
@@ -1287,6 +1305,8 @@ def collect_achievement_labels(
         labels.append("3100 ответов")
     if total >= 3200:
         labels.append("3200 ответов")
+    if total >= 3300:
+        labels.append("3300 ответов")
     if correct >= 5:
         labels.append("5 верных ответов")
     if correct >= 10:
@@ -1363,6 +1383,8 @@ def collect_achievement_labels(
         labels.append("360 верных ответов")
     if correct >= 370:
         labels.append("370 верных ответов")
+    if correct >= 380:
+        labels.append("380 верных ответов")
     if best_streak >= 5:
         labels.append("Серия 5+")
     if best_streak >= 10:
@@ -1431,6 +1453,8 @@ def collect_achievement_labels(
         labels.append("Серия 165+")
     if best_streak >= 170:
         labels.append("Серия 170+")
+    if best_streak >= 175:
+        labels.append("Серия 175+")
     if total >= 10 and correct / total >= 0.7:
         labels.append("Точность 70%+")
     if total >= 10 and correct / total >= 0.8:

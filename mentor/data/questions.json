@@ -2088,5 +2088,38 @@
       "simpson paradox confounding",
       "парадокс симпсона"
     ]
+  },
+  {
+    "id": "py-053",
+    "competency_id": "python-ds",
+    "difficulty": 2,
+    "prompt": "Что делает df.melt(id_vars=['id']) в pandas?",
+    "answer": "переводит широкую таблицу в длинный формат собирая столбцы в переменную и значение",
+    "aliases": [
+      "melt wide to long",
+      "расплавить таблицу"
+    ]
+  },
+  {
+    "id": "ml-096",
+    "competency_id": "ml-foundations",
+    "difficulty": 2,
+    "prompt": "Чем soft voting отличается от hard voting в ансамблях?",
+    "answer": "hard voting считает голоса классов soft voting усредняет вероятности и выбирает класс с максимальной средней вероятностью",
+    "aliases": [
+      "soft vs hard voting ensemble",
+      "мягкое и жёсткое голосование"
+    ]
+  },
+  {
+    "id": "st-040",
+    "competency_id": "stats-basics",
+    "difficulty": 3,
+    "prompt": "Что такое мультиколлинеарность в регрессии?",
+    "answer": "сильная корреляция между предикторами которая делает коэффициенты нестабильными и завышает их дисперсию",
+    "aliases": [
+      "multicollinearity correlated predictors",
+      "мультиколлинеарность vif"
+    ]
   }
 ]
