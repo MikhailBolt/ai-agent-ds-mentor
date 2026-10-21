@@ -135,6 +135,8 @@ BOT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("hook", "Средний из сильной темы"),
     ("stamp", "Штамп прогресса"),
     ("crown", "Сложный из сильной темы"),
+    ("sigil", "Знак прогресса"),
+    ("grip", "Лёгкий из сильной темы"),
     ("compare", "Слабая vs сильная тема"),
     ("record", "Личные рекорды"),
     ("seen", "Встреченные вопросы"),
@@ -322,8 +324,10 @@ def _help_text() -> str:
         "/link, /tie или /bond — лёгкий из следующей темы по орбите\n"
         "/phase, /stage или /tier — фаза: уровень по точности и банку\n"
         "/hook, /snag или /grab — средний из сильной темы\n"
-        "/stamp или /seal — штамп: фаза, серия и шаг\n"
-        "/crown или /crest — сложный из сильной темы\n"
+        "/stamp, /seal или /brand — штамп: фаза, серия и шаг\n"
+        "/crown, /crest или /helm — сложный из сильной темы\n"
+        "/sigil или /emblem — знак: точность, серия и банк\n"
+        "/grip или /clasp — лёгкий из сильной темы\n"
         "/level или /rank — уровень по ответам и банку\n"
         "/record или /best — личные рекорды\n"
         "/plan или /guide — что тренировать дальше\n"
@@ -3029,7 +3033,7 @@ def handle_text(
         )
         return
 
-    if cmd in {"/stamp", "/seal"}:
+    if cmd in {"/stamp", "/seal", "/brand"}:
         st = mentor_db.get_stats(conn, chat_id)
         streak = mentor_db.get_streak(conn, chat_id)
         mastered = len(mentor_db.get_mastered_question_ids(conn, chat_id))
@@ -3047,7 +3051,7 @@ def handle_text(
         )
         return
 
-    if cmd in {"/crown", "/crest"}:
+    if cmd in {"/crown", "/crest", "/helm"}:
         tip_pair = mentor_comp.suggest_strongest_competency(
             competencies,
             mentor_db.get_competency_stats(conn, chat_id),
@@ -3107,6 +3111,85 @@ def handle_text(
             comp_filter=tip.id,
             difficulty_filter=3,
             intro=f"Crown: «{tip.title}» ★★★",
+        )
+        return
+
+    if cmd in {"/sigil", "/emblem"}:
+        st = mentor_db.get_stats(conn, chat_id)
+        streak = mentor_db.get_streak(conn, chat_id)
+        seen = len(mentor_db.get_seen_question_ids(conn, chat_id))
+        api.send_message(
+            chat_id,
+            mentor_progress.format_sigil_summary(
+                correct=st.correct,
+                total=st.total,
+                streak=streak,
+                bank_seen=seen,
+                bank_total=len(questions),
+            ),
+        )
+        return
+
+    if cmd in {"/grip", "/clasp"}:
+        tip_pair = mentor_comp.suggest_strongest_competency(
+            competencies,
+            mentor_db.get_competency_stats(conn, chat_id),
+        )
+        seen = mentor_db.get_seen_question_ids(conn, chat_id)
+        unseen = mentor_quiz.unseen_question_ids(questions, seen)
+        if tip_pair is None:
+            deliver_quiz_question(
+                api,
+                conn,
+                chat_id,
+                questions,
+                competencies,
+                difficulty_filter=1,
+                intro="Grip",
+            )
+            return
+        tip, _acc = tip_pair
+        tip_easy_unseen = {
+            q.id
+            for q in questions
+            if q.id in unseen and q.competency_id == tip.id and q.difficulty == 1
+        }
+        if tip_easy_unseen:
+            deliver_quiz_question(
+                api,
+                conn,
+                chat_id,
+                questions,
+                competencies,
+                comp_filter=tip.id,
+                difficulty_filter=1,
+                only_ids=tip_easy_unseen,
+                intro=f"Grip: «{tip.title}» ★☆☆",
+            )
+            return
+        tip_easy = {q.id for q in questions if q.competency_id == tip.id and q.difficulty == 1}
+        if tip_easy:
+            deliver_quiz_question(
+                api,
+                conn,
+                chat_id,
+                questions,
+                competencies,
+                comp_filter=tip.id,
+                difficulty_filter=1,
+                only_ids=tip_easy,
+                intro=f"Grip: «{tip.title}» ★☆☆",
+            )
+            return
+        deliver_quiz_question(
+            api,
+            conn,
+            chat_id,
+            questions,
+            competencies,
+            comp_filter=tip.id,
+            difficulty_filter=1,
+            intro=f"Grip: «{tip.title}» ★☆☆",
         )
         return
 

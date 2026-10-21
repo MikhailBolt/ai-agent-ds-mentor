@@ -2055,5 +2055,38 @@
       "insert column at position",
       "вставить столбец по индексу"
     ]
+  },
+  {
+    "id": "py-052",
+    "competency_id": "python-ds",
+    "difficulty": 1,
+    "prompt": "Что делает df.select_dtypes(include='number') в pandas?",
+    "answer": "возвращает подмножество столбцов указанных типов например только числовые",
+    "aliases": [
+      "select columns by dtype",
+      "выбрать столбцы по типу"
+    ]
+  },
+  {
+    "id": "ml-095",
+    "competency_id": "ml-foundations",
+    "difficulty": 2,
+    "prompt": "Зачем при обучении нейросетей применяют gradient clipping?",
+    "answer": "ограничивает норму или величину градиентов чтобы стабилизировать обучение и избежать exploding gradients",
+    "aliases": [
+      "clip gradients exploding",
+      "обрезка градиентов"
+    ]
+  },
+  {
+    "id": "st-039",
+    "competency_id": "stats-basics",
+    "difficulty": 3,
+    "prompt": "Что такое парадокс Симпсона?",
+    "answer": "тренд в объединённых данных может исчезать или менять знак при разбиении на группы из за смешивающих факторов",
+    "aliases": [
+      "simpson paradox confounding",
+      "парадокс симпсона"
+    ]
   }
 ]

@@ -994,6 +994,47 @@ def test_stamp_crown_and_3100_achievements() -> None:
     assert "/review" in stamp_review
 
 
+def test_sigil_grip_and_3200_achievements() -> None:
+    labels = prog.collect_achievement_labels(
+        total=3200,
+        correct=370,
+        best_streak=170,
+        bank_total=186,
+        bank_mastered=178,
+    )
+    assert "3200 ответов" in labels
+    assert "370 верных ответов" in labels
+    assert "Серия 170+" in labels
+
+    sigil = prog.format_sigil_summary(
+        correct=40,
+        total=50,
+        streak=6,
+        bank_seen=20,
+        bank_total=186,
+    )
+    assert "Знак:" in sigil
+    assert "/grip" in sigil or "/hook" in sigil
+
+    sigil_strong = prog.format_sigil_summary(
+        correct=45,
+        total=50,
+        streak=8,
+        bank_seen=100,
+        bank_total=186,
+    )
+    assert "/crown" in sigil_strong
+
+    sigil_new = prog.format_sigil_summary(
+        correct=0,
+        total=0,
+        streak=0,
+        bank_seen=0,
+        bank_total=186,
+    )
+    assert "/quiz" in sigil_new
+
+
 def test_format_balance_summary() -> None:
     text = prog.format_balance_summary(
         bank_by_diff={1: 10, 2: 20, 3: 5},
